@@ -121,6 +121,7 @@ cd LangChain-RAG-FastAPI-Service
 #### 后端依赖
 ```bash
 cd backend
+uv venv
 uv sync
 ```
 
