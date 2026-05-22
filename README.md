@@ -74,8 +74,8 @@ flowchart TD
     end
 
     subgraph "AI模型服务"
-        L -->|LLM调用| R["DashScope API (Qwen3-Max)"]
-        J -->|嵌入模型| S["文本嵌入 (text-embedding-v4)"]
+        L -->|LLM调用| R["DeepSeek API / DashScope API (Qwen3-Max)"]
+        J -->|嵌入模型| S["Ollama 嵌入 (qwen3-embedding)"]
         M -->|重排序模型| T["Qwen3-Reranker-0.6B"]
     end
 
@@ -141,8 +141,13 @@ pnpm install
 
 ```env
 # ==================== LLM 大模型配置 ====================
-# LLM类型：ALIYUN | OLLAMA
-LLM_TYPE=ALIYUN
+# LLM类型：ALIYUN | OLLAMA | DEEPSEEK
+LLM_TYPE=DEEPSEEK
+
+# ==================== DeepSeek 配置 (LLM_TYPE=DEEPSEEK) ====================
+DEEPSEEK_API_KEY=your_deepseek_api_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL_NAME=deepseek-chat
 
 # ==================== Ollama 配置 (LLM_TYPE=OLLAMA) ====================
 OLLAMA_BASE_URL=http://localhost:11434
@@ -160,7 +165,7 @@ ALIYUN_EMBED_MODEL_NAME=qwen3-embedding
 
 # ==================== 数据库配置 ====================
 MYSQL_USER=root
-MYSQL_PASSWORD=root
+MYSQL_PASSWORD=123
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_DATABASE=chat_history
@@ -261,7 +266,7 @@ separators: ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
 | Django | 用户认证和管理系统 |
 | MySQL | 关系型数据库 |
 | Redis | 缓存数据库 |
-| DashScope API | 大语言模型服务 |
+| DeepSeek API / DashScope API | 大语言模型服务 |
 | Hugging Face | 预训练模型服务 |
 | PyTorch | 深度学习框架 |
 | Sentence-Transformers | 句子嵌入库 |

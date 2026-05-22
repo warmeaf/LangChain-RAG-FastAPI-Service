@@ -7,6 +7,7 @@ from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
 from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_openai import ChatOpenAI
 
 from app.core.logger_handler import logger
 
@@ -64,7 +65,7 @@ class BaseModelFactory(ABC):
 
 
 class ChatModelFactory(BaseModelFactory):
-    """聊天模型工厂 - 支持阿里云百炼和Ollama"""
+    """聊天模型工厂 - 支持阿里云百炼、Ollama和DeepSeek"""
     
     def generator(self) -> Optional[Embeddings | BaseChatModel]:
         """根据LLM_TYPE生成对应的聊天模型"""
@@ -87,9 +88,9 @@ class ChatModelFactory(BaseModelFactory):
             model_name = os.getenv("ALIYUN_MODEL_NAME", os.getenv("CHAT_MODEL_NAME", "qwen3-max"))
             api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
             base_url = os.getenv("ALIYUN_BASE_URL")
-            
+
             logger.info(f"📦 ChatModel 使用阿里云百炼模型: {model_name}")
-            
+
             return ChatTongyi(
                 model=model_name,
                 api_key=api_key,
@@ -97,9 +98,24 @@ class ChatModelFactory(BaseModelFactory):
                 streaming=True,
                 top_p=0.7,
             )
-        
+
+        elif llm_type == "DEEPSEEK":
+            model_name = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-v4-flash")
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+
+            logger.info(f"📦 ChatModel 使用DeepSeek模型: {model_name}")
+
+            return ChatOpenAI(
+                model=model_name,
+                api_key=api_key,
+                base_url=base_url,
+                streaming=True,
+                top_p=0.7,
+            )
+
         else:
-            raise ValueError(f"不支持的LLM_TYPE: {llm_type}，可选值: ALIYUN, OLLAMA")
+            raise ValueError(f"不支持的LLM_TYPE: {llm_type}，可选值: ALIYUN, OLLAMA, DEEPSEEK")
 
 
 class EmbedModelFactory(BaseModelFactory):
@@ -182,7 +198,9 @@ class VisionModelFactory(BaseModelFactory):
             )
 
         else:
-            raise ValueError(f"不支持的VISION_MODEL_TYPE: {vision_type}，可选值: ALIYUN, OLLAMA")
+            logger.warning(f"🎨 VisionModel 不支持的类型: {vision_type}，PDF多模态功能已禁用")
+            logger.warning(f"   如需使用，请设置 VISION_MODEL_TYPE=OLLAMA 或 VISION_MODEL_TYPE=ALIYUN")
+            return None
 
 
 class RerankerModelFactory(BaseModelFactory):

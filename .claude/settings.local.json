@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc --track-changes=all \"你好.docx\" -o current.md)",
+      "Bash(uv run *)",
+      "Bash(pip install *)",
+      "Bash(mkdir -p \"e:/project_my/LangChain-RAG-FastAPI-Service/unpacked_hello\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}
