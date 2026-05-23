@@ -7,6 +7,7 @@ from typing import List, Optional, AsyncGenerator
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_community.chat_models import ChatTongyi
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.tools import BaseTool
@@ -101,8 +102,23 @@ class AgentFactory:
                 top_p=0.7,
             )
         
+        elif llm_type == "DEEPSEEK":
+            model_name = custom_model or os.getenv("DEEPSEEK_MODEL_NAME", self.model)
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+
+            logger.info(f"🤖 Agent使用DeepSeek模型: {model_name}")
+
+            return ChatOpenAI(
+                model=model_name,
+                api_key=api_key,
+                base_url=base_url,
+                streaming=True,
+                top_p=0.7,
+            )
+
         else:
-            raise ValueError(f"不支持的LLM_TYPE: {llm_type}，可选值: ALIYUN, OLLAMA")
+            raise ValueError(f"不支持的LLM_TYPE: {llm_type}，可选值: ALIYUN, OLLAMA, DEEPSEEK")
 
     def _create_prompt(self, custom_system_prompt: Optional[str] = None) -> ChatPromptTemplate:
         """内部方法：创建提示词模板"""
