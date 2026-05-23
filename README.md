@@ -1,15 +1,5 @@
 # 🚀 RAG对话系统
 
-<div align="center">
-<a href="https://github.com/RMA-MUN/LangChain-RAG-FastAPI-Service/stargazers">
-  <img src="https://img.shields.io/github/stars/RMA-MUN/LangChain-RAG-FastAPI-Service?style=flat-square&label=Stars&color=orange" alt="Stars">
-</a>
-<a href="https://github.com/RMA-MUN/LangChain-RAG-FastAPI-Service/network/members">
-  <img src="https://img.shields.io/github/forks/RMA-MUN/LangChain-RAG-FastAPI-Service?style=flat-square&label=Forks&color=green" alt="Forks">
-</a>
-  <img src="https://img.shields.io/badge/python-v3.12.4-blue.svg" alt="System">
-</div>
-
 ## 📋 目录
 
 - [项目简介](#项目简介)
