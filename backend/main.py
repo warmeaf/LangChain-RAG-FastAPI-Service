@@ -83,9 +83,12 @@ async def startup_event():
     await connect_redis()
     logger.info("Redis连接初始化完成")
     
-    # 检查并重排序模型
+    # 检查并重排序模型，并预加载到内存（避免首次请求时死锁）
     check_and_download_reranker_model()
-    logger.info("重排序模型检查完成")
+    logger.info("重排序模型检查完成，开始预加载...")
+    from app.rag.reorder_service import reorder_service
+    await reorder_service._get_model()
+    logger.info("重排序模型预加载完成")
 
 @app.on_event("shutdown")
 async def shutdown_event():
