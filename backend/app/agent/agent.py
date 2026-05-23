@@ -222,8 +222,8 @@ async def get_agent_response(
         }):
             if "output" in chunk:
                 full_response.append(chunk["output"])
-            elif "intermediate_steps" in chunk:
-                for action, observation in chunk["intermediate_steps"]:
+            elif "intermediate_step" in chunk:
+                for action, observation in chunk["intermediate_step"]:
                     # 记录日志
                     logger.info(f"\n\n🧠 [Agent 思考] {action.log}")
                     logger.info(f"🛠️ [调用工具] {action.tool}")
@@ -303,8 +303,8 @@ async def get_agent_stream_response(
             }):
                 if "output" in chunk:
                     full_response.append(chunk["output"])
-                elif "intermediate_steps" in chunk:
-                    for action, observation in chunk["intermediate_steps"]:
+                elif "intermediate_step" in chunk:
+                    for action, observation in chunk["intermediate_step"]:
                         logger.info(f"\n\n🧠 [Agent 思考] {action.log}")
                         logger.info(f"🛠️ [调用工具] {action.tool}")
                         logger.info(f"📥 [工具输入] {action.tool_input}")
