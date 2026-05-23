@@ -115,6 +115,7 @@ class AgentFactory:
                 base_url=base_url,
                 streaming=True,
                 top_p=0.7,
+                extra_body={"thinking": {"type": "disabled"}},
             )
 
         else:
