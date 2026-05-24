@@ -7,8 +7,6 @@ from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
 from langchain_ollama import OllamaEmbeddings, ChatOllama
-from langchain_openai import ChatOpenAI
-
 from app.core.logger_handler import logger
 
 # 加载环境变量
@@ -100,16 +98,17 @@ class ChatModelFactory(BaseModelFactory):
             )
 
         elif llm_type == "DEEPSEEK":
+            from langchain_deepseek import ChatDeepSeek
             model_name = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-v4-flash")
             api_key = os.getenv("DEEPSEEK_API_KEY")
-            base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+            api_base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 
-            logger.info(f"📦 ChatModel 使用DeepSeek模型: {model_name}")
+            logger.info(f"📦 ChatModel 使用DeepSeek模型(ChatDeepSeek): {model_name}")
 
-            return ChatOpenAI(
+            return ChatDeepSeek(
                 model=model_name,
                 api_key=api_key,
-                base_url=base_url,
+                api_base=api_base,
                 streaming=True,
                 top_p=0.7,
                 extra_body={"thinking": {"type": "disabled"}},

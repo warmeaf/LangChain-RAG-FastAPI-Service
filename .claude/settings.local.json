@@ -5,7 +5,8 @@
       "Bash(uv run *)",
       "Bash(pip install *)",
       "Bash(mkdir -p \"e:/project_my/LangChain-RAG-FastAPI-Service/unpacked_hello\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "WebSearch"
     ]
   }
 }
