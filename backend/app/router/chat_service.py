@@ -38,6 +38,13 @@ class ChatService:
         history = await sm.session_manager.get_history(session_id, user_id)
         return history
 
+
+    async def handle_get_thinking(self, session_id: str, user_id: str):
+        """处理获取思考过程事件逻辑"""
+        # 先验证会话属于当前用户
+        await sm.session_manager.get_session(session_id, user_id)
+        return await sm.session_manager.get_thinking_events(session_id)
+
     async def handle_delete_session(self, session_id: str, user_id: str) -> None:
         """处理删除会话逻辑"""
         await sm.session_manager.clear_session(session_id, user_id)

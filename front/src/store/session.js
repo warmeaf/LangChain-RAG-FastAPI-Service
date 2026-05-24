@@ -207,6 +207,22 @@ export const useSessionStore = defineStore('session', {
       }
     },
     
+
+    // 获取会话的思考过程事件
+    async getThinking(sessionId) {
+      try {
+        const token = localStorage.getItem('jwt_token');
+        const response = await axios.get(
+          `${apiConfig.endpoints.getSessionThinking}${sessionId}/thinking`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data.data?.thinking || [];
+      } catch (error) {
+        console.error('获取思考过程失败:', error);
+        return [];
+      }
+    },
+
     // 设置当前会话
     setCurrentSession(session) {
       this.currentSession = session;

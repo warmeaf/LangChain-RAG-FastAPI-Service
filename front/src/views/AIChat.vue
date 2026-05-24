@@ -222,18 +222,8 @@ const truncateText = (text, maxLen) => {
   return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
 };
 
-// localStorage 存储最近 5 条思考过程
+// localStorage 存储（保留读取作为降级回退）
 const THINKING_HISTORY_KEY = 'ai_thinking_history';
-
-const saveThinkingToHistory = (sessionId, query, thinking) => {
-  if (!sessionId || !thinking || thinking.length === 0) return;
-  try {
-    let history = JSON.parse(localStorage.getItem(THINKING_HISTORY_KEY) || '[]');
-    history = history.filter(e => e.sessionId !== sessionId);
-    history.unshift({ sessionId, query, thinking, timestamp: Date.now() });
-    localStorage.setItem(THINKING_HISTORY_KEY, JSON.stringify(history.slice(0, 5)));
-  } catch (e) { /* ignore */ }
-};
 
 const loadThinkingFromHistory = (sessionId) => {
   if (!sessionId) return null;
@@ -403,11 +393,6 @@ const fetchAIResponse = async (userMessage) => {
                 const sid = json.session_id;
                 if (sid && typeof sid === 'string' && sid.trim()) {
                   sessionId.value = sid;
-                  // 保存思考过程到 localStorage
-                  const lastMsg = messages.value[messages.value.length - 1];
-                  if (lastMsg && lastMsg.role === 'assistant') {
-                    saveThinkingToHistory(sid, userMessage, lastMsg.thinking);
-                  }
                   // 如果当前路由没有sessionId参数，跳转到带sessionId的路由
                   if (!route.params.sessionId) {
                     router.push(`/aichat/${sid}`);
@@ -461,7 +446,7 @@ watch(() => route.params.sessionId, async (newSessionId) => {
     try {
       const result = await sessionStore.getSession(newSessionId);
       if (result.success && sessionStore.currentSession) {
-        loadSessionHistory(sessionStore.currentSession);
+        await loadSessionHistory(sessionStore.currentSession);
       } else {
         showToast('加载会话历史失败');
       }
@@ -482,7 +467,7 @@ onMounted(async () => {
     try {
       const result = await sessionStore.getSession(routeSessionId);
       if (result.success && sessionStore.currentSession) {
-        loadSessionHistory(sessionStore.currentSession);
+        await loadSessionHistory(sessionStore.currentSession);
       } else {
         showToast('加载会话历史失败');
       }
@@ -492,14 +477,14 @@ onMounted(async () => {
     }
   } else if (sessionStore.currentSession) {
     // 从store中加载会话历史
-    loadSessionHistory(sessionStore.currentSession);
+    await loadSessionHistory(sessionStore.currentSession);
   }
   
   scrollToBottom();
 });
 
-// 加载会话历史
-const loadSessionHistory = (session) => {
+// 加载会话历史（异步，从 API 加载思考过程）
+const loadSessionHistory = async (session) => {
   if (session.history && session.history.length > 0) {
     // 清空当前消息
     messages.value = [];
@@ -510,12 +495,26 @@ const loadSessionHistory = (session) => {
     });
     // 设置会话ID
     sessionId.value = session.session_id;
-    // 从 localStorage 恢复思考过程
-    const saved = loadThinkingFromHistory(session.session_id);
-    if (saved && messages.value.length > 0) {
-      const last = messages.value[messages.value.length - 1];
-      if (last.role === 'assistant') {
-        last.thinking = saved;
+
+    // 从 API 加载思考过程
+    const thinkingData = await sessionStore.getThinking(session.session_id);
+    if (thinkingData && thinkingData.length > 0) {
+      // 按索引将 thinking[i] 分配到第 i 个 assistant 消息
+      let aiIndex = 0;
+      for (const msg of messages.value) {
+        if (msg.role === 'assistant' && aiIndex < thinkingData.length) {
+          msg.thinking = thinkingData[aiIndex];
+          aiIndex++;
+        }
+      }
+    } else {
+      // API 无数据时回退到 localStorage
+      const saved = loadThinkingFromHistory(session.session_id);
+      if (saved && messages.value.length > 0) {
+        const last = messages.value[messages.value.length - 1];
+        if (last.role === 'assistant') {
+          last.thinking = saved;
+        }
       }
     }
   }

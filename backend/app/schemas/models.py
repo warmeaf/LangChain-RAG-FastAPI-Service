@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 
 class QueryRequest(BaseModel):
@@ -126,3 +126,15 @@ class MD5ListResponse(BaseModel):
     """MD5记录列表响应模型"""
     records: List[MD5Record]
     total_count: int
+
+class ThinkingEvent(BaseModel):
+    """思考过程事件模型"""
+    stage: str
+    content: str
+    details: Optional[Dict] = None
+
+
+class ThinkingResponse(BaseModel):
+    """思考过程响应模型"""
+    session_id: str
+    thinking: List[List[ThinkingEvent]]

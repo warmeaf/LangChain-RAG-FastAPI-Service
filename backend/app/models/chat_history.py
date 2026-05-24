@@ -34,3 +34,16 @@ class ChatMessage(Base):
 
     # 关系
     session = relationship("ChatSession", back_populates="messages")
+
+
+class ChatThinkingEvent(Base):
+    __tablename__ = "chat_thinking_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String(64), nullable=False, index=True)
+    message_id = Column(Integer, nullable=False, index=True)
+    stage = Column(String(64), nullable=False)
+    content = Column(Text, nullable=False)
+    details = Column(JSON)
+    sequence = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

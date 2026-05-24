@@ -271,12 +271,14 @@ async def get_agent_stream_response(
     thinking_queue = asyncio.Queue()
     agent_result_holder = {"response": None, "error": None}
     agent_done = asyncio.Event()
+    thinking_events = []
     
     async def thinking_callback(data: dict):
         """思考过程回调函数，将事件放入队列"""
         logger.info(f"【思考过程】{data.get('stage', 'unknown')}: {data.get('content', '')}")
+        thinking_events.append(data)
         await thinking_queue.put(data)
-    
+
     async def run_agent():
         """在独立任务中执行 Agent"""
         try:
@@ -359,7 +361,12 @@ async def get_agent_stream_response(
         response = agent_result_holder["response"]
         
         # 添加到会话历史
-        await sm.session_manager.add_message(session_id, user_id, query, response)
+        message_id = await sm.session_manager.add_message(session_id, user_id, query, response)
+        if thinking_events:
+            try:
+                await sm.session_manager.save_thinking_events(session_id, message_id, thinking_events)
+            except Exception as e:
+                logger.error(f"【Agent流式响应】保存思考过程失败: {e}", exc_info=True)
         logger.info(f"【Agent流式响应】添加到会话历史成功")
         
         # 发送回答内容

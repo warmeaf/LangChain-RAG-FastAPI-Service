@@ -2,7 +2,7 @@ import asyncio
 from typing import Dict, List, Tuple, Optional
 
 from app.db.db_config import AsyncSessionLocal
-from app.models.chat_history import ChatSession, ChatMessage
+from app.models.chat_history import ChatSession, ChatMessage, ChatThinkingEvent
 from app.core.logger_handler import logger
 
 
@@ -128,7 +128,9 @@ class DatabaseSessionManager:
             db.add(assistant_msg)
 
             await db.commit()
+            await db.refresh(assistant_msg)
             logger.info(f"【数据库会话管理】添加消息到会话: {session_id} 属于用户: {user_id}")
+            return assistant_msg.id
 
     async def get_history(self, session_id: str, user_id: str) -> List[Tuple[str, str]]:
         """获取会话历史"""
@@ -144,6 +146,12 @@ class DatabaseSessionManager:
             )
 
             if session:
+                # 删除关联的 thinking 事件
+                await db.run_sync(
+                    lambda s: s.query(ChatThinkingEvent)
+                               .filter(ChatThinkingEvent.session_id == session_id)
+                               .delete()
+                )
                 # 删除会话（级联删除消息）
                 await db.delete(session)
                 await db.commit()
@@ -179,6 +187,45 @@ class DatabaseSessionManager:
             ]
 
 
+
+    async def save_thinking_events(self, session_id: str, message_id: int, events: list):
+        """批量保存思考过程事件"""
+        async with AsyncSessionLocal() as db:
+            for i, event in enumerate(events):
+                db.add(ChatThinkingEvent(
+                    session_id=session_id,
+                    message_id=message_id,
+                    stage=event.get("stage", ""),
+                    content=event.get("content", ""),
+                    details=event.get("details"),
+                    sequence=i
+                ))
+            await db.commit()
+            logger.info(f"【数据库会话管理】保存 {len(events)} 条思考事件到会话: {session_id}, 消息: {message_id}")
+
+    async def get_thinking_events(self, session_id: str):
+        """获取会话所有思考事件，按消息分组，顺序与 history 一致"""
+        async with AsyncSessionLocal() as db:
+            messages = await db.run_sync(
+                lambda s: s.query(ChatMessage)
+                           .filter(ChatMessage.session_id == session_id,
+                                   ChatMessage.role == "assistant")
+                           .order_by(ChatMessage.created_at)
+                           .all()
+            )
+            result = []
+            for msg in messages:
+                events = await db.run_sync(
+                    lambda s: s.query(ChatThinkingEvent)
+                               .filter(ChatThinkingEvent.message_id == msg.id)
+                               .order_by(ChatThinkingEvent.sequence)
+                               .all()
+                )
+                result.append([
+                    {"stage": e.stage, "content": e.content, "details": e.details}
+                    for e in events
+                ])
+            return result
 # 全局数据库会话管理器实例
 database_session_manager = None
 

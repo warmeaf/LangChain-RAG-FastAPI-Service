@@ -62,6 +62,17 @@ async def delete_session(session_id: str, user_id: str = Depends(get_current_use
     return success_response(message=f"Session {session_id} deleted successfully")
 
 
+
+@chat_router.get("/session/{session_id}/thinking")
+async def get_session_thinking(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id),
+    router_service: ChatService = Depends(get_router_service)
+):
+    """获取会话的思考过程事件"""
+    thinking = await router_service.handle_get_thinking(session_id, user_id)
+    return success_response(data={"session_id": session_id, "thinking": thinking})
+
 @chat_router.get("/sessions")
 async def get_all_sessions(router_service: ChatService = Depends(get_router_service)):
     """获取所有会话ID"""

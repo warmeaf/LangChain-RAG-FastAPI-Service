@@ -33,7 +33,7 @@ export const apiConfig = {
     deleteSession: '/chat/session/',
     getAllSessions: '/chat/sessions',
     getUserSessions: '/chat/sessions',
-
+    getSessionThinking: '/chat/session/',
     // 向量数据库
     uploadSingleFile: '/knowledge/add/single',
     uploadMultipleFiles: '/knowledge/add/multiple',
