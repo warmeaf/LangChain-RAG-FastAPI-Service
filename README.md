@@ -238,7 +238,7 @@ separators: ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
 | 服务 | 命令 | 端口 |
 |------|------|------|
 | 后端服务 | `cd backend && .venv\Scripts\activate && uvicorn main:app --reload` | 8000 |
-| 前端服务 | `cd front && npm run dev` | 3000 |
+| 前端服务 | `cd front && pnpm dev` | 3000 |
 | 用户服务 | `cd DjangoUserService && .venv\Scripts\activate && uv run python manage.py runserver 8001` | 8001 |
 | MySQL | `net start mysql` | 3306 |
 | Redis | `redis-server` 或 `net start redis` | 6379 |
@@ -327,7 +327,7 @@ separators: ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
 
 2. **调试技巧**
    - 使用 FastAPI 的自动重载功能：`uvicorn main:app --reload`
-   - 使用 Vue 的热更新功能：`npm run dev`
+   - 使用 Vue 的热更新功能：`pnpm dev`
 
 ## 故障排除
 
