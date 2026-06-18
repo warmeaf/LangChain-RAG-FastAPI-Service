@@ -31,7 +31,7 @@ def check_and_download_reranker_model() -> None:
     MODELSCOPE_MODEL_NAME = "Qwen/Qwen3-Reranker-0.6B"
 
     try:
-        if os.path.exists(LOCAL_MODEL_PATH) and os.path.isdir(LOCAL_MODEL_PATH):
+        if os.path.exists(LOCAL_MODEL_PATH) and os.path.isdir(LOCAL_MODEL_PATH) and os.path.exists(os.path.join(LOCAL_MODEL_PATH, "config.json")):
             logger.info(f"✅ 检测到本地重排序模型：{LOCAL_MODEL_PATH}")
         else:
             logger.warning(f"⚠️  本地模型未找到：{LOCAL_MODEL_PATH}")
