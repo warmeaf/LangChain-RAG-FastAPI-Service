@@ -80,6 +80,7 @@ class ChatModelFactory(BaseModelFactory):
                 base_url=base_url,
                 streaming=True,
                 top_p=0.7,
+                client_kwargs={'trust_env': False},
             )
         
         elif llm_type == "ALIYUN":
@@ -132,7 +133,8 @@ class EmbedModelFactory(BaseModelFactory):
             
             return OllamaEmbeddings(
                 model=model_name,
-                base_url=base_url
+                base_url=base_url,
+                client_kwargs={'trust_env': False},
             )
         
         elif embed_type == "ALIYUN":
@@ -180,8 +182,9 @@ class VisionModelFactory(BaseModelFactory):
                 # 视觉模型禁用 streaming，因为图片理解需要在完整的上下文上做推理
                 streaming=False,
                 top_p=0.7,
+                client_kwargs={'trust_env': False},
             )
-
+        
         elif vision_type == "ALIYUN":
             model_name = os.getenv("VISION_CHAT_MODEL_NAME") or os.getenv("CHAT_MODEL_NAME") or "qwen3-max"
             api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
