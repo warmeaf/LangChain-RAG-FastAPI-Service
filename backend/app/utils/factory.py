@@ -169,7 +169,7 @@ class VisionModelFactory(BaseModelFactory):
         vision_type = os.getenv("VISION_MODEL_TYPE", "").upper() or os.getenv("LLM_TYPE", "ALIYUN").upper()
 
         if vision_type == "OLLAMA":
-            model_name = os.getenv("VISION_OLLAMA_MODEL_NAME") or os.getenv("OLLAMA_MODEL_NAME") or "qwen-vl:7b"
+            model_name = os.getenv("VISION_OLLAMA_MODEL_NAME") or os.getenv("OLLAMA_MODEL_NAME") or "qwen3-vl:4b"
             base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
             logger.info(f"🎨 VisionModel 使用Ollama多模态模型: {model_name}, 地址: {base_url}")

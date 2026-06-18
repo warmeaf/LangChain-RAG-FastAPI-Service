@@ -209,8 +209,8 @@ REDIS_CACHE_URL=redis://localhost:6379/1
 配置好env文件后，我们需要执行Django ORM的迁移命令来迁移数据库表：
 
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+uv run python manage.py makemigrations
+uv run python manage.py migrate
 ```
 
 
@@ -237,9 +237,9 @@ separators: ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
 
 | 服务 | 命令 | 端口 |
 |------|------|------|
-| 后端服务 | `cd backend && .venv\Scripts\activate && uvicorn main:app --reload` | 8000 |
+| 后端服务 | `cd backend && uv venv && uv run uvicorn main:app --reload` | 8000 |
 | 前端服务 | `cd front && pnpm dev` | 3000 |
-| 用户服务 | `cd DjangoUserService && .venv\Scripts\activate && uv run python manage.py runserver 8001` | 8001 |
+| 用户服务 | `cd DjangoUserService && uv venv && uv run python manage.py runserver 8001` | 8001 |
 | MySQL | `net start mysql` | 3306 |
 | Redis | `redis-server` 或 `net start redis` | 6379 |
 | Ollama | `ollama serve` | 11434 |
