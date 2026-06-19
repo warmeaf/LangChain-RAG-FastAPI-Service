@@ -321,7 +321,7 @@ class KnowledgeService:
                     try:
                         yield self._yield_writing_event(result, state)
 
-                        await asyncio.to_thread(store.vectors_store.add_documents, result.documents)
+                        await asyncio.to_thread(store.add_documents, result.documents)
                         await store.save_md5_hex(result.md5, result.filename, result.filename, user_id)
 
                         state.success_count += 1

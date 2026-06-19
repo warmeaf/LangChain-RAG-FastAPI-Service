@@ -2,8 +2,10 @@ import asyncio
 import os
 import threading
 import shutil
+import uuid
 
-from langchain_chroma import Chroma
+from chromadb import PersistentClient, EmbeddingFunction
+from chromadb.api.types import Documents, Embeddings as ChromaEmbeddings
 from langchain_core.documents import Document
 
 from app.utils.config import chroma_config
@@ -38,6 +40,16 @@ def _reset_chroma_db(persist_dir: str):
     if os.path.exists(persist_dir):
         shutil.rmtree(persist_dir)
         logger.info(f"已删除 Chroma 数据库目录并重置缓存: {persist_dir}")
+
+
+class ChromaEmbeddingWrapper(EmbeddingFunction):
+    """将 langchain_core.embeddings.Embeddings 包装为 chromadb.EmbeddingFunction"""
+
+    def __init__(self, embeddings):
+        self._embeddings = embeddings
+
+    def __call__(self, input: Documents) -> ChromaEmbeddings:
+        return self._embeddings.embed_documents(input)
 
 
 class VectorStoreService:
@@ -85,14 +97,38 @@ class VectorStoreService:
             VectorStoreService._initialized = True
 
     def _init_chroma(self, persist_dir: str):
-        self.vectors_store = Chroma(
-            collection_name=chroma_config['collection_name'],
-            embedding_function=embed_model,
-            persist_directory=persist_dir,
+        self._client = PersistentClient(path=persist_dir)
+        self._embedding_fn = ChromaEmbeddingWrapper(embed_model)
+        self.collection = self._client.get_or_create_collection(
+            name=chroma_config['collection_name'],
+            embedding_function=self._embedding_fn,
         )
         self.md5_store = MD5Store()
-        self.hybrid_retriever = HybridRetriever(self.vectors_store)
-        self.document_processor = DocumentProcessor(self.vectors_store, self.md5_store)
+        self.hybrid_retriever = HybridRetriever(self)
+        self.document_processor = DocumentProcessor(self, self.md5_store)
+
+    # ── 文档添加（替代 langchain_chroma 的 add_documents）──
+
+    def add_documents(self, documents: list[Document]) -> list[str]:
+        """
+        向 ChromaDB 添加文档列表。
+        返回生成的文档 ID 列表。
+        """
+        if not documents:
+            return []
+
+        ids = [str(uuid.uuid4()) for _ in documents]
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        self.collection.add(
+            ids=ids,
+            documents=texts,
+            metadatas=metadatas,
+        )
+        return ids
+
+    # ── 检索器相关 ──
 
     async def get_bm25_retriever(self, user_id: str = None):
         return await self.hybrid_retriever.get_bm25_retriever(user_id)
@@ -107,6 +143,8 @@ class VectorStoreService:
     async def get_dynamic_weights(query: str = None):
         return await HybridRetriever.get_dynamic_weights(query)
 
+    # ── MD5 管理 ──
+
     async def check_md5_hex(self, md5_for_check: str, user_id: str = None) -> bool:
         return await self.md5_store.check_md5_hex(md5_for_check, user_id)
 
@@ -115,6 +153,8 @@ class VectorStoreService:
 
     def save_md5_hex_sync(self, md5_hex: str, filename: str = None, original_filename: str = None, user_id: str = None):
         self.md5_store.save_md5_hex_sync(md5_hex, filename, original_filename, user_id)
+
+    # ── 文档删除 ──
 
     async def delete_user_documents(self, user_id: str):
         """
@@ -136,7 +176,7 @@ class VectorStoreService:
         try:
             if delete_documents:
                 await asyncio.to_thread(
-                    self.vectors_store.delete,
+                    self.collection.delete,
                     where={"user_id": user_id}
                 )
                 logger.info(f"【向量数据库】已删除用户 {user_id} 的所有文档")
@@ -167,7 +207,7 @@ class VectorStoreService:
             if delete_documents:
                 where_clause = {"$and": [{"user_id": user_id}, {"md5": md5_to_delete}]}
                 await asyncio.to_thread(
-                    self.vectors_store.delete,
+                    self.collection.delete,
                     where=where_clause
                 )
                 logger.info(f"【向量数据库】已删除用户 {user_id} 中文件 {filename} 对应的文档")
@@ -200,7 +240,7 @@ class VectorStoreService:
             if delete_documents:
                 where_clause = {"$and": [{"user_id": user_id}, {"md5": md5_to_delete}]}
                 await asyncio.to_thread(
-                    self.vectors_store.delete,
+                    self.collection.delete,
                     where=where_clause
                 )
                 logger.info(f"【向量数据库】已删除用户 {user_id} 中MD5为 {md5_to_delete} 的文档")
@@ -213,6 +253,8 @@ class VectorStoreService:
         except Exception as e:
             logger.error(f"【向量数据库】删除用户 {user_id} 的MD5记录 {md5_to_delete} 时出错: {e}")
             return False
+
+    # ── MD5 查询 ──
 
     async def get_md5_info(self, user_id: str, md5_value: str):
         """
@@ -241,6 +283,8 @@ class VectorStoreService:
             logger.error(f"【向量数据库】获取用户 {user_id} 的MD5记录时出错: {e}")
             return []
 
+    # ── 文档查询 ──
+
     async def get_user_documents(self, user_id: str = None):
         """
         获取用户的知识库文档列表
@@ -250,7 +294,7 @@ class VectorStoreService:
         try:
             where_clause = {"user_id": user_id} if user_id else None
             all_docs = await asyncio.to_thread(
-                self.vectors_store.get,
+                self.collection.get,
                 include=['documents', 'metadatas'],
                 where=where_clause
             )
@@ -262,8 +306,6 @@ class VectorStoreService:
                 content = all_docs['documents'][i] if i < len(all_docs['documents']) else ""
 
                 # 优先使用 metadata 中保存的 original_filename（用户上传时的原始文件名）
-                # 因为 source 可能存的是临时文件的完整路径（如 C:\Users\...\tmp123.pdf），
-                # 而 original_filename 才是用户看到的文件名
                 source = metadata.get('source', metadata.get('filename', 'unknown'))
                 if isinstance(source, str) and '\\' in source:
                     source = os.path.basename(source)
@@ -305,7 +347,7 @@ class VectorStoreService:
         try:
             where_clause = {"user_id": user_id}
             all_docs = await asyncio.to_thread(
-                self.vectors_store.get,
+                self.collection.get,
                 include=['documents', 'metadatas'],
                 where=where_clause
             )
@@ -328,7 +370,6 @@ class VectorStoreService:
                     source_name = str(source)
                 original_filename = metadata.get('original_filename', '')
 
-                # 同时匹配 source 和 original_filename，兼容不同切片方式写入的 metadata
                 if source_name == filename or original_filename == filename:
                     if not doc_info:
                         doc_info = {
@@ -345,8 +386,6 @@ class VectorStoreService:
                     chunk_count += 1
                     full_content.append(content)
 
-                    # 从 metadata 中取出该 chunk 关联的图片文件名列表，
-                    # 拼接成可供前端直接请求的 URL 路径（由 knowledge_router 中的图片路由处理）
                     image_paths = metadata.get('image_paths', [])
                     chunk_images = []
                     if isinstance(image_paths, list):
@@ -386,7 +425,7 @@ class VectorStoreService:
         try:
             where_clause = {"user_id": user_id}
             all_docs = await asyncio.to_thread(
-                self.vectors_store.get,
+                self.collection.get,
                 include=['documents', 'metadatas'],
                 where=where_clause
             )
@@ -407,7 +446,6 @@ class VectorStoreService:
 
                 if source_name == filename or original_filename == filename:
                     doc_md5 = metadata.get('md5', '')
-                    # 解析图片路径：从 metadata 中拿到图片文件名列表，拼接为前端可用的API URL
                     image_paths = metadata.get('image_paths', [])
                     if isinstance(image_paths, list):
                         images = [f"/knowledge/image/{doc_md5}/{img}" for img in image_paths]
@@ -436,7 +474,8 @@ class VectorStoreService:
             logger.error(f"【向量数据库】获取文档切片 {filename} 时出错: {e}")
             raise
 
-    # 以下方法将参数透传给 DocumentProcessor，使其能获取 md5 和 user_id 用于多模态PDF加载
+    # ── DocumentProcessor 代理 ──
+
     async def get_file_document(self, read_path: str, md5: str = None, user_id: str = None) -> list[Document]:
         return await self.document_processor.get_file_document(read_path, md5, user_id)
 
@@ -448,6 +487,10 @@ class VectorStoreService:
 
     async def get_document(self, files: list = None, user_id: str = None, progress_callback=None):
         await self.document_processor.get_document(files, user_id, progress_callback)
+
+
+# 保留向后兼容：knowledge_service.py 中旧的 vectors_store.add_documents 直接访问
+# 在 VectorStoreService 中已添加 add_documents 方法，不再需要访问 collection
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 import asyncio
 import os
 import tempfile
+from typing import TYPE_CHECKING
 
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
 from app.rag.text_spliter import AsyncTextSplitter
@@ -17,7 +17,7 @@ from app.core.logger_handler import logger
 class DocumentProcessor:
     """文档处理器"""
 
-    def __init__(self, vectors_store: Chroma, md5_store):
+    def __init__(self, vectors_store, md5_store):
         self.vectors_store = vectors_store
         self.md5_store = md5_store
         self.spliter = AsyncTextSplitter(
