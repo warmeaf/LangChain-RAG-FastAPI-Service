@@ -198,3 +198,61 @@ async def get_agent_stream_response(
         logger.error(f"【Agent流式响应】处理请求失败: {e}", exc_info=True)
         yield f"data: {json.dumps({'type': 'error', 'content': f'错误: {str(e)}', 'session_id': session_id}, ensure_ascii=False)}\n\n"
         yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+
+
+async def get_agent_response(
+    query: str,
+    history: Optional[List[tuple]] = None,
+    user_id: Optional[str] = None,
+    custom_tools: Optional[List[BaseTool]] = None,
+    **kwargs
+) -> dict:
+    """
+    非流式 Agent 响应（供 chat_service.py 使用）
+    :return: {"response": str, "steps": list}
+    """
+    if user_id:
+        set_current_user_id(user_id)
+
+    tools = custom_tools or DEFAULT_TOOLS
+
+    try:
+        chat_messages = []
+        if history:
+            for user_msg, assistant_msg in history:
+                chat_messages.append(HumanMessage(content=user_msg))
+                chat_messages.append(AIMessage(content=assistant_msg))
+
+        chat_messages.append(HumanMessage(content=query))
+
+        graph = _build_agent_graph(tools, _SYSTEM_PROMPT)
+        result = await graph.ainvoke({"messages": chat_messages})
+
+        # 提取最终回复
+        messages = result.get("messages", [])
+        response_text = ""
+        steps = []
+        for msg in messages:
+            if isinstance(msg, AIMessage) and not msg.tool_calls:
+                response_text = msg.content or ""
+            elif isinstance(msg, AIMessage) and msg.tool_calls:
+                steps.append({
+                    "thought": f"调用工具: {[tc.get('name', '') for tc in msg.tool_calls]}",
+                    "tool": [tc.get('name', '') for tc in msg.tool_calls],
+                    "tool_input": [tc.get('args', {}) for tc in msg.tool_calls],
+                })
+            elif isinstance(msg, ToolMessage):
+                if steps:
+                    steps[-1]["tool_output"] = msg.content
+
+        return {
+            "response": response_text or "抱歉，我无法理解您的请求。",
+            "steps": steps
+        }
+
+    except Exception as e:
+        logger.error(f"Agent 执行错误: {str(e)}", exc_info=True)
+        return {
+            "response": f"抱歉，处理您的请求时出现了错误: {str(e)}",
+            "steps": []
+        }
