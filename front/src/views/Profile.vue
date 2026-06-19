@@ -79,8 +79,7 @@ onMounted(async () => {
     loadingInstance.close();
     
     if (result.success) {
-      // 显示成功提示
-      showSuccessToast('获取用户信息成功');
+      // 不弹提示，静默加载
     } else {
       showFailToast(result.message || '获取用户信息失败');
     }
