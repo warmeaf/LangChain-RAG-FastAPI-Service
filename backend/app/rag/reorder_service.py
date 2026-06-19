@@ -111,22 +111,28 @@ class ReorderService:
             pairs = [(query, doc) for doc in documents]
 
             model = await self.model
-            scores = await asyncio.to_thread(self._predict_sync, model, pairs)
+            raw_scores = await asyncio.to_thread(self._predict_sync, model, pairs)
+
+            # 将原始 logit 分数归一化到 [0, 1] 范围，方便前端显示为百分比
+            min_score = min(raw_scores)
+            max_score = max(raw_scores)
+            score_range = max_score - min_score if max_score != min_score else 1.0
+            normalized_scores = [(s - min_score) / score_range for s in raw_scores]
 
             scored_documents = []
-            for doc, score in zip(documents, scores):
+            for doc, norm_score, raw_score in zip(documents, normalized_scores, raw_scores):
                 scored_documents.append({
                     "document": doc,
-                    "similarity": float(score)
+                    "similarity": float(norm_score)  # 归一化后的 [0, 1] 分数
                 })
-                logger.info(f"【重排序服务】文档相似度分数: {score:.4f}")
+                logger.info(f"【重排序服务】文档相似度分数: {raw_score:.4f} -> 归一化: {norm_score:.4f}")
 
             if thinking_callback:
                 score_details = []
-                for i, (doc, score) in enumerate(zip(documents, scores), 1):
+                for i, (doc, norm_score) in enumerate(zip(documents, normalized_scores), 1):
                     score_details.append({
                         "index": i,
-                        "score": round(float(score), 4),
+                        "score": round(float(norm_score), 4),
                         "preview": doc[:100] + "..." if len(doc) > 100 else doc
                     })
                 await thinking_callback({

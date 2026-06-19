@@ -52,7 +52,7 @@
                     <template v-if="step.details.documents">
                       <div v-for="(doc, dIndex) in step.details.documents.slice(0, 3)" :key="dIndex" class="thinking-doc-item">
                         <span class="thinking-doc-source">{{ doc.source }}</span>
-                        <span class="thinking-doc-score">{{ (doc.score * 100).toFixed(0) }}%</span>
+                        <span class="thinking-doc-score" v-if="doc.score !== undefined && doc.score !== null">{{ (doc.score * 100).toFixed(0) }}%</span>
                       </div>
                       <div v-if="step.details.documents.length > 3" class="thinking-doc-more">
                         ... 还有 {{ step.details.documents.length - 3 }} 个文档
