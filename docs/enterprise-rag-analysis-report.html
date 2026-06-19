@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业级 RAG 实现深度分析报告</title>
+<style>
+  :root {
+    --green: #22c55e;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --gray: #6b7280;
+    --dark: #1e293b;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); line-height:1.7; }
+  .container { max-width:1100px; margin:0 auto; padding:40px 24px; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white; padding: 48px 40px; border-radius: 16px; margin-bottom: 40px;
+    text-align: center;
+  }
+  .report-header h1 { font-size:2.2em; margin-bottom:8px; letter-spacing:-0.02em; }
+  .report-header .meta { opacity:0.7; font-size:0.95em; }
+  .score-ring {
+    display: inline-flex; align-items:center; justify-content:center;
+    width:120px; height:120px; border-radius:50%; background: conic-gradient(#22c55e 0deg 288deg, #334155 288deg 360deg);
+    margin: 24px auto 0; position:relative;
+  }
+  .score-ring-inner {
+    width:94px; height:94px; border-radius:50%; background:#1e293b;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .score-ring-inner .big { font-size:2em; font-weight:800; }
+  .score-ring-inner .sub { font-size:0.75em; opacity:0.6; }
+
+  /* Summary cards */
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:40px; }
+  .summary-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; }
+  .summary-card .icon { font-size:1.5em; margin-bottom:4px; }
+  .summary-card .value { font-size:1.6em; font-weight:700; }
+  .summary-card .label { font-size:0.85em; color:var(--gray); margin-top:2px; }
+
+  /* Sections */
+  .section { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:32px; margin-bottom:24px; }
+  .section h2 { font-size:1.35em; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+  .section h3 { font-size:1.05em; margin:24px 0 12px; color:#475569; }
+  .section .intro { color:var(--gray); margin-bottom:20px; font-size:0.95em; }
+
+  /* Progress bar */
+  .bar-wrap { display:flex; align-items:center; gap:12px; margin:4px 0; }
+  .bar-wrap .label { min-width:120px; font-size:0.9em; font-weight:500; }
+  .bar-track { flex:1; height:10px; background:#e2e8f0; border-radius:5px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:5px; transition: width 0.5s; }
+  .bar-wrap .pct { min-width:46px; font-size:0.85em; font-weight:600; text-align:right; }
+  .green  .bar-fill { background: var(--green); }
+  .yellow .bar-fill { background: var(--yellow); }
+  .orange .bar-fill { background: var(--orange); }
+  .red    .bar-fill { background: var(--red); }
+
+  /* Score pills */
+  .badge {
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.8em; font-weight:600;
+  }
+  .badge-A { background:#dcfce7; color:#166534; }
+  .badge-B { background:#fef9c3; color:#854d0e; }
+  .badge-C { background:#ffedd5; color:#9a3412; }
+  .badge-D { background:#fee2e2; color:#991b1b; }
+
+  /* Feature table */
+  table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.9em; }
+  th, td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:left; }
+  th { background:#f1f5f9; font-weight:600; font-size:0.85em; color:#475569; }
+  td:first-child { font-weight:500; }
+
+  /* Comparison boxes */
+  .compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:12px 0; }
+  .compare-box { border-radius:10px; padding:16px; font-size:0.9em; }
+  .compare-box.standard { background:#f0fdf4; border:1px solid #bbf7d0; }
+  .compare-box.actual { background:#fefce8; border:1px solid #fef08a; }
+  .compare-box h4 { font-size:0.85em; margin-bottom:6px; color:#475569; }
+
+  /* Highlight boxes */
+  .highlight { background:#eff6ff; border-left:4px solid #3b82f6; padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; font-size:0.9em; }
+  .warning { background:#fefce8; border-left:4px solid #eab308; padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; font-size:0.9em; }
+  .success { background:#f0fdf4; border-left:4px solid #22c55e; padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; font-size:0.9em; }
+  .danger { background:#fff5f5; border-left:4px solid #ef4444; padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; font-size:0.9em; }
+
+  /* Code references */
+  .code-ref { font-family:'SF Mono','Fira Code',monospace; font-size:0.82em; background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#334155; }
+
+  /* Mermaid-style flow */
+  .flow { background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:20px; margin:12px 0; font-size:0.88em; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .flow-step { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px 16px; text-align:center; font-weight:500; }
+  .flow-arrow { display:flex; align-items:center; color:#94a3b8; font-size:1.2em; }
+
+  /* Responsive */
+  @media (max-width:768px) {
+    .summary-grid { grid-template-columns:repeat(2,1fr); }
+    .compare { grid-template-columns:1fr; }
+    .container { padding:20px 12px; }
+    .section { padding:20px; }
+    .report-header { padding:32px 20px; }
+  }
+
+  /* Print */
+  @media print {
+    body { background:white; }
+    .section { break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ─── HEADER ─────────────────────────────── -->
+<div class="report-header">
+  <h1>🔍 企业级 RAG 实现深度分析报告</h1>
+  <p class="meta">
+    项目: LangChain-RAG-FastAPI-Service &nbsp;|&nbsp; 分支: feature/enterprise-rag &nbsp;|&nbsp; 评估日期: 2026-06-19<br>
+    对照标准: <a href="https://x.com/ma_zhenyuan/status/2054024665652396142" style="color:#93c5fd;">「企业级 RAG」- Miles.Ma</a>
+  </p>
+  <div class="score-ring">
+    <div class="score-ring-inner">
+      <span class="big">80</span>
+      <span class="sub">/100</span>
+    </div>
+  </div>
+  <p style="margin-top:14px; opacity:0.8;">综合评分 <strong>B+</strong> — 已达到企业级标准的核心要求，部分领域有待深化</p>
+</div>
+
+<!-- ─── SUMMARY ────────────────────────────── -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="icon">📊</div><div class="value">85/100</div><div class="label">数据层面</div>
+  </div>
+  <div class="summary-card">
+    <div class="icon">🔎</div><div class="value">88/100</div><div class="label">检索策略</div>
+  </div>
+  <div class="summary-card">
+    <div class="icon">🏗️</div><div class="value">75/100</div><div class="label">工程架构</div>
+  </div>
+  <div class="summary-card">
+    <div class="icon">📈</div><div class="value">70/100</div><div class="label">反馈闭环</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 第二章：数据层面 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>📦 第二章：数据层面 <span class="badge badge-A">85 分</span></h2>
+
+  <!-- 2.1 文档切分 -->
+  <h3>2.1 文档切分：不同文件类型的处理策略</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准要求</h4>
+      <ul>
+        <li>Excel：行→自然语言描述，多 Sheet 处理，合并单元格/多级表头解析</li>
+        <li>PDF：纯文本/扫描版/混合版三类分治，OCR + 后处理纠错</li>
+        <li>Word/PPT：格式保留（Markdown），PowerPoint 按幻灯片逻辑切分</li>
+        <li>代码：AST 解析，按函数/类/方法切分，保留上下文</li>
+        <li>邮件/聊天：保留对话线程和元信息</li>
+        <li>多种切分策略组合：段落/标题层级/语义单元/完整观点/滑动窗口</li>
+      </ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>Excel</strong>: <span class="code-ref">excel_processor.py</span> — 实现了行→自然语言（"表头值"），支持多 Sheet（sheet 名作上下文），但<em>未处理合并单元格和多级表头</em></li>
+        <li><strong>PDF</strong>: <span class="code-ref">ocr_processor.py</span> — PaddleOCR 扫描版识别 + 后处理纠错（常见错字字典）；混合版通过 <span class="code-ref">pdf_multimodal_loader</span> 支持</li>
+        <li><strong>Word/PPT</strong>: <span class="code-ref">format_preserver.py</span> — 使用 Markdown 语法保留格式（Title→#, Header→##, ListItem→-），PPT 通过 unstructured partition 解析</li>
+        <li><strong>代码</strong>: <span class="code-ref">code_processor.py</span> — Python 用 AST 按 FunctionDef/ClassDef 切分并保留类上下文；其他语言退化为空行分块（弱）</li>
+        <li><strong>邮件/聊天</strong>: ❌ 未实现</li>
+        <li><strong>切分策略</strong>: 递归字符切分（中文感知分隔符）+ 语义合并优化（embedding 相似度 >0.7 合并）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bar-wrap green"><span class="label">Excel 处理</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="pct">70%</span></div>
+  <div class="bar-wrap green"><span class="label">PDF 处理</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="pct">85%</span></div>
+  <div class="bar-wrap green"><span class="label">Word/PPT 格式保留</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="pct">80%</span></div>
+  <div class="bar-wrap yellow"><span class="label">代码 AST 切分</span><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><span class="pct">60%</span></div>
+  <div class="bar-wrap red"><span class="label">邮件/聊天处理</span><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><span class="pct">0%</span></div>
+  <div class="bar-wrap green"><span class="label">多策略切分</span><div class="bar-track"><div class="bar-fill" style="width:75%"></div></div><span class="pct">75%</span></div>
+
+  <div class="success">
+    <strong>✅ 做得好的：</strong> PDF 三类分治（纯文本/OCR/多模态）是亮点；中文感知分隔符（。！？）比纯英文分隔符更精准；embedding 相似度合并是创新的语义优化。
+  </div>
+  <div class="warning">
+    <strong>⚠️ 待改进：</strong> Excel 不支持合并单元格/多级表头；代码处理器仅 Python 有 AST 支持（JS/TS/Java/Go 退化为空行分块）；缺少标题层级切分和完整观点切分策略。
+  </div>
+
+  <!-- 2.2 向量化 -->
+  <h3>2.2 向量化：模型选择和输入处理</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>中文: bge-large-zh (1024维)</li><li>控制输入 300-400 字</li><li>图片/图表: OCR + 多模态 LLM 描述 + 视觉 Embedding 三路结合</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>BAAI/bge-large-zh</strong>（<span class="code-ref">factory.py:373</span>），1024维，完全匹配标准</li>
+        <li>默认 chunk_size=400，chunk_overlap=40（<span class="code-ref">rag.yaml:24</span>），精确命中 300-400 推荐值</li>
+        <li>图片: <span class="code-ref">pdf_multimodal_loader</span> 使用 Vision Model 生成描述（GPT-4V 兼容）→ 文本 Embedding 方式</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bar-wrap green"><span class="label">Embedding 模型选型</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="pct">100%</span></div>
+  <div class="bar-wrap green"><span class="label">输入长度控制</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+  <div class="bar-wrap yellow"><span class="label">图片/图表向量化</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="pct">65%</span></div>
+
+  <div class="success"><strong>✅ 亮点：</strong>Embedding 模型选择和 chunk 尺寸完美匹配企业级标准；chunk_overlap=40 为适度重叠提供了信息连续性。</div>
+  <div class="warning"><strong>⚠️ 待改进：</strong>图片向量化仅使用了「多模态 LLM 生成描述 + 文本 Embedding」一种方式，未实现 OCR 文字提取和视觉 Embedding 的独立召回通路。缺少图片级别的独立存储和检索。</div>
+
+  <!-- 2.3 向量数据库 -->
+  <h3>2.3 向量数据库选型</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>&lt;10万: Faiss</li><li>10万-100万: Milvus/Qdrant</li><li>&gt;100万: Pinecone/Weaviate</li><li>索引: IVF_FLAT (中小规模/高准确率)</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>Milvus 2.4.0</strong> Standalone（<span class="code-ref">docker-compose.milvus.yml</span>）</li>
+        <li>索引: <strong>IVF_FLAT</strong> + COSINE 度量（<span class="code-ref">rag.yaml:32-33</span>），nlist=128，与标准一致</li>
+        <li>支持实时插入/删除，按 user_id 分区键隔离多租户</li>
+        <li>Schema 包含: id, text, embedding(1024), user_id, doc_weight, created_at, metadata(JSON)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bar-wrap green"><span class="label">数据库选型</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+  <div class="bar-wrap green"><span class="label">索引策略</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+  <div class="bar-wrap green"><span class="label">多租户隔离</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="pct">90%</span></div>
+
+  <div class="success"><strong>✅ 亮点：</strong>Milvus + IVF_FLAT + COSINE 选型精确命中企业级标准；user_id 分区键实现了多租户隔离，架构上非常适合 SaaS 场景；docker-compose 提供了包括 etcd+minio 的完整部署方案。</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 第三章：检索策略 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>🎯 第三章：检索策略 <span class="badge badge-A">88 分</span></h2>
+
+  <!-- 3.1 长问题处理 -->
+  <h3>3.1 长问题的处理：压缩和改写</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>超长问题 → LLM 压缩保留核心信息</li><li>复杂问题 → 拆分为多个子问题</li><li>两者结合使用</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>压缩</strong>: <span class="code-ref">query_processor.py:61-68</span> — 长度 > max_length(400) 时触发 LLM 压缩</li>
+        <li><strong>拆解</strong>: <span class="code-ref">query_processor.py:70-80</span> — LLM 将复合问题拆分为最多 3 个子问题</li>
+        <li><strong>扩展</strong>: <span class="code-ref">query_processor.py:82-92</span> — 每个子问题生成最多 2 个语义变体</li>
+        <li>三段式流水线: 压缩 → 拆解 → 扩展 → 并行检索</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">长问题处理</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="pct">90%</span></div>
+
+  <div class="highlight">
+    <strong>💡 超出标准：</strong>实现了"查询扩展"（第三章 3.6 的内容）作为查询预处理的第三阶段，形成了"压缩→拆解→扩展→并行检索+合并去重"的完整查询增强流水线。还将 HyDE（假设文档嵌入）作为额外检索变体（<span class="code-ref">rag_service.py:69-70</span>），进一步提升了召回覆盖面。
+  </div>
+
+  <!-- 3.2 召回率优化 -->
+  <h3>3.2 召回率优化：粗排和精排（两阶段检索）</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>粗排: 向量检索召回 Top-100</li><li>精排: Rerank 模型对 Top-100 重打分取 Top-10</li><li>粗排目标"不漏"，精排目标"准确"</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>粗排</strong>: coarse_k=100（<span class="code-ref">rag.yaml:4</span>），混合检索（Milvus向量 + BM25关键词 + RRF融合）</li>
+        <li><strong>精排</strong>: <span class="code-ref">reorder_service.py</span> — BAAI/bge-reranker-large 对粗排结果逐个打分</li>
+        <li>完整两阶段流程: 粗排(100) → Reranker精排 → 多因素排序 → Top-N(8) 总结</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">粗排召回</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+  <div class="bar-wrap green"><span class="label">精排 Reranker</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="pct">90%</span></div>
+  <div class="bar-wrap green"><span class="label">两阶段流程完整性</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+
+  <div class="success"><strong>✅ 亮点：</strong>两阶段检索高度完整，粗排 → 精排 → 多因素排序的流水线清晰且解耦良好。Reranker 使用 BAAI/bge-reranker-large（中文最佳开源选择），且在应用启动时预加载避免冷启动延迟（<span class="code-ref">main.py:93-96</span>）。</div>
+
+  <!-- 3.3 准确率 -->
+  <h3>3.3 准确率优化：Rerank 模型的使用</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>BGE Reranker (中文)</li><li>问题和文档一起输入 → 直接判断相关性</li><li>输出 0-1 分数</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li>BAAI/bge-reranker-large（<span class="code-ref">reorder_service.py:12</span>），精确匹配</li>
+        <li>CrossEncoder 架构: (query, doc) 对 → sigmoid 输出分数</li>
+        <li>min-max 归一化 → 0~1 区间，供后续多因素排序使用</li>
+        <li>支持 GPU/CPU 自适应（<span class="code-ref">reorder_service.py:13</span>）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">Reranker 模型</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="pct">100%</span></div>
+
+  <div class="success"><strong>✅ 完美实现：</strong>Reranker 选型、打分机制、归一化处理全部精准匹配企业级标准。分数归一化到 [0,1] 区间使得后续多因素排序的权重计算具有可比性。</div>
+
+  <!-- 3.4 多因素排序 -->
+  <h3>3.4 综合排序：多因素加权</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul>
+        <li>最终得分 = 相似度×0.5 + 时间衰减×0.3 + 权重×0.2</li>
+        <li>时间衰减: 指数衰减 (今天的文档=1.0, 1年前=0.37)</li>
+        <li>权重: 人工标注的文档重要性</li>
+      </ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>完全对齐</strong>: w_relevance=0.5, w_time=0.3, w_weight=0.2（<span class="code-ref">rag.yaml:12-14</span>）</li>
+        <li>指数衰减: exp(-λ * years_ago), λ=1.0（<span class="code-ref">multi_factor_ranker.py:42</span>）</li>
+        <li>文档权重: 从 metadata.doc_weight 读取，默认 1.0</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">多因素排序公式</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="pct">100%</span></div>
+  <div class="bar-wrap green"><span class="label">时间衰减实现</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="pct">95%</span></div>
+  <div class="bar-wrap yellow"><span class="label">文档权重机制</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="pct">70%</span></div>
+
+  <div class="success"><strong>✅ 亮点：</strong>多因素排序公式和权重系数精确匹配标准；指数衰减函数实现正确；配置化权重允许不同业务场景灵活调整。</div>
+  <div class="warning"><strong>⚠️ 待改进：</strong>文档权重目前仅支持初始值（默认1.0）和反馈微调，没有实现「按文档类别预设权重」的功能（如标准中提到的"政策类=1.0, 会议纪要=0.3"）。缺少分类模型打分等额外评分因素。</div>
+
+  <!-- 3.5 混合检索 -->
+  <h3>3.5 混合检索：向量检索 + 关键词检索</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>向量检索 + 关键词检索（Elasticsearch）</li><li>合并去重后精排</li><li>根据问题类型动态调整权重</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>Milvus 向量检索</strong>（<span class="code-ref">milvus_retriever.py</span>）+ <strong>BM25 关键词检索</strong>（<span class="code-ref">hybrid_retriever.py:13-34</span>）</li>
+        <li><strong>RRF 融合</strong>（Reciprocal Rank Fusion, k=60）：无需手动调权，自动平衡两路结果</li>
+        <li>BM25 使用 rank-bm25 库，在内存中构建索引</li>
+        <li>动态权重接口预留但返回固定值 (0.5, 0.5)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">向量+关键词混合</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="pct">90%</span></div>
+  <div class="bar-wrap yellow"><span class="label">动态权重</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="pct">40%</span></div>
+
+  <div class="success"><strong>✅ 做得好的：</strong>向量+BM25+RRF 混合检索是经典的企业级方案；RRF 算法避免了手动调权的复杂性。</div>
+  <div class="warning"><strong>⚠️ 待改进：</strong>BM25 通过加载全部用户文档到内存构建索引，文档量大量时内存压力大；未使用 Elasticsearch 做独立的关键词检索引擎；动态权重仅预留接口未实现（标准中提到的"根据问题类型动态调整"）。</div>
+
+  <!-- 3.6 查询扩展 -->
+  <h3>3.6 查询扩展：同义词和相关词</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul><li>同义词词典 或 LLM 生成变体</li><li>每个变体单独检索合并结果</li></ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li>LLM 生成语义变体（<span class="code-ref">query_processor.py:82-92</span>），最多 2 个扩展</li>
+        <li>所有变体 + HyDE 变体并行检索后去重合并（<span class="code-ref">rag_service.py:42-60</span>）</li>
+        <li>未使用同义词词典</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap green"><span class="label">查询扩展实现</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="pct">85%</span></div>
+
+  <div class="success"><strong>✅ 亮点：</strong>LLM 查询扩展 + HyDE 变体并行检索是一种更高级的实现，比同义词词典覆盖面更广。</div>
+
+  <!-- 3.7 负反馈学习 -->
+  <h3>3.7 负反馈学习：从用户行为中学习</h3>
+
+  <div class="compare">
+    <div class="compare-box standard">
+      <h4>📋 企业级标准</h4>
+      <ul>
+        <li>收集点击、停留时间、反馈评分</li>
+        <li>调整文档排序权重</li>
+        <li>CTR 模型或 Learning to Rank</li>
+      </ul>
+    </div>
+    <div class="compare-box actual">
+      <h4>✅ 当前实现</h4>
+      <ul>
+        <li><strong>反馈收集</strong>: <span class="code-ref">feedback_service.py</span> — like/dislike/skip + rating(1-5) + dwell_time_ms + clicked_doc_md5</li>
+        <li><strong>权重调整</strong>: like → +0.05, dislike/skip → -0.05（简单增减，非学习模型）</li>
+        <li>数据持久化: MySQL（UserFeedback + DocWeight 表）</li>
+        <li><strong>未实现</strong>: CTR 模型、Learning to Rank、基于反馈的检索重排序</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar-wrap yellow"><span class="label">反馈数据收集</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="pct">80%</span></div>
+  <div class="bar-wrap orange"><span class="label">反馈驱动排序优化</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="pct">35%</span></div>
+  <div class="bar-wrap red"><span class="label">CTR/Learning to Rank</span><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><span class="pct">0%</span></div>
+
+  <div class="warning"><strong>⚠️ 最大差距：</strong>这是当前实现与企业级标准差距最大的领域。反馈收集的基础设施已就位（UserFeedback/DocWeight/QueryLog 三张表），但反馈数据仅用于简单的权重加减，未形成"收集→学习→优化检索"的闭环。Weight 更新后是否被 MultiFactorRanker 正确读取使用也需要验证。</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 工程架构 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>🏗️ 工程架构与运维 <span class="badge badge-B">75 分</span></h2>
+
+  <h3>整体流水线架构</h3>
+  <div class="flow">
+    <div class="flow-step">📥 文档上传</div><div class="flow-arrow">→</div>
+    <div class="flow-step">📄 类型路由</div><div class="flow-arrow">→</div>
+    <div class="flow-step">✂️ 智能切分</div><div class="flow-arrow">→</div>
+    <div class="flow-step">🧮 Embedding</div><div class="flow-arrow">→</div>
+    <div class="flow-step">💾 Milvus</div>
+  </div>
+  <div class="flow" style="margin-top:8px;">
+    <div class="flow-step">🔍 查询预处理</div><div class="flow-arrow">→</div>
+    <div class="flow-step">🔎 粗排(混合)</div><div class="flow-arrow">→</div>
+    <div class="flow-step">📊 精排(Reranker)</div><div class="flow-arrow">→</div>
+    <div class="flow-step">⚖️ 多因素排序</div><div class="flow-arrow">→</div>
+    <div class="flow-step">📝 LLM 总结</div>
+  </div>
+
+  <table>
+    <tr><th>维度</th><th>企业级要求</th><th>实现状态</th><th>评分</th></tr>
+    <tr>
+      <td>异步处理</td>
+      <td>非阻塞 I/O，高并发支持</td>
+      <td>✅ asyncio 全链路异步 + ThreadPoolExecutor 混合</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>流式响应</td>
+      <td>SSE 进度推送</td>
+      <td>✅ SSE 分步推送（loading→splitting→storing→completed）+ Agent 流式</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>多租户</td>
+      <td>数据隔离</td>
+      <td>✅ user_id 分区键 + 查询过滤</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>MD5 去重</td>
+      <td>避免重复处理</td>
+      <td>✅ 文件级 MD5 去重，支持增删查</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>限流保护</td>
+      <td>防止滥用</td>
+      <td>⚠️ RateLimitMiddleware 已实现但暂时注释</td>
+      <td><span class="badge badge-B">B</span></td>
+    </tr>
+    <tr>
+      <td>文件类型验证</td>
+      <td>MIME + 扩展名双重验证</td>
+      <td>✅ MIME 检测 + 扩展名白名单 + 大小限制</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>模型预热</td>
+      <td>避免冷启动</td>
+      <td>✅ Reranker 启动时预加载</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>可观测性</td>
+      <td>日志/追踪/监控</td>
+      <td>⚠️ 结构化日志 + LangSmith traceable，但缺 Metrics 面板</td>
+      <td><span class="badge badge-B">B</span></td>
+    </tr>
+    <tr>
+      <td>配置管理</td>
+      <td>YAML 配置化，参数可调</td>
+      <td>✅ rag.yaml 全面配置化，权重/阈值/参数均可调</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+    <tr>
+      <td>部署方案</td>
+      <td>容器化</td>
+      <td>✅ docker-compose (Milvus + etcd + MinIO)</td>
+      <td><span class="badge badge-A">A</span></td>
+    </tr>
+  </table>
+
+  <div class="highlight">
+    <strong>💡 架构亮点：</strong>
+    <ul>
+      <li>清晰的分层架构: Router → Service → RAG Pipeline，职责明确</li>
+      <li>单例模式 + 线程安全锁 管理 MilvusService</li>
+      <li>ThreadPoolExecutor 处理 CPU 密集型任务（切片+MD5），asyncio 处理 I/O 密集型任务</li>
+      <li>HyDE（假设文档嵌入）作为额外的检索增强手段</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 数据层面总览 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>📊 逐项对比总览</h2>
+
+  <table>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:20%">标准项</th>
+      <th style="width:10%">权重</th>
+      <th style="width:8%">得分</th>
+      <th style="width:57%">关键发现</th>
+    </tr>
+    <tr>
+      <td>2.1</td><td>文档切分策略</td><td>高</td>
+      <td><span class="badge badge-A">72%</span></td>
+      <td>Excel/PDF/Word/PPT/代码均有处理，缺邮件/聊天，代码 AST 仅覆盖 Python</td>
+    </tr>
+    <tr>
+      <td>2.2</td><td>向量化选型</td><td>高</td>
+      <td><span class="badge badge-A">87%</span></td>
+      <td>bge-large-zh + 400 chunk + 图片多模态描述，缺独立视觉 Embedding 通路</td>
+    </tr>
+    <tr>
+      <td>2.3</td><td>向量数据库</td><td>高</td>
+      <td><span class="badge badge-A">93%</span></td>
+      <td>Milvus+IVF_FLAT+COSINE+多租户，完全匹配标准</td>
+    </tr>
+    <tr>
+      <td>3.1</td><td>长问题处理</td><td>中</td>
+      <td><span class="badge badge-A">90%</span></td>
+      <td>压缩+拆解+扩展+HyDE 四段式，超出标准要求</td>
+    </tr>
+    <tr>
+      <td>3.2</td><td>粗排精排</td><td>高</td>
+      <td><span class="badge badge-A">93%</span></td>
+      <td>coarse_k=100 + Reranker 精排，流水线完整</td>
+    </tr>
+    <tr>
+      <td>3.3</td><td>Reranker 模型</td><td>高</td>
+      <td><span class="badge badge-A">100%</span></td>
+      <td>bge-reranker-large，完美匹配；启动预热；GPU/CPU 自适应</td>
+    </tr>
+    <tr>
+      <td>3.4</td><td>多因素排序</td><td>高</td>
+      <td><span class="badge badge-A">88%</span></td>
+      <td>公式+权重完全对齐；缺类别预设权重和额外评分因素</td>
+    </tr>
+    <tr>
+      <td>3.5</td><td>混合检索</td><td>高</td>
+      <td><span class="badge badge-B">75%</span></td>
+      <td>向量+BM25+RRF 经典方案；BM25 内存式无 ES；动态权重未实现</td>
+    </tr>
+    <tr>
+      <td>3.6</td><td>查询扩展</td><td>中</td>
+      <td><span class="badge badge-A">85%</span></td>
+      <td>LLM 生成变体 + HyDE，覆盖充分</td>
+    </tr>
+    <tr>
+      <td>3.7</td><td>负反馈学习</td><td>中</td>
+      <td><span class="badge badge-C">38%</span></td>
+      <td>反馈收集完备但利用不充分，缺学习模型</td>
+    </tr>
+    <tr>
+      <td>—</td><td>工程架构</td><td>高</td>
+      <td><span class="badge badge-B">82%</span></td>
+      <td>异步+流式+多租户+MD5去重+配置化；限流未启用；缺监控</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 改进建议 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>🔧 优先级改进建议</h2>
+
+  <table>
+    <tr><th>优先级</th><th>领域</th><th>建议</th><th>预期收益</th></tr>
+    <tr>
+      <td><span class="badge badge-D">P0</span></td>
+      <td>负反馈闭环</td>
+      <td>
+        实现反馈驱动排序：反馈数据 → DocWeight 更新 → MultiFactorRanker 读取。确保 QueryLog 的 clicked_doc_md5 能实际影响后续检索排序。引入简单的 CTR 加权或 Learning to Rank 基础模型。
+      </td>
+      <td>高</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-D">P0</span></td>
+      <td>代码切分</td>
+      <td>
+        为非 Python 语言（JS/TS/Java/Go）实现真正的 AST 解析。JS/TS 可用 tree-sitter 或 esprima，Java 可用 javalang，Go 可用 go/parser。当前空行分块方式会导致语义断裂。
+      </td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-C">P1</span></td>
+      <td>混合检索权重</td>
+      <td>
+        实现 get_dynamic_weights 的逻辑：根据 query 是否包含专有名词/编号/日期，动态调整向量检索和关键词检索的权重。
+      </td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-C">P1</span></td>
+      <td>Excel 增强</td>
+      <td>
+        增加合并单元格解析和多级表头识别。可使用 openpyxl 的 merged_cells 属性检测合并区域，用行跨度推断表头层级。
+      </td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-B">P2</span></td>
+      <td>图片召回增强</td>
+      <td>
+        对图片同时执行 OCR 文字提取 + 多模态描述 + 视觉 Embedding 三路召回，在检索时多路并行后合并去重。
+      </td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-B">P2</span></td>
+      <td>可观测性</td>
+      <td>
+        添加 Prometheus metrics（检索延迟、召回率、精排耗时分布），Grafana 面板，以及基于 LangSmith 的检索质量追踪。
+      </td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-B">P2</span></td>
+      <td>类别预设权重</td>
+      <td>
+        在 DocWeight 模型中实现按文档类别（政策、会议纪要、技术文档等）预设初始权重，通过分类器或文件名规则自动识别。
+      </td>
+      <td>低</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-B">P2</span></td>
+      <td>切分策略增强</td>
+      <td>
+        增加标题层级切分（通过 Markdown heading 识别）和完整观点切分（基于语义分割模型），与现有递归字符切分形成策略组合。
+      </td>
+      <td>中</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 总体评价 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>📝 总体评价</h2>
+
+  <div class="success">
+    <strong>🎯 核心结论：</strong>该项目已经实现了企业级 RAG 标准的 <strong>核心骨架</strong>。在两阶段检索（粗排+精排）、多因素排序、查询预处理、向量数据库选型等关键领域达到了高度对齐甚至超越标准（如 HyDE 集成）。代码架构清晰、配置化管理完善、多租户设计和异步处理具备生产级基础。
+  </div>
+
+  <br>
+
+  <div class="highlight">
+    <strong>🌟 三大突出优势：</strong>
+    <ol>
+      <li><strong>检索流水线完整性</strong>：查询预处理(压缩+拆解+扩展+HyDE) → 混合粗排(向量+BM25+RRF) → Reranker精排 → 多因素排序，形成了教科书级的企业 RAG pipeline。</li>
+      <li><strong>模型选型精准</strong>：bge-large-zh(Embedding) + bge-reranker-large(Reranker) 是中文场景的最佳实践组合。</li>
+      <li><strong>工程化程度高</strong>：配置化参数、启动预热、SSE 流式进度、MD5 去重、多租户隔离等工程实践扎实。</li>
+    </ol>
+  </div>
+
+  <br>
+
+  <div class="warning">
+    <strong>⚠️ 三个关键短板：</strong>
+    <ol>
+      <li><strong>负反馈闭环断裂</strong>：反馈数据收集完备但未驱动检索优化，是企业级标准中评分最低的领域（38%）。</li>
+      <li><strong>代码文件处理不均衡</strong>：Python 有 AST 支持但 JS/TS/Java/Go 退化为空行分块，生产环境中代码库检索体验会受影响。</li>
+      <li><strong>混合检索动态权重缺失</strong>：向量+BM25 融合使用固定 RRF 策略，未根据问题类型动态调整，对精确匹配类查询可能召回不足。</li>
+    </ol>
+  </div>
+
+  <br>
+
+  <div style="text-align:center; padding:24px; background:#f8fafc; border-radius:10px;">
+    <div style="font-size:2em; font-weight:800; color:#1e293b;">80 / 100</div>
+    <div style="color:#64748b; font-size:0.95em;">综合评级 B+ &nbsp;—&nbsp; 已达到企业级标准的核心要求，负反馈闭环和代码切分是通往 A 级的关键路径</div>
+  </div>
+
+  <br>
+  <p style="color:var(--gray); font-size:0.85em; text-align:center;">
+    报告生成时间: 2026-06-19 &nbsp;|&nbsp; 分析代码提交: feature/enterprise-rag &nbsp;|&nbsp; 对照标准版本: Miles.Ma 企业级 RAG (2026-05-12)
+  </p>
+</div>
+
+</div>
+</body>
+</html>

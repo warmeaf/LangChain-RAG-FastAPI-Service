@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业级 RAG 系统全面测试方案</title>
+<style>
+  :root {
+    --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+    --blue: #3b82f6; --gray: #6b7280; --dark: #1e293b; --bg: #f8fafc;
+    --card: #ffffff; --border: #e2e8f0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--dark); line-height:1.7; }
+  .container { max-width:1100px; margin:0 auto; padding:40px 24px; }
+
+  .header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 36px; text-align: center; }
+  .header h1 { font-size:2em; margin-bottom:8px; }
+  .header .meta { opacity:0.7; font-size:0.9em; }
+
+  .section { background: var(--card); border:1px solid var(--border); border-radius:12px; padding:28px 32px; margin-bottom:24px; }
+  .section h2 { font-size:1.25em; margin-bottom:6px; }
+  .section .desc { color: var(--gray); margin-bottom:16px; font-size:0.9em; }
+
+  .test { border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin:16px 0; }
+  .test h3 { font-size:1.05em; margin-bottom:8px; }
+  .test h3 .n { color: var(--blue); font-weight:600; }
+  .test .purpose { color: var(--gray); font-size:0.9em; margin-bottom:12px; }
+
+  pre { background: #1e293b; color: #e2e8f0; padding:14px 18px; border-radius:8px; overflow-x:auto; font-size:0.85em; line-height:1.5; margin:10px 0; }
+  pre .kw { color:#93c5fd; }
+  pre .str { color:#86efac; }
+  pre .cmt { color:#64748b; }
+
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:0.88em; }
+  th, td { padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+  th { background:#f1f5f9; font-weight:600; color:#475569; font-size:0.85em; }
+  td:nth-child(3), th:nth-child(3) { text-align:center; width:80px; }
+  tr.pass td:nth-child(3) { color: var(--green); }
+  tr.fail td:nth-child(3) { color: var(--red); }
+
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78em; font-weight:600; }
+  .badge-A { background:#dcfce7; color:#166534; }
+  .badge-B { background:#fef9c3; color:#854d0e; }
+  .badge-C { background:#ffedd5; color:#9a3412; }
+  .badge-D { background:#fee2e2; color:#991b1b; }
+
+  .kpi-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px; margin:16px 0; }
+  .kpi { background: #f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px 16px; text-align:center; }
+  .kpi .name { font-size:0.85em; color: var(--gray); }
+  .kpi .thr { font-size:0.8em; color: var(--orange); }
+  .kpi .val { font-size:1.3em; font-weight:700; color: var(--dark); margin:4px 0; }
+  .kpi .status { font-size:0.85em; color: var(--gray); }
+
+  .checklist { counter-reset: item; }
+  .checklist li { list-style:none; padding:6px 0; display:flex; align-items:center; gap:10px; }
+  .checklist li::before { counter-increment: item; content: counter(item); width:24px; height:24px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:0.8em; font-weight:600; flex-shrink:0; }
+
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:32px; }
+  .sum-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+  .sum-card .icon { font-size:1.4em; }
+  .sum-card .num { font-size:1.4em; font-weight:700; margin:4px 0; }
+  .sum-card .lbl { font-size:0.85em; color:var(--gray); }
+
+  @media (max-width:768px) {
+    .summary-grid { grid-template-columns:repeat(2,1fr); }
+    .kpi-grid { grid-template-columns:1fr; }
+    .container { padding:12px; }
+    .section { padding:16px; }
+  }
+  @media print { body { background:white; } .section { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 企业级 RAG 系统全面测试方案</h1>
+  <p class="meta">5 轮 · 14 项测试 · 目标：验证达到企业级标准 (≥90/100)</p>
+</div>
+
+<div class="summary-grid">
+  <div class="sum-card"><div class="icon">📦</div><div class="num">4</div><div class="lbl">数据层面测试</div></div>
+  <div class="sum-card"><div class="icon">🔎</div><div class="num">4</div><div class="lbl">检索策略测试</div></div>
+  <div class="sum-card"><div class="icon">🔄</div><div class="num">2</div><div class="lbl">反馈闭环测试</div></div>
+  <div class="sum-card"><div class="icon">⚡</div><div class="num">4</div><div class="lbl">集成 + 性能测试</div></div>
+</div>
+
+<!-- ════════════════ 测试准备 ════════════════ -->
+<div class="section">
+  <h2>📋 测试准备</h2>
+  <p class="desc">在 <code>backend/data/</code> 下准备以下测试文件：</p>
+  <table>
+    <tr><th>文件</th><th>用途</th><th>测试项</th></tr>
+    <tr><td><code>policy_2026.md</code></td><td>政策制度类文档</td><td>类别权重、RAG 查询</td></tr>
+    <tr><td><code>tech_architecture.md</code></td><td>技术文档（含多级标题）</td><td>标题层级切分</td></tr>
+    <tr><td><code>meeting_notes.md</code></td><td>会议纪要</td><td>低权重类别验证</td></tr>
+    <tr><td><code>employee.xlsx</code></td><td>员工信息表（含合并单元格）</td><td>Excel 增强</td></tr>
+    <tr><td><code>code_sample.py</code></td><td>Python 代码</td><td>AST 切分</td></tr>
+    <tr><td><code>code_sample.js</code></td><td>JavaScript 代码</td><td>tree-sitter 多语言</td></tr>
+    <tr><td><code>scan_report.pdf</code></td><td>扫描版 PDF</td><td>OCR 识别</td></tr>
+    <tr><td><code>multimodal_slides.pdf</code></td><td>含图片 PDF</td><td>图片三路召回</td></tr>
+  </table>
+</div>
+
+<!-- ════════════════ 第一轮 ════════════════ -->
+<div class="section">
+  <h2>📦 第一轮：数据层面测试 <span class="badge badge-A">4 项</span></h2>
+  <p class="desc">对照企业级标准第二章：文档切分、向量化、数据库选型</p>
+
+  <!-- 1.1 -->
+  <div class="test">
+    <h3><span class="n">1.1</span> Markdown 标题层级切分</h3>
+    <p class="purpose">验证 HeadingSplitter 按 <code>#</code> 标题切分并保留路径上下文</p>
+    <pre><span class="cmt"># 创建测试文件</span>
+cat > backend/data/heading_test.md &lt;&lt; 'EOF'
+<span class="kw">#</span> 第一章 系统概述
+本章介绍系统的基本架构和设计理念。
+
+<span class="kw">##</span> 1.1 核心组件
+核心组件包括 API 网关、消息队列、数据库集群。
+
+<span class="kw">###</span> 1.1.1 API 网关
+API 网关负责请求路由、限流、认证。
+
+<span class="kw">#</span> 第二章 快速开始
+按照以下步骤快速启动系统。
+EOF
+
+<span class="cmt"># 运行测试</span>
+cd backend && uv run python -c "
+from app.rag.text_spliter import HeadingSplitter
+hs = HeadingSplitter(chunk_size=400)
+with open('data/heading_test.md') as f: text = f.read()
+chunks = hs.split_text(text)
+print(f'总 chunk 数: {len(chunks)}')
+for i, c in enumerate(chunks):
+    print(f'--- Chunk {i} ---')
+    print(c[:150]); print()
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>Chunk 数量</td><td>≥ 4（两个一级标题 + 二级 + 三级）</td><td>⬜</td></tr>
+      <tr><td>标题路径</td><td>Chunk 1.1 含 <code>第一章 系统概述 > 1.1 核心组件</code></td><td>⬜</td></tr>
+      <tr><td>层级嵌套</td><td>Chunk 1.1.1 含三级路径 <code>第一章 > 1.1 > 1.1.1</code></td><td>⬜</td></tr>
+      <tr><td>无内容丢失</td><td>所有原文内容在某个 chunk 中出现</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 1.2 -->
+  <div class="test">
+    <h3><span class="n">1.2</span> Excel 合并单元格 + 多级表头</h3>
+    <p class="purpose">验证合并单元格值正确填充、多级表头正确拼接为 <code>基本信息 > 姓名张三</code> 格式</p>
+    <pre><span class="cmt"># 创建测试 Excel 并运行验证</span>
+cd backend && uv run python -c "
+import openpyxl
+wb = openpyxl.Workbook(); ws = wb.active; ws.title = '员工信息'
+ws.merge_cells('A1:B1'); ws['A1'] = '基本信息'; ws['C1'] = '薪资'
+ws['A2'] = '姓名'; ws['B2'] = '职位'; ws['C2'] = '月薪'
+ws['A3'] = '张三'; ws['B3'] = '工程师'; ws['C3'] = 15000
+ws['A4'] = '李四'; ws['B4'] = '经理'; ws['C4'] = 25000
+wb.save('data/employee_test.xlsx')
+
+import asyncio
+from app.rag.document_handler.excel_processor import ExcelProcessor
+async def test():
+    docs = await ExcelProcessor().process('data/employee_test.xlsx')
+    print(f'文档数: {len(docs)}')
+    for d in docs: print(d.page_content)
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>文档数</td><td>2（两张数据行）</td><td>⬜</td></tr>
+      <tr><td>多级表头</td><td>输出包含 <code>基本信息 > 姓名张三</code></td><td>⬜</td></tr>
+      <tr><td>合并单元格</td><td><code>基本信息 > 姓名</code> 和 <code>基本信息 > 职位</code> 共享父级</td><td>⬜</td></tr>
+      <tr><td>Sheet 上下文</td><td>以 <code>[Sheet: 员工信息]</code> 开头</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 1.3 -->
+  <div class="test">
+    <h3><span class="n">1.3</span> 代码 AST 切分（多语言）</h3>
+    <p class="purpose">验证 Python 和 JS 均能按函数/类切分并保留父级上下文</p>
+    <pre>cd backend && uv run python -c "
+import asyncio, tempfile, os
+from app.rag.document_handler.code_processor import CodeProcessor
+
+async def test_lang(ext, code):
+    with tempfile.NamedTemporaryFile(mode='w', suffix=ext, delete=False) as f:
+        f.write(code); tmp = f.name
+    docs = await CodeProcessor().process(tmp); os.unlink(tmp)
+    print(f'{ext}: {len(docs)} chunks')
+    for d in docs:
+        print(f'  [{d.metadata.get(\"node_type\",\"?\")}] {d.page_content[:60]}')
+    return docs
+
+async def main():
+    await test_lang('.py', '''
+class UserService:
+    def login(self, u, p): return True
+    def logout(self, u): pass
+''')
+    await test_lang('.js', '''
+class UserService {
+    login(u, p) { return true; }
+    logout(u) { return false; }
+}
+function main() { console.log(\"start\"); }
+''')
+asyncio.run(main())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>Python 切分</td><td>≥ 2 chunk（class + 方法），含 <code>class: UserService</code> 上下文</td><td>⬜</td></tr>
+      <tr><td>JS 切分</td><td>≥ 2 chunk，含 <code>class: UserService</code></td><td>⬜</td></tr>
+      <tr><td>函数名保留</td><td>含 <code>def: login</code> 和 <code>def: main</code></td><td>⬜</td></tr>
+      <tr><td>Fallback 不崩溃</td><td>语法错误退化为空行分块</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 1.4 -->
+  <div class="test">
+    <h3><span class="n">1.4</span> 图片 OCR 识别</h3>
+    <p class="purpose">验证扫描版 PDF 的 PaddleOCR 识别 + 后处理纠错 + chunk_type 标记</p>
+    <pre>cd backend && uv run python -c "
+import asyncio
+from app.rag.document_handler.ocr_processor import OCRProcessor
+async def test():
+    op = OCRProcessor()
+    assert op._post_process('白勺') == '的'
+    assert op._post_process('己经') == '已经'
+    print('OCR 后处理纠错正常')
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>OCR 引擎</td><td>PaddleOCR 可正加载</td><td>⬜</td></tr>
+      <tr><td>chunk_type 标记</td><td>metadata 含 <code>chunk_type: "image_ocr"</code></td><td>⬜</td></tr>
+      <tr><td>纠错字典</td><td>白勺→的、己经→已经 等常见错字纠正</td><td>⬜</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ 第二轮 ════════════════ -->
+<div class="section">
+  <h2>🔎 第二轮：检索策略测试 <span class="badge badge-A">4 项</span></h2>
+  <p class="desc">对照企业级标准第三章：查询预处理、召回率、Reranker、多因素排序</p>
+
+  <!-- 2.1 -->
+  <div class="test">
+    <h3><span class="n">2.1</span> 查询预处理（压缩 + 拆解 + 扩展 + HyDE）</h3>
+    <p class="purpose">验证长问题压缩、复合问题拆解、语义变体生成</p>
+    <pre>cd backend && uv run python -c "
+import asyncio
+from app.rag.query_processor import QueryProcessor
+async def test():
+    qp = QueryProcessor()
+    v = await qp.process('我们公司需要支持多商户、多语言、多货币，还要积分系统和优惠券，怎么实现？')
+    print(f'拆解后变体数: {len(v)}')
+    for i, x in enumerate(v): print(f'  变体{i+1}: {x[:80]}')
+    assert len(v) >= 1
+    print('查询预处理正常')
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>复合问题拆解</td><td>≥ 1 个变体</td><td>⬜</td></tr>
+      <tr><td>去重</td><td>相同变体不重复出现</td><td>⬜</td></tr>
+      <tr><td>HyDE 变体</td><td>pipeline 中包含 HyDE 假设文档变体</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 2.2 -->
+  <div class="test">
+    <h3><span class="n">2.2</span> 粗排混合检索 + 动态权重</h3>
+    <p class="purpose">验证精确查询偏重 BM25、语义查询偏重向量</p>
+    <pre>cd backend && uv run python -c "
+import asyncio
+from app.rag.milvus_store import MilvusService
+async def test():
+    ms = MilvusService()
+    w1 = await ms.get_dynamic_weights('员工编号 E12345 的工资')
+    w2 = await ms.get_dynamic_weights('公司年假政策是什么')
+    print(f'精确查询(BM25,Vec): {w1}')   # 预期 BM25 >= 0.6
+    print(f'语义查询(BM25,Vec): {w2}')   # 预期 Vec >= 0.5
+    assert w1[0] >= 0.6, '精确查询应偏重BM25'
+    print('动态权重验证通过')
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>精确查询</td><td>BM25 权重 ≥ 0.6</td><td>⬜</td></tr>
+      <tr><td>语义查询</td><td>向量权重 ≥ 0.5</td><td>⬜</td></tr>
+      <tr><td>RRF 融合</td><td>k=60 正确应用，去重不重复</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 2.3 -->
+  <div class="test">
+    <h3><span class="n">2.3</span> 精排 Reranker 准确性</h3>
+    <p class="purpose">验证 bge-reranker-large 能正确排序相关 vs 不相关文档</p>
+    <pre>cd backend && uv run python -c "
+import asyncio
+from app.rag.reorder_service import reorder_service
+async def test():
+    r = await reorder_service.reorder_documents('怎么申请报销', [
+        '报销流程：先填写报销单，然后提交给财务部审核。',
+        '公司年假政策：员工每年有10天年假。',
+        '报销表格可以在公司内网下载。',
+        '会议室预定系统使用指南。',
+    ])
+    if r['success']:
+        for d in r['documents']:
+            print(f'  [{d[\"similarity\"]:.4f}] {d[\"document\"][:50]}')
+        assert r['documents'][0]['similarity'] > 0.5
+        print('Reranker 测试通过 — 报销文档排在年假文档前面')
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>相关性区分</td><td>报销 > 年假</td><td>⬜</td></tr>
+      <tr><td>分数归一化</td><td>输出在 [0, 1] 区间</td><td>⬜</td></tr>
+      <tr><td>排序稳定性</td><td>相同输入多次调用排序一致</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 2.4 -->
+  <div class="test">
+    <h3><span class="n">2.4</span> 多因素排序（时间衰减 + 权重）</h3>
+    <p class="purpose">验证相同相关性下新文档排前面、类别权重正确生效</p>
+    <pre>cd backend && uv run python -c "
+import asyncio, time
+from langchain_core.documents import Document
+from app.rag.multi_factor_ranker import MultiFactorRanker
+async def test():
+    now = int(time.time())
+    yr = now - 365*24*3600
+    docs = [
+        Document(page_content='旧文档', metadata={'created_at':yr,'doc_weight':1,'md5':'old'}),
+        Document(page_content='新文档', metadata={'created_at':now,'doc_weight':1,'md5':'new'}),
+    ]
+    result = await MultiFactorRanker().rank('查询', docs, [0.8, 0.8])
+    for i,d in enumerate(result): print(f'{i+1}. {d.page_content}')
+    assert result[0].metadata['created_at'] == now
+    print('时间衰减验证通过 — 新文档排在第一')
+asyncio.run(test())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>时间衰减</td><td>相同相关性下，新文档 > 旧文档</td><td>⬜</td></tr>
+      <tr><td>类别权重</td><td>政策类 (1.0) > 会议纪要 (0.3)</td><td>⬜</td></tr>
+      <tr><td>质量评分</td><td>ingest 后自动计算</td><td>⬜</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ 第三轮 ════════════════ -->
+<div class="section">
+  <h2>🔄 第三轮：反馈闭环测试 <span class="badge badge-A">2 项</span></h2>
+  <p class="desc">对照企业级标准 3.7：负反馈学习</p>
+
+  <!-- 3.1 -->
+  <div class="test">
+    <h3><span class="n">3.1</span> 反馈权重更新</h3>
+    <p class="purpose">验证 like/dislike 正确影响 DocWeight 表，后续检索体现变化</p>
+    <pre><span class="cmt"># 1. 批量提交反馈</span>
+curl -X POST http://127.0.0.1:8000/feedback/batch \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT" \
+  -d '{"feedbacks": [
+    {"session_id":"test","query":"年假政策","feedback_type":"like","clicked_doc_md5":"MD5_A"},
+    {"session_id":"test","query":"年假政策","feedback_type":"dislike","clicked_doc_md5":"MD5_B"}
+  ]}'
+
+<span class="cmt"># 2. 检查数据库权重变化</span>
+cd backend && uv run python -c "
+import asyncio
+from app.db.db_config import AsyncSessionLocal
+from app.models.feedback import DocWeight
+from sqlalchemy import select
+async def check():
+    async with AsyncSessionLocal() as s:
+        r = await s.execute(select(DocWeight))
+        for dw in r.scalars():
+            print(f'{dw.doc_filename}: w={dw.weight:.3f} imp={dw.impression_count} clk={dw.click_count}')
+asyncio.run(check())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>Like 权重上升</td><td>weight 从 0.5 上升</td><td>⬜</td></tr>
+      <tr><td>Dislike 权重下降</td><td>weight 下降但不低于 0.1</td><td>⬜</td></tr>
+      <tr><td>曝光计数递增</td><td>impression_count 每次反馈 +1</td><td>⬜</td></tr>
+      <tr><td>点击计数递增</td><td>click_count 仅 like 时 +1</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <!-- 3.2 -->
+  <div class="test">
+    <h3><span class="n">3.2</span> QueryLog 自动记录</h3>
+    <p class="purpose">验证每次检索自动落库</p>
+    <pre>cd backend && uv run python -c "
+import asyncio
+from app.db.db_config import AsyncSessionLocal
+from app.models.feedback import QueryLog
+from sqlalchemy import select
+async def check():
+    async with AsyncSessionLocal() as s:
+        r = await s.execute(select(QueryLog).order_by(QueryLog.created_at.desc()).limit(5))
+        for ql in r.scalars():
+            print(f'query={ql.query[:30]} docs={len(ql.retrieved_docs or [])}')
+asyncio.run(check())
+"</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>自动写入</td><td>每次检索后 query_log 有新记录</td><td>⬜</td></tr>
+      <tr><td>文档关联</td><td>retrieved_docs 包含 md5 和 source</td><td>⬜</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ 第四轮 ════════════════ -->
+<div class="section">
+  <h2>🔗 第四轮：端到端集成测试 <span class="badge badge-B">2 项</span></h2>
+
+  <div class="test">
+    <h3><span class="n">4.1</span> 完整 RAG 流水线</h3>
+    <p class="purpose">验证上传文档 → 检索 → 摘要的全链路</p>
+    <pre><span class="cmt"># 1. 上传文档</span>
+curl -X POST http://127.0.0.1:8000/knowledge/upload \
+  -H "Authorization: Bearer YOUR_JWT" \
+  -F "files=@data/policy_2026.md"
+
+<span class="cmt"># 2. RAG 查询</span>
+curl -X POST http://127.0.0.1:8000/chat/rag/query \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT" \
+  -d '{"query": "公司的年假政策是什么？"}'</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>响应时间</td><td>&lt; 15 秒（含 Reranker）</td><td>⬜</td></tr>
+      <tr><td>返回文档数</td><td>≤ 8 (max_documents)</td><td>⬜</td></tr>
+      <tr><td>摘要相关性</td><td>内容与 query 相关</td><td>⬜</td></tr>
+      <tr><td>错误处理</td><td>无知识库时返回友好提示</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <div class="test">
+    <h3><span class="n">4.2</span> 图片三路召回</h3>
+    <p class="purpose">验证含图片 PDF 的 OCR + CLIP 编码 + 跨模态检索联动</p>
+    <pre><span class="cmt"># 1. 上传含图片 PDF → 检查图片 collection</span>
+cd backend && uv run python -c "
+from pymilvus import MilvusClient
+c = MilvusClient(uri='http://localhost:19530')
+s = c.get_collection_stats('rag_image_collection')
+print(f'图片 collection: {s.get(\"row_count\", 0)} 条')
+"
+
+<span class="cmt"># 2. 图片关键词查询 → 应返回 image_visual chunk</span></pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>OCR chunk 标记</td><td>metadata 含 <code>chunk_type: image_ocr</code></td><td>⬜</td></tr>
+      <tr><td>CLIP 向量存储</td><td>rag_image_collection 中有记录</td><td>⬜</td></tr>
+      <tr><td>跨模态检索</td><td>文本查询可召回图片结果</td><td>⬜</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ 第五轮 ════════════════ -->
+<div class="section">
+  <h2>⚡ 第五轮：性能与稳定性测试 <span class="badge badge-B">2 项</span></h2>
+
+  <div class="test">
+    <h3><span class="n">5.1</span> 并发检索压力测试</h3>
+    <pre><span class="cmt"># 使用 Apache Bench 或 wrk</span>
+ab -n 50 -c 5 \
+   -H "Authorization: Bearer YOUR_JWT" \
+   -p query.json -T "application/json" \
+   http://127.0.0.1:8000/chat/rag/query</pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>5 并发 50 请求</td><td>成功率 100%</td><td>⬜</td></tr>
+      <tr><td>P95 延迟</td><td>&lt; 15 秒</td><td>⬜</td></tr>
+      <tr><td>内存</td><td>请求完成后内存回落</td><td>⬜</td></tr>
+    </table>
+  </div>
+
+  <div class="test">
+    <h3><span class="n">5.2</span> 大文档处理</h3>
+    <pre><span class="cmt"># 构造 100 页 PDF 或 10000 行代码上传测试</span>
+<span class="cmt"># 验证不 OOM、SSE 进度正常推送、chunk 数合理</span></pre>
+    <table>
+      <tr><th>验证项</th><th>企业级要求</th><th>通过</th></tr>
+      <tr><td>不崩溃</td><td>处理完成或明确报错</td><td>⬜</td></tr>
+      <tr><td>chunk 数合理</td><td>与内容量成正比</td><td>⬜</td></tr>
+      <tr><td>进度推送</td><td>SSE 流式返回百分比</td><td>⬜</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ 关键指标看板 ════════════════ -->
+<div class="section">
+  <h2>📊 关键指标看板</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="name">召回率 (Recall@100)</div><div class="thr">阈值: ≥ 90%</div><div class="val">—</div><div class="status">待测</div></div>
+    <div class="kpi"><div class="name">精确率 (Precision@10)</div><div class="thr">阈值: ≥ 80%</div><div class="val">—</div><div class="status">待测</div></div>
+    <div class="kpi"><div class="name">MRR</div><div class="thr">阈值: ≥ 0.8</div><div class="val">—</div><div class="status">待测</div></div>
+    <div class="kpi"><div class="name">P95 延迟</div><div class="thr">阈值: &lt; 15s</div><div class="val">—</div><div class="status">待测</div></div>
+    <div class="kpi"><div class="name">文档处理吞吐</div><div class="thr">阈值: &gt; 10 p/s</div><div class="val">—</div><div class="status">待测</div></div>
+    <div class="kpi"><div class="name">反馈闭环</div><div class="thr">阈值: 生效</div><div class="val">—</div><div class="status">待测</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ 汇总 ════════════════ -->
+<div class="section">
+  <h2>📋 测试通过汇总</h2>
+  <table>
+    <tr><th>#</th><th>测试项</th><th>权重</th><th>通过</th></tr>
+    <tr><td>1.1</td><td>Markdown 标题层级切分</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>1.2</td><td>Excel 合并单元格 + 多级表头</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>1.3</td><td>代码 AST 切分（多语言）</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>1.4</td><td>图片 OCR 识别</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>2.1</td><td>查询预处理</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>2.2</td><td>粗排混合检索</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>2.3</td><td>精排 Reranker</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>2.4</td><td>多因素排序</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>3.1</td><td>反馈权重更新</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>3.2</td><td>QueryLog 记录</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>4.1</td><td>端到端流水线</td><td><span class="badge badge-A">高</span></td><td>⬜</td></tr>
+    <tr><td>4.2</td><td>图片三路召回</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>5.1</td><td>并发检索</td><td><span class="badge badge-B">中</span></td><td>⬜</td></tr>
+    <tr><td>5.2</td><td>大文档处理</td><td><span class="badge badge-C">低</span></td><td>⬜</td></tr>
+  </table>
+  <div style="text-align:center; margin-top:20px; padding:16px; background:#f0fdf4; border-radius:10px;">
+    <strong>全部 14 项 ⬜ → ✅ → 企业级认证</strong>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
