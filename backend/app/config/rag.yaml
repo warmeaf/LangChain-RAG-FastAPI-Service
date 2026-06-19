@@ -2,7 +2,7 @@
 
 retrieval:
   coarse_k: 100          # 粗排召回数
-  max_documents: 5       # 最终总结文档数
+  max_documents: 8       # 最终总结文档数（简历/工作经历类文档分散，需要更多）
 
 reranker:
   model: "BAAI/bge-reranker-large"
@@ -16,8 +16,8 @@ ranking:
 
 query_processing:
   max_length: 400
-  max_sub_queries: 5
-  max_expansions: 3
+  max_sub_queries: 3      # 降低：避免拆出过多噪音子问题
+  max_expansions: 2       # 降低：避免扩展过多噪音变体
 
 chunking:
   default:
