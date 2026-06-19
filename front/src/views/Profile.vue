@@ -141,7 +141,7 @@ const showPasswordConfirm = () => {
   showDialog({
     title: '修改密码',
     showCancelButton: true,
-    message: h('div', { style: 'padding: 10px 0;' }, [
+    message: h('div', { style: 'padding: var(--van-padding-sm) 0;' }, [
       h(Field, { modelValue: oldPassword.value, 'onUpdate:modelValue': (v) => oldPassword.value = v, type: 'password', label: '当前密码', placeholder: '请输入当前密码' }),
       h(Field, { modelValue: newPassword.value, 'onUpdate:modelValue': (v) => newPassword.value = v, type: 'password', label: '新密码', placeholder: '请输入新密码' }),
       h(Field, { modelValue: confirmPassword.value, 'onUpdate:modelValue': (v) => confirmPassword.value = v, type: 'password', label: '确认密码', placeholder: '请确认新密码' }),
@@ -447,7 +447,7 @@ const showAvatarDialog = () => {
     title: '修改头像',
     showCancelButton: true,
     confirmButtonText: '确认上传',
-    message: h('div', { style: 'text-align: center; padding: 10px 0;' }, [
+    message: h('div', { style: 'text-align: center; padding: var(--van-padding-sm) 0;' }, [
       h(Image, { round: true, width: 100, height: 100, src: previewUrl.value, style: { marginBottom: '10px' } }),
       h(Uploader, {
         accept: 'image/*',
@@ -511,7 +511,7 @@ const showAvatarDialog = () => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background-color: var(--color-bg);
+  background-color: var(--van-background);
 }
 
 .profile-container {
@@ -528,25 +528,25 @@ const showAvatarDialog = () => {
 .avatar-group :deep(.van-cell),
 .info-group :deep(.van-cell),
 .security-group :deep(.van-cell) {
-  background: var(--color-card);
+  background: var(--van-background-2);
   border-radius: 8px;
   margin-bottom: 6px;
-  box-shadow: 0 1px 2px var(--color-shadow);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .profile-avatar-letter {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-primary);
+  background: var(--van-background);
+  color: var(--van-primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  border: 2px solid var(--color-border);
+  
+  font-weight: var(--van-font-bold);
+  border: 2px solid var(--van-border-color);
 }
 
 .avatar-group :deep(.van-cell-group),
@@ -555,6 +555,6 @@ const showAvatarDialog = () => {
 }
 
 .password-dialog .van-dialog__content {
-  padding: 20px;
+  padding: var(--van-padding-lg);
 }
 </style>

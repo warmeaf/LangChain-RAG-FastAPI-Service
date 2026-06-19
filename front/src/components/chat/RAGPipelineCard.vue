@@ -5,7 +5,7 @@
       <van-collapse-item v-for="stage in stages" :key="stage.stage" :title="stage.title">
         <p>{{ stage.content }}</p>
         <div v-if="stage.details?.documents" class="doc-tags">
-          <van-tag v-for="d in stage.details.documents" :key="d.index" size="medium" style="margin: 2px">
+          <van-tag v-for="d in stage.details.documents" :key="d.index" size="medium" style="margin: var(--van-padding-base)">
             #{{ d.index }} {{ d.preview?.slice(0, 60) }}
           </van-tag>
         </div>
@@ -36,16 +36,16 @@ defineExpose({ addStage, reset })
 
 <style scoped>
 .pipeline-card {
-  margin: 8px 0;
-  background: var(--color-card);
+  margin: var(--van-padding-xs) 0;
+  background: var(--van-background-2);
   border-radius: 8px;
   overflow: hidden;
 }
 .pipeline-title {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
+  padding: var(--van-padding-sm) 16px;
+  font-size: var(--van-font-size-md);
+  font-weight: var(--van-font-bold);
+  color: var(--van-text-color);
 }
-.doc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.doc-tags { display: flex; flex-wrap: wrap; gap: var(--van-padding-base); margin-top: 8px; }
 </style>

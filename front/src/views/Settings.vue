@@ -127,8 +127,8 @@ const changeLanguage = () => {
 <style scoped>
 .settings-container {
   min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--van-background);
+  color: var(--van-text-color);
   padding-top: 46px;
   padding-bottom: 20px;
 }
@@ -139,19 +139,19 @@ const changeLanguage = () => {
 
 .popup-title {
   text-align: center;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: var(--font-heading);
-  border-bottom: 1px solid var(--color-divider);
-  color: var(--color-text);
+  padding: var(--van-padding-md);
+  font-size: var(--van-font-size-lg);
+  font-weight: var(--van-font-bold);
+  
+  border-bottom: 1px solid var(--van-border-color);
+  color: var(--van-text-color);
 }
 
 .theme-list {
   display: flex;
   flex-wrap: wrap;
-  padding: 20px 16px;
-  gap: 12px;
+  padding: var(--van-padding-lg) 16px;
+  gap: var(--van-padding-sm);
   justify-content: center;
 }
 
@@ -162,7 +162,7 @@ const changeLanguage = () => {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  padding: 12px 8px;
+  padding: var(--van-padding-sm) 8px;
   border-radius: 10px;
   transition: background 0.2s;
 }
@@ -181,10 +181,10 @@ const changeLanguage = () => {
   height: 48px;
   border-radius: 8px;
   margin-bottom: 8px;
-  padding: 6px;
+  padding: var(--van-padding-xs);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--van-padding-base);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -207,17 +207,17 @@ const changeLanguage = () => {
 }
 
 .theme-name {
-  font-size: 13px;
-  color: var(--color-text-light);
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color-2);
 }
 
 .theme-name {
-  font-size: 12px;
-  color: var(--color-text-light);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-2);
 }
 
 .popup-footer {
-  padding: 16px;
+  padding: var(--van-padding-md);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -225,7 +225,7 @@ const changeLanguage = () => {
 }
 
 .language-active {
-  background-color: var(--color-surface);
-  color: var(--color-text);
+  background-color: var(--van-background);
+  color: var(--van-text-color);
 }
 </style>

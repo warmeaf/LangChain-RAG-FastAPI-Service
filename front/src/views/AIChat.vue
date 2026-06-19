@@ -542,15 +542,15 @@ const loadSessionHistory = async (session) => {
   padding-top: 46px;
   padding-bottom: 50px;
   box-sizing: border-box;
-  background-color: var(--color-bg);
+  background-color: var(--van-background);
 }
 
 .nav-sessions-btn {
   display: flex;
   align-items: center;
-  padding: 4px;
+  padding: var(--van-padding-base);
   cursor: pointer;
-  color: var(--color-text);
+  color: var(--van-text-color);
   opacity: 0.7;
   transition: opacity 0.2s;
 }
@@ -566,29 +566,29 @@ const loadSessionHistory = async (session) => {
 /* ==================== 欢迎卡片 ==================== */
 .welcome-card {
   text-align: center;
-  padding: 40px 32px 24px;
+  padding: var(--van-padding-lg) var(--van-padding-lg) var(--van-padding-lg);
   animation: fadeIn 0.5s ease-out;
 }
 
 .welcome-icon {
-  color: var(--color-primary);
+  color: var(--van-primary-color);
   margin-bottom: 12px;
   opacity: 0.8;
 }
 
 .welcome-title {
-  font-family: var(--font-heading);
+  
   font-size: 20px;
-  color: var(--color-text);
+  color: var(--van-text-color);
   margin: 0 0 8px;
-  font-weight: 600;
+  font-weight: var(--van-font-bold);
 }
 
 .welcome-desc {
-  font-size: 14px;
-  color: var(--color-text-light);
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color-2);
   line-height: 1.6;
-  margin: 0 0 20px;
+  margin: 0 0 var(--van-padding-lg);
 }
 
 .welcome-questions {
@@ -603,31 +603,31 @@ const loadSessionHistory = async (session) => {
 .quick-question {
   all: unset;
   display: inline-block;
-  font-size: 13px;
-  color: var(--color-text-light);
-  background: var(--color-card);
-  padding: 10px 18px;
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color-2);
+  background: var(--van-background-2);
+  padding: var(--van-padding-sm) 18px;
   border-radius: 24px;
   cursor: pointer;
-  box-shadow: 0 1px 3px var(--color-shadow);
-  border: 1px solid var(--color-border-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--van-border-color);
   transition: all 0.15s ease;
   line-height: 1.4;
-  font-family: var(--font-body);
+  
 }
 
 .quick-question:active {
   transform: scale(0.97);
-  background: var(--color-surface);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: var(--van-background);
+  border-color: var(--van-primary-color);
+  color: var(--van-primary-color);
 }
 
 /* ==================== 消息容器 ==================== */
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 12px;
+  padding: var(--van-padding-md) 12px;
 }
 
 .message {
@@ -645,7 +645,7 @@ const loadSessionHistory = async (session) => {
 }
 
 .message-content {
-  padding: 10px 14px;
+  padding: var(--van-padding-sm) 14px;
   border-radius: 12px;
   word-break: break-word;
   line-height: 1.6;
@@ -654,32 +654,32 @@ const loadSessionHistory = async (session) => {
 /* 用户气泡 — 暖灰底 + 深棕文字 + 原角 */
 .user-message .message-content {
   background-color: #EDE4D8;
-  color: var(--color-text);
+  color: var(--van-text-color);
   border-bottom-right-radius: 4px;
-  box-shadow: 0 1px 2px var(--color-shadow);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* AI 气泡 — 卡片底 + 暖棕文字 + 微阴影 */
 .ai-message .message-content {
-  background-color: var(--color-card);
-  color: var(--color-text);
+  background-color: var(--van-background-2);
+  color: var(--van-text-color);
   border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* ==================== 输入区域 ==================== */
 .input-container {
   display: flex;
-  padding: 8px 12px;
-  border-top: 1px solid var(--color-border-light);
-  background-color: var(--color-card);
+  padding: var(--van-padding-xs) 12px;
+  border-top: 1px solid var(--van-border-color);
+  background-color: var(--van-background-2);
   align-items: flex-end;
 }
 
 .chat-input {
   flex: 1;
   margin-right: 10px;
-  --van-field-background: var(--color-surface);
+  --van-field-background: var(--van-background);
   --van-field-border-radius: 10px;
 }
 
@@ -704,7 +704,7 @@ const loadSessionHistory = async (session) => {
 }
 
 :deep(a) {
-  color: var(--color-primary);
+  color: var(--van-primary-color);
   text-decoration: none;
 }
 
@@ -714,8 +714,8 @@ const loadSessionHistory = async (session) => {
 
 :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
   margin: 10px 0 6px;
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: var(--van-font-bold);
+  color: var(--van-text-color);
 }
 
 :deep(h1) { font-size: 1.4em; }
@@ -723,18 +723,18 @@ const loadSessionHistory = async (session) => {
 :deep(h3) { font-size: 1.1em; }
 
 :deep(blockquote) {
-  border-left: 3px solid var(--color-primary);
-  padding: 6px 12px;
-  margin: 8px 0;
-  color: var(--color-text-light);
-  background-color: var(--color-surface);
+  border-left: 3px solid var(--van-primary-color);
+  padding: var(--van-padding-xs) var(--van-padding-sm);
+  margin: var(--van-padding-xs) 0;
+  color: var(--van-text-color-2);
+  background-color: var(--van-background);
   border-radius: 0 6px 6px 0;
   font-size: 0.95em;
 }
 
 :deep(hr) {
   border: 0;
-  border-top: 1px solid var(--color-divider);
+  border-top: 1px solid var(--van-border-color);
   margin: 14px 0;
 }
 
@@ -747,29 +747,29 @@ const loadSessionHistory = async (session) => {
 :deep(table) {
   width: 100%;
   border-collapse: collapse;
-  margin: 8px 0;
+  margin: var(--van-padding-xs) 0;
   font-size: 0.95em;
 }
 
 :deep(th), :deep(td) {
-  border: 1px solid var(--color-border);
-  padding: 6px 10px;
+  border: 1px solid var(--van-border-color);
+  padding: var(--van-padding-xs) var(--van-padding-sm);
   text-align: left;
 }
 
 :deep(th) {
-  background-color: var(--color-surface);
-  font-weight: 600;
+  background-color: var(--van-background);
+  font-weight: var(--van-font-bold);
 }
 
 /* 代码块 — 暖调浅底 */
 :deep(pre) {
-  background-color: var(--color-surface);
-  padding: 14px;
+  background-color: var(--van-background);
+  padding: var(--van-padding-md);
   border-radius: 8px;
   overflow-x: auto;
   margin: 10px 0;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--van-border-color);
   font-size: 0.9em;
   line-height: 1.5;
 }
@@ -785,24 +785,24 @@ const loadSessionHistory = async (session) => {
 
 :deep(code) {
   font-family: 'Consolas', 'Monaco', 'Courier New', 'Source Code Pro', monospace;
-  background-color: var(--color-surface);
-  padding: 2px 6px;
+  background-color: var(--van-background);
+  padding: var(--van-padding-base) var(--van-padding-xs);
   border-radius: 4px;
   font-size: 0.9em;
-  color: var(--color-text-light);
+  color: var(--van-text-color-2);
 }
 
 /* ==================== 打字指示器 ==================== */
 .typing-indicator {
   display: flex;
-  padding: 4px 0;
-  gap: 4px;
+  padding: var(--van-padding-base) 0;
+  gap: var(--van-padding-base);
 }
 
 .typing-indicator span {
   height: 7px;
   width: 7px;
-  background-color: var(--color-text-lighter);
+  background-color: var(--van-text-color-3);
   border-radius: 50%;
   display: inline-block;
   animation: bounce 1.4s infinite ease-in-out;
@@ -825,10 +825,10 @@ const loadSessionHistory = async (session) => {
 .thinking-section {
   margin-bottom: 8px;
   border-left: 3px solid rgba(212, 145, 74, 0.25);
-  background-color: var(--color-surface);
+  background-color: var(--van-background);
   border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 12px;
+  padding: var(--van-padding-xs) 10px;
+  font-size: var(--van-font-size-sm);
 }
 
 .thinking-header {
@@ -841,14 +841,14 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-label {
-  color: var(--color-text-lighter);
-  font-weight: 500;
-  font-size: 12px;
+  color: var(--van-text-color-3);
+  font-weight: var(--van-font-bold);
+  font-size: var(--van-font-size-sm);
 }
 
 .thinking-toggle {
-  color: var(--color-text-lightest);
-  font-size: 11px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-sm);
 }
 
 .thinking-body {
@@ -856,8 +856,8 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-step {
-  padding: 4px 0;
-  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--van-padding-base) 0;
+  border-bottom: 1px solid var(--van-border-color);
   line-height: 1.4;
 }
 
@@ -866,39 +866,39 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-step-content {
-  color: var(--color-text-light);
-  font-size: 12px;
+  color: var(--van-text-color-2);
+  font-size: var(--van-font-size-sm);
   vertical-align: middle;
 }
 
 .thinking-details {
-  margin-top: 4px;
-  padding: 6px 8px;
+  margin-top: var(--van-padding-base);
+  padding: var(--van-padding-xs) var(--van-padding-xs);
   background-color: rgba(255, 255, 255, 0.5);
   border-radius: 4px;
-  font-size: 11px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
 }
 
 .thinking-detail-text {
-  color: var(--color-text-lighter);
-  font-size: 11px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-sm);
   line-height: 1.4;
 }
 
 .thinking-detail-kv {
   display: flex;
-  gap: 4px;
+  gap: var(--van-padding-base);
   line-height: 1.5;
 }
 
 .thinking-detail-key {
-  color: var(--color-text-lightest);
+  color: var(--van-text-color-3);
   white-space: nowrap;
 }
 
 .thinking-detail-val {
-  color: var(--color-text-lighter);
+  color: var(--van-text-color-3);
   word-break: break-all;
 }
 
@@ -911,8 +911,8 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-doc-source {
-  color: var(--color-text-lighter);
-  font-size: 11px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-sm);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -920,15 +920,15 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-doc-score {
-  color: var(--color-text-light);
-  font-size: 11px;
+  color: var(--van-text-color-2);
+  font-size: var(--van-font-size-sm);
   margin-left: 8px;
   white-space: nowrap;
 }
 
 .thinking-doc-more {
-  color: var(--color-text-lightest);
-  font-size: 11px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-sm);
   margin-top: 2px;
 }
 
@@ -938,8 +938,8 @@ const loadSessionHistory = async (session) => {
   align-items: center;
   padding: 2px 0;
   line-height: 1.5;
-  font-size: 11px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
 }
 
 .thinking-score-preview {
@@ -947,6 +947,6 @@ const loadSessionHistory = async (session) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-text-lightest);
+  color: var(--van-text-color-3);
 }
 </style>

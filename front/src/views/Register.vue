@@ -229,7 +229,7 @@ const goToLogin = () => {
 <style scoped>
 .register-page {
   min-height: 100vh;
-  background-color: var(--color-bg);
+  background-color: var(--van-background);
 }
 
 .register-container {
@@ -246,45 +246,45 @@ const goToLogin = () => {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: var(--color-surface);
+  background: var(--van-background);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  color: var(--color-primary);
-  box-shadow: 0 2px 8px var(--color-shadow);
+  color: var(--van-primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .register-logo h2 {
-  font-family: var(--font-heading);
+  
   font-size: 22px;
-  color: var(--color-text);
-  font-weight: 600;
+  color: var(--van-text-color);
+  font-weight: var(--van-font-bold);
 }
 
 .register-form {
-  padding: 0 16px;
+  padding: 0 var(--van-padding-md);
 }
 
 .register-form :deep(.van-cell-group) {
-  background: var(--color-card);
+  background: var(--van-background-2);
   border-radius: 12px;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .register-btn-container {
   margin-top: 24px;
-  padding: 0 16px;
+  padding: 0 var(--van-padding-md);
 }
 
 .login-link {
   text-align: center;
   margin-top: 24px;
-  color: var(--color-text-lighter);
-  font-size: 14px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-md);
 }
 
 .login-link span {
-  color: var(--color-primary);
+  color: var(--van-primary-color);
 }
 </style>

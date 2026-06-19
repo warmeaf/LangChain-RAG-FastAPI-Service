@@ -697,47 +697,47 @@ onMounted(() => {
 <style scoped>
 .knowledgebase-container {
   min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--van-background);
+  color: var(--van-text-color);
   padding-top: 46px;
   padding-bottom: 20px;
 }
 
 .knowledgebase-content {
-  padding: 16px;
+  padding: var(--van-padding-md);
 }
 
 .upload-area {
-  border: 2px dashed var(--color-border);
+  border: 2px dashed var(--van-border-color);
   border-radius: 12px;
-  padding: 36px 20px;
+  padding: var(--van-padding-lg) var(--van-padding-lg);
   text-align: center;
   cursor: pointer;
   margin-bottom: 20px;
-  background: var(--color-surface);
+  background: var(--van-background);
   transition: border-color 0.2s, background 0.2s;
 }
 
 .upload-area:active {
-  border-color: var(--color-primary);
+  border-color: var(--van-primary-color);
   background: rgba(212, 145, 74, 0.04);
 }
 
 .upload-icon {
-  color: var(--color-text-lighter);
+  color: var(--van-text-color-3);
   margin-bottom: 12px;
 }
 
 .upload-text {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--van-font-size-lg);
+  font-weight: var(--van-font-bold);
   margin: 0 0 6px;
-  color: var(--color-text);
+  color: var(--van-text-color);
 }
 
 .upload-hint {
-  font-size: 12px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
   margin: 0;
 }
 
@@ -750,11 +750,11 @@ onMounted(() => {
 }
 
 .section-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--van-font-size-md);
+  font-weight: var(--van-font-bold);
   margin: 0 0 10px;
-  color: var(--color-text-light);
-  font-family: var(--font-heading);
+  color: var(--van-text-color-2);
+  
 }
 
 .list-header {
@@ -767,12 +767,12 @@ onMounted(() => {
 .list-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--van-padding-sm);
 }
 
 .document-count {
-  font-size: 12px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
 }
 
 .document-list {
@@ -780,13 +780,13 @@ onMounted(() => {
 }
 
 .doc-meta {
-  font-size: 12px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
 }
 
 .delete-icon {
   cursor: pointer;
-  padding: 8px;
+  padding: var(--van-padding-xs);
 }
 
 .chunk-count {
@@ -795,8 +795,8 @@ onMounted(() => {
 
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
-  color: var(--color-text-lighter);
+  padding: var(--van-padding-lg) var(--van-padding-lg);
+  color: var(--van-text-color-3);
 }
 
 .empty-state p {
@@ -809,10 +809,10 @@ onMounted(() => {
 
 .progress-item {
   margin-bottom: 16px;
-  background: var(--color-card);
-  padding: 12px;
+  background: var(--van-background-2);
+  padding: var(--van-padding-sm);
   border-radius: 8px;
-  box-shadow: 0 1px 2px var(--color-shadow);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .progress-header {
@@ -823,13 +823,13 @@ onMounted(() => {
 }
 
 .progress-filename {
-  font-size: 14px;
-  color: var(--color-text);
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color);
 }
 
 .progress-status {
-  font-size: 12px;
-  padding: 2px 10px;
+  font-size: var(--van-font-size-sm);
+  padding: var(--van-padding-base) var(--van-padding-sm);
   border-radius: 10px;
 }
 
@@ -849,65 +849,65 @@ onMounted(() => {
 }
 
 .progress-message {
-  font-size: 12px;
-  color: var(--color-text-lighter);
-  margin: 8px 0 0;
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
+  margin: var(--van-padding-xs) 0 0;
 }
 
 .upload-result {
   text-align: center;
-  padding: 24px;
+  padding: var(--van-padding-lg);
   margin-top: 20px;
 }
 
 .upload-result p {
-  margin: 8px 0 0;
-  color: var(--color-text-light);
+  margin: var(--van-padding-xs) 0 0;
+  color: var(--van-text-color-2);
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid var(--color-divider);
+  padding: var(--van-padding-md);
+  border-bottom: 1px solid var(--van-border-color);
 }
 
 .detail-header h4 {
   margin: 0;
-  font-size: 16px;
-  font-family: var(--font-heading);
+  font-size: var(--van-font-size-lg);
+  
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--van-padding-sm);
 }
 
 .detail-content {
-  padding: 16px;
+  padding: var(--van-padding-md);
   overflow-y: auto;
   height: calc(100% - 60px);
 }
 
 .detail-meta {
-  font-size: 12px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
   margin-bottom: 16px;
 }
 
 .detail-preview {
-  font-size: 14px;
+  font-size: var(--van-font-size-md);
   line-height: 1.6;
-  color: var(--color-text-light);
+  color: var(--van-text-color-2);
   white-space: pre-wrap;
 }
 
 .detail-content-full {
-  font-size: 14px;
+  font-size: var(--van-font-size-md);
   line-height: 1.8;
-  color: var(--color-text);
+  color: var(--van-text-color);
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -925,19 +925,19 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--van-border-color);
 }
 
 .chunks-total {
-  font-size: 12px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-sm);
+  color: var(--van-text-color-3);
 }
 
 .chunk-item {
   display: flex;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px dashed var(--color-border-light);
+  border-bottom: 1px dashed var(--van-border-color);
 }
 
 .chunk-item:last-child {
@@ -947,13 +947,13 @@ onMounted(() => {
 .chunk-index {
   min-width: 26px;
   height: 26px;
-  background-color: var(--color-primary);
+  background-color: var(--van-primary-color);
   color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--van-font-size-sm);
   margin-right: 12px;
   flex-shrink: 0;
 }
@@ -965,7 +965,7 @@ onMounted(() => {
 .detail-chunk {
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px dashed var(--color-border-light);
+  border-bottom: 1px dashed var(--van-border-color);
 }
 
 .detail-chunk:last-child {
@@ -981,20 +981,20 @@ onMounted(() => {
 .detail-page-group + .detail-page-group {
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid var(--color-divider);
+  border-top: 1px solid var(--van-border-color);
 }
 
 .detail-page-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-primary);
+  font-size: var(--van-font-size-sm);
+  font-weight: var(--van-font-bold);
+  color: var(--van-primary-color);
   margin-bottom: 8px;
 }
 
 .detail-text {
-  font-size: 14px;
+  font-size: var(--van-font-size-md);
   line-height: 1.8;
-  color: var(--color-text);
+  color: var(--van-text-color);
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -1008,7 +1008,7 @@ onMounted(() => {
   margin-bottom: 12px;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .chunk-images {
@@ -1023,9 +1023,9 @@ onMounted(() => {
 }
 
 .chunk-content {
-  font-size: 13px;
+  font-size: var(--van-font-size-md);
   line-height: 1.6;
-  color: var(--color-text-light);
+  color: var(--van-text-color-2);
   white-space: pre-wrap;
   word-break: break-all;
 }

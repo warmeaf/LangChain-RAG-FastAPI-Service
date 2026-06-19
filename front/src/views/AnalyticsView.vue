@@ -31,30 +31,30 @@ onMounted(async () => {
 .analytics-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px;
+  padding: var(--van-padding-lg);
 }
 .analytics-card {
-  background: var(--color-card);
+  background: var(--van-background-2);
   border-radius: 8px;
-  padding: 16px;
+  padding: var(--van-padding-md);
 }
 .analytics-card h3 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--van-font-size-lg);
+  font-weight: var(--van-font-bold);
   margin: 0 0 16px;
-  color: var(--color-text);
+  color: var(--van-text-color);
 }
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--van-padding-sm);
 }
 .stat-item {
   text-align: center;
-  padding: 12px;
-  background: var(--color-bg);
+  padding: var(--van-padding-sm);
+  background: var(--van-background);
   border-radius: 6px;
 }
-.stat-label { font-size: 13px; color: var(--color-text-lighter); display: block; }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--color-primary); margin-top: 4px; }
+.stat-label { font-size: var(--van-font-size-md); color: var(--van-text-color-3); display: block; }
+.stat-value { font-size: 24px; font-weight: 700; color: var(--van-primary-color); margin-top: var(--van-padding-base); }
 </style>

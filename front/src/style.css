@@ -1,27 +1,7 @@
-/* ============================================
-   Vant UI 原生样式
-   --color-* 映射到 Vant CSS 变量，深色模式自动切换
-   ============================================ */
+/* Vant UI 原生样式 */
 
 :root {
-  /* 映射到 Vant 原生变量 */
-  --color-primary:       var(--van-primary-color);
-  --color-primary-hover: var(--van-primary-color);
-  --color-bg:            var(--van-background);
-  --color-surface:       var(--van-background);
-  --color-card:          var(--van-background-2);
-  --color-text:          var(--van-text-color);
-  --color-text-light:    var(--van-text-color-2);
-  --color-text-lighter:  var(--van-text-color-3);
-  --color-text-lightest: var(--van-text-color-3);
-  --color-border:        var(--van-border-color);
-  --color-border-light:  var(--van-border-color);
-  --color-shadow:        rgba(0, 0, 0, 0.08);
-  --color-shadow-strong: rgba(0, 0, 0, 0.15);
-  --color-divider:       var(--van-border-color);
-
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
-
   font-family: var(--van-base-font);
   color-scheme: light dark;
   color: var(--van-text-color);
@@ -36,7 +16,7 @@ html {
 }
 
 body {
-  font-size: 14px;
+  font-size: var(--van-font-size-md);
   color: var(--van-text-color);
   background-color: var(--van-background);
   font-family: var(--van-base-font);
@@ -60,7 +40,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .ellipsis-2 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -71,7 +50,6 @@ body {
 
 /* 全局淡入 */
 .fade-in { animation: fadeIn 0.4s ease-out; }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -79,5 +57,5 @@ body {
 
 /* 卡片微阴影 */
 .card-shadow {
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }

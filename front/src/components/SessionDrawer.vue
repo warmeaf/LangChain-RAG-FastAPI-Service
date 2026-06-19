@@ -107,33 +107,33 @@ const createNewSession = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--color-bg);
+  background: var(--van-background);
 }
 .drawer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border-light, #ebedf0);
+  padding: var(--van-padding-md);
+  border-bottom: 1px solid var(--van-border-color);
 }
 .header-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--color-text);
+  gap: var(--van-padding-xs);
+  font-size: var(--van-font-size-lg);
+  font-weight: var(--van-font-bold);
+  color: var(--van-text-color);
 }
-.drawer-content { flex: 1; overflow-y: auto; padding: 12px; }
+.drawer-content { flex: 1; overflow-y: auto; padding: var(--van-padding-sm); }
 .loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: var(--color-text-light);
+  color: var(--van-text-color-2);
 }
 .active {
-  border-left: 3px solid var(--color-primary, #1989fa);
+  border-left: 3px solid var(--van-primary-color);
 }
 </style>

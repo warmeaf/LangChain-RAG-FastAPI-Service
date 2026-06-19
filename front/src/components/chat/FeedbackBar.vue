@@ -32,7 +32,7 @@ defineEmits<{ feedback: [type: string]; rate: [value: number] }>()
 .feedback-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--van-padding-xs);
 }
 .feedback-btn {
   display: inline-flex;
@@ -41,9 +41,9 @@ defineEmits<{ feedback: [type: string]; rate: [value: number] }>()
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--van-border-color);
   cursor: pointer;
-  color: var(--color-text-lighter);
+  color: var(--van-text-color-3);
   transition: all 0.2s;
 }
 .feedback-btn.active {

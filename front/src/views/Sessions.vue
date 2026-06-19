@@ -239,12 +239,12 @@ const confirmNewSession = async () => {
   padding-top: 46px;
   padding-bottom: 50px;
   box-sizing: border-box;
-  background-color: var(--color-bg);
+  background-color: var(--van-background);
 }
 
 .sessions-content {
   flex: 1;
-  padding: 16px;
+  padding: var(--van-padding-md);
   overflow-y: auto;
 }
 
@@ -258,15 +258,15 @@ const confirmNewSession = async () => {
 .header-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--color-text);
+  gap: var(--van-padding-xs);
+  color: var(--van-text-color);
 }
 
 .sessions-header h2 {
   font-size: 18px;
-  font-weight: 600;
-  font-family: var(--font-heading);
-  color: var(--color-text);
+  font-weight: var(--van-font-bold);
+  
+  color: var(--van-text-color);
   margin: 0;
 }
 
@@ -280,7 +280,7 @@ const confirmNewSession = async () => {
 
 .loading p {
   margin-top: 16px;
-  color: var(--color-text-light);
+  color: var(--van-text-color-2);
 }
 
 .empty-sessions {
@@ -293,19 +293,19 @@ const confirmNewSession = async () => {
 }
 
 .empty-icon {
-  color: var(--color-text-lightest);
-  margin-bottom: 4px;
+  color: var(--van-text-color-3);
+  margin-bottom: var(--van-padding-base);
 }
 
 .empty-sessions p {
-  margin: 8px 0 4px;
-  color: var(--color-text-lighter);
-  font-size: 15px;
+  margin: var(--van-padding-xs) 0 4px;
+  color: var(--van-text-color-3);
+  font-size: var(--van-font-size-lg);
 }
 
 .empty-sub {
-  font-size: 13px;
-  color: var(--color-text-lightest);
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color-3);
   margin-bottom: 20px !important;
 }
 
@@ -316,45 +316,45 @@ const confirmNewSession = async () => {
 .sessions-list :deep(.van-cell) {
   border-radius: 8px;
   margin-bottom: 6px;
-  background: var(--color-card);
-  box-shadow: 0 1px 2px var(--color-shadow);
+  background: var(--van-background-2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .active {
   background-color: rgba(212, 145, 74, 0.10) !important;
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--van-primary-color);
 }
 
 .delete-btn {
   display: flex;
   align-items: center;
-  padding: 4px;
+  padding: var(--van-padding-base);
   cursor: pointer;
-  color: var(--color-text-lighter);
+  color: var(--van-text-color-3);
   border-radius: 4px;
   transition: color 0.2s, background 0.2s;
 }
 
 .delete-btn:hover {
-  color: var(--color-text);
+  color: var(--van-text-color);
 }
 
 .delete-btn:active {
-  background: var(--color-border-light);
+  background: var(--van-border-color);
 }
 
 .new-session-dialog {
-  background-color: var(--color-card);
+  background-color: var(--van-background-2);
   border-radius: 16px 16px 0 0;
-  padding: 20px;
+  padding: var(--van-padding-lg);
 }
 
 .new-session-dialog h3 {
   font-size: 18px;
-  font-weight: 600;
-  font-family: var(--font-heading);
-  color: var(--color-text);
-  margin: 0 0 20px;
+  font-weight: var(--van-font-bold);
+  
+  color: var(--van-text-color);
+  margin: 0 0 var(--van-padding-lg);
   text-align: center;
 }
 
@@ -362,7 +362,7 @@ const confirmNewSession = async () => {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
-  gap: 8px;
+  gap: var(--van-padding-xs);
 }
 
 .dialog-buttons van-button {

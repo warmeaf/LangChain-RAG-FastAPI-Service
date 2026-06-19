@@ -109,8 +109,8 @@ onMounted(async () => {
 .my-container {
   padding-top: 46px;
   padding-bottom: 50px;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--van-background);
+  color: var(--van-text-color);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -126,19 +126,19 @@ onMounted(async () => {
 .user-info {
   display: flex;
   align-items: center;
-  padding: 20px 16px;
-  background: linear-gradient(135deg, var(--color-card) 0%, var(--color-surface) 100%);
-  color: var(--color-text);
+  padding: var(--van-padding-lg) 16px;
+  background: linear-gradient(135deg, var(--van-background-2) 0%, var(--van-background) 100%);
+  color: var(--van-text-color);
   border-radius: 12px;
-  margin: 16px;
+  margin: var(--van-padding-md);
   position: relative;
-  box-shadow: 0 1px 4px var(--color-shadow);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .arrow-icon {
   position: absolute;
   right: 16px;
-  color: var(--color-text-lighter);
+  color: var(--van-text-color-3);
 }
 
 .avatar {
@@ -150,15 +150,15 @@ onMounted(async () => {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-primary);
+  background: var(--van-background);
+  color: var(--van-primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  border: 2px solid var(--color-border);
+  
+  font-weight: var(--van-font-bold);
+  border: 2px solid var(--van-border-color);
 }
 
 .info {
@@ -167,25 +167,25 @@ onMounted(async () => {
 
 .username {
   font-size: 18px;
-  font-weight: 600;
-  font-family: var(--font-heading);
-  margin-bottom: 4px;
-  color: var(--color-text);
+  font-weight: var(--van-font-bold);
+  
+  margin-bottom: var(--van-padding-base);
+  color: var(--van-text-color);
 }
 
 .desc {
-  font-size: 14px;
-  color: var(--color-text-lighter);
+  font-size: var(--van-font-size-md);
+  color: var(--van-text-color-3);
 }
 
 .menu-list {
-  margin: 0 16px;
+  margin: 0 var(--van-padding-md);
 }
 
 .menu-list :deep(.van-cell) {
   border-radius: 8px;
   margin-bottom: 6px;
-  background: var(--color-card);
-  box-shadow: 0 1px 2px var(--color-shadow);
+  background: var(--van-background-2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 </style>
