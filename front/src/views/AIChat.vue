@@ -20,9 +20,7 @@
         <!-- 欢迎状态（仅首次进入时显示） -->
         <div v-if="showWelcome" class="welcome-card">
           <div class="welcome-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-              <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.27A7.01 7.01 0 0 1 14 23h-4a7.01 7.01 0 0 1-6.73-5H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
-            </svg>
+            <van-icon name="service-o" size="36" />
           </div>
           <h3 class="welcome-title">RAG 智能问答</h3>
           <p class="welcome-desc">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
@@ -52,9 +50,9 @@
               </div>
               <div v-show="!message.thinkingCollapsed" class="thinking-body">
                 <div v-for="(step, sIndex) in message.thinking" :key="sIndex" class="thinking-step">
-                  <span class="thinking-stage-label" :style="{ backgroundColor: getStageColor(step.stage) }">
+                  <van-tag :color="getStageColor(step.stage)" size="medium" text-color="#fff">
                     {{ getStageLabel(step.stage) }}
-                  </span>
+                  </van-tag>
                   <span class="thinking-step-content">{{ step.content }}</span>
                   <div v-if="step.details" class="thinking-details">
                     <template v-if="step.details.documents">
@@ -865,18 +863,6 @@ const loadSessionHistory = async (session) => {
 
 .thinking-step:last-child {
   border-bottom: none;
-}
-
-.thinking-stage-label {
-  display: inline-block;
-  font-size: 10px;
-  color: #fff;
-  padding: 2px 7px;
-  border-radius: 3px;
-  margin-right: 5px;
-  vertical-align: middle;
-  line-height: 1.5;
-  letter-spacing: 0.3px;
 }
 
 .thinking-step-content {

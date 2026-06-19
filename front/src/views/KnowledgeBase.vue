@@ -8,11 +8,7 @@
     <div class="knowledgebase-content">
       <div class="upload-area" @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
         <div class="upload-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
+          <van-icon name="upgrade" size="40" />
         </div>
         <p class="upload-text">{{ $t('knowledgebase.uploadText') }}</p>
         <p class="upload-hint">{{ $t('knowledgebase.uploadHint') }}</p>
@@ -58,9 +54,9 @@
         <div v-for="(progress, index) in uploadProgressList" :key="index" class="progress-item">
           <div class="progress-header">
             <span class="progress-filename">{{ progress.filename }}</span>
-            <span class="progress-status" :class="getStatusClass(progress.status)">
+            <van-tag :type="getStatusType(progress.status)" size="medium">
               {{ getStatusText(progress.status) }}
-            </span>
+            </van-tag>
           </div>
           <van-progress :percentage="progress.percentage" v-if="progress.percentage !== null" />
           <p class="progress-message">{{ progress.message }}</p>
@@ -117,10 +113,7 @@
           </van-cell>
         </van-cell-group>
 
-        <div v-else-if="!loadingDocuments" class="empty-state">
-          <van-icon name="file-text-o" size="48" color="#ccc" />
-          <p>{{ $t('knowledgebase.empty') }}</p>
-        </div>
+        <van-empty v-else-if="!loadingDocuments" :description="$t('knowledgebase.empty')" />
 
         <van-loading v-if="loadingDocuments" />
       </div>
@@ -680,11 +673,11 @@ const onActionSelect = async (action) => {
   }
 };
 
-const getStatusClass = (status) => {
+const getStatusType = (status) => {
   switch (status) {
-    case 'completed': return 'status-success';
-    case 'failed': return 'status-failed';
-    default: return 'status-processing';
+    case 'completed': return 'success';
+    case 'failed': return 'danger';
+    default: return 'warning';
   }
 };
 

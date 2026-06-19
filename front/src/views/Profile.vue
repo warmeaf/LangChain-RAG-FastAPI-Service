@@ -42,7 +42,7 @@
 <script setup>
 import { ref, computed, h, onMounted } from 'vue';
 import { useUserStore } from '../store/user';
-import { showDialog, showToast, showLoadingToast, showSuccessToast, showFailToast, Dialog, RadioGroup, Radio } from 'vant';
+import { showDialog, showToast, showLoadingToast, showSuccessToast, showFailToast, Dialog, RadioGroup, Radio, Field, Image, Uploader } from 'vant';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { apiConfig } from '../config/api';
@@ -134,7 +134,6 @@ const lastLoginText = computed(() => {
 });
 
 const showPasswordConfirm = () => {
-  // 使用ref创建响应式变量
   const oldPassword = ref('');
   const newPassword = ref('');
   const confirmPassword = ref('');
@@ -142,35 +141,10 @@ const showPasswordConfirm = () => {
   showDialog({
     title: '修改密码',
     showCancelButton: true,
-    className: 'password-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '当前密码：'),
-        h('input', {
-          type: 'password',
-          value: oldPassword.value,
-          onInput: (e) => { oldPassword.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ]),
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '新密码：'),
-        h('input', {
-          type: 'password',
-          value: newPassword.value,
-          onInput: (e) => { newPassword.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ]),
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '确认密码：'),
-        h('input', {
-          type: 'password',
-          value: confirmPassword.value,
-          onInput: (e) => { confirmPassword.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ])
+    message: h('div', { style: 'padding: 10px 0;' }, [
+      h(Field, { modelValue: oldPassword.value, 'onUpdate:modelValue': (v) => oldPassword.value = v, type: 'password', label: '当前密码', placeholder: '请输入当前密码' }),
+      h(Field, { modelValue: newPassword.value, 'onUpdate:modelValue': (v) => newPassword.value = v, type: 'password', label: '新密码', placeholder: '请输入新密码' }),
+      h(Field, { modelValue: confirmPassword.value, 'onUpdate:modelValue': (v) => confirmPassword.value = v, type: 'password', label: '确认密码', placeholder: '请确认新密码' }),
     ]),
   }).then(async () => {
     // 点击确认按钮
@@ -219,24 +193,21 @@ const showPasswordConfirm = () => {
 };
 
 const showBioDialog = () => {
-  // 使用ref创建响应式变量
   const newBioValue = ref(userBio.value);
   
   showDialog({
     title: '修改个人简介',
     showCancelButton: true,
     confirmButtonText: '确认',
-    className: 'bio-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '个人简介：'),
-        h('textarea', {
-          value: newBioValue.value,
-          onInput: (e) => { newBioValue.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box; min-height: 100px; resize: vertical;'
-        })
-      ])
-    ])
+    message: h(Field, {
+      modelValue: newBioValue.value,
+      'onUpdate:modelValue': (v) => newBioValue.value = v,
+      type: 'textarea',
+      autosize: true,
+      rows: 3,
+      placeholder: '请输入个人简介',
+      maxlength: 200,
+    })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -275,55 +246,21 @@ const showBioDialog = () => {
 };
 
 const showGenderDialog = () => {
-  // 使用ref创建响应式变量
   const selectedGender = ref(userInfo.value?.gender || 3);
   
-  // 使用Vant的Dialog组件显示性别选择
   showDialog({
     title: '选择性别',
-    message: h('div', { 
-      style: 'padding: 10px; text-align: left;'
-    }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('input', {
-          type: 'radio',
-          name: 'gender',
-          value: 1,
-          checked: selectedGender.value === 1,
-          style: 'margin-right: 8px;',
-          onChange: (e) => selectedGender.value = parseInt(e.target.value)
-        }),
-        h('label', { 
-          style: 'cursor: pointer; margin-right: 20px;' 
-        }, '男')
-      ]),
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('input', {
-          type: 'radio',
-          name: 'gender',
-          value: 2,
-          checked: selectedGender.value === 2,
-          style: 'margin-right: 8px;',
-          onChange: (e) => selectedGender.value = parseInt(e.target.value)
-        }),
-        h('label', { 
-          style: 'cursor: pointer; margin-right: 20px;' 
-        }, '女')
-      ]),
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('input', {
-          type: 'radio',
-          name: 'gender',
-          value: 3,
-          checked: selectedGender.value === 3,
-          style: 'margin-right: 8px;',
-          onChange: (e) => selectedGender.value = parseInt(e.target.value)
-        }),
-        h('label', { 
-          style: 'cursor: pointer;' 
-        }, '其他')
-      ])
-    ]),
+    message: h(RadioGroup, {
+      modelValue: selectedGender.value,
+      'onUpdate:modelValue': (v) => { selectedGender.value = v },
+      direction: 'horizontal'
+    }, {
+      default: () => [
+        h(Radio, { name: 1 }, { default: () => '男' }),
+        h(Radio, { name: 2 }, { default: () => '女' }),
+        h(Radio, { name: 3 }, { default: () => '其他' }),
+      ]
+    }),
     confirmButtonText: '确认',
     cancelButtonText: '取消',
     showCancelButton: true
@@ -367,25 +304,13 @@ const showGenderDialog = () => {
 
 
 const showUsernameDialog = () => {
-  // 使用ref创建响应式变量
   const newUsernameValue = ref(userInfo.value?.username || '');
   
   showDialog({
     title: '修改用户名',
     showCancelButton: true,
     confirmButtonText: '确认',
-    className: 'username-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '用户名：'),
-        h('input', {
-          type: 'text',
-          value: newUsernameValue.value,
-          onInput: (e) => { newUsernameValue.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ])
-    ])
+    message: h(Field, { modelValue: newUsernameValue.value, 'onUpdate:modelValue': (v) => newUsernameValue.value = v, label: '用户名', placeholder: '请输入用户名' })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -431,18 +356,7 @@ const showEmailDialog = () => {
     title: '修改邮箱',
     showCancelButton: true,
     confirmButtonText: '确认',
-    className: 'email-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '邮箱：'),
-        h('input', {
-          type: 'email',
-          value: newEmailValue.value,
-          onInput: (e) => { newEmailValue.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ])
-    ])
+    message: h(Field, { modelValue: newEmailValue.value, 'onUpdate:modelValue': (v) => newEmailValue.value = v, type: 'email', label: '邮箱', placeholder: '请输入邮箱' })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -481,25 +395,13 @@ const showEmailDialog = () => {
 };
 
 const showPhoneDialog = () => {
-  // 使用ref创建响应式变量
   const newPhoneValue = ref(userInfo.value?.telephone || '');
   
   showDialog({
     title: '修改手机号',
     showCancelButton: true,
     confirmButtonText: '确认',
-    className: 'phone-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '手机号：'),
-        h('input', {
-          type: 'tel',
-          value: newPhoneValue.value,
-          onInput: (e) => { newPhoneValue.value = e.target.value },
-          style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
-        })
-      ])
-    ])
+    message: h(Field, { modelValue: newPhoneValue.value, 'onUpdate:modelValue': (v) => newPhoneValue.value = v, type: 'tel', label: '手机号', placeholder: '请输入手机号', maxlength: 11 })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -545,35 +447,18 @@ const showAvatarDialog = () => {
     title: '修改头像',
     showCancelButton: true,
     confirmButtonText: '确认上传',
-    className: 'avatar-dialog',
-    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
-      h('div', { style: 'margin-bottom: 15px; text-align: center;' }, [
-        h('van-image', {
-          props: {
-            round: true,
-            width: 100,
-            height: 100,
-            src: previewUrl.value
-          },
-          style: 'margin-bottom: 10px;'
-        })
-      ]),
-      h('div', { style: 'margin-bottom: 15px;' }, [
-        h('input', {
-          type: 'file',
-          accept: 'image/*',
-          onInput: (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              selectedFile.value = file;
-              // 生成预览URL
-              previewUrl.value = URL.createObjectURL(file);
-            }
-          },
-          style: 'width: 100%; padding: 8px; box-sizing: border-box; cursor: pointer;'
-        })
-      ]),
-      h('div', { style: 'margin-bottom: 15px; font-size: 12px; color: #999;' }, '请选择本地图片文件，建议使用正方形图片')
+    message: h('div', { style: 'text-align: center; padding: 10px 0;' }, [
+      h(Image, { round: true, width: 100, height: 100, src: previewUrl.value, style: { marginBottom: '10px' } }),
+      h(Uploader, {
+        accept: 'image/*',
+        maxCount: 1,
+        onUpdateModelValue: (files) => {
+          if (files.length > 0) {
+            selectedFile.value = files[0].file || files[0];
+            previewUrl.value = files[0].url || (files[0].file ? URL.createObjectURL(files[0].file) : '');
+          }
+        },
+      }),
     ])
   }).then(async () => {
     // 点击确认按钮
