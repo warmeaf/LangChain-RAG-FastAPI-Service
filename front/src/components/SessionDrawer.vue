@@ -57,24 +57,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 新会话对话框 -->
-      <van-popup v-model:show="showNewSessionDialog" position="bottom">
-        <div class="new-session-dialog">
-          <h3>新会话</h3>
-          <van-field
-            v-model="newSessionQuery"
-            type="textarea"
-            rows="3"
-            placeholder="请输入您的问题..."
-            maxlength="200"
-          />
-          <div class="dialog-buttons">
-            <van-button @click="showNewSessionDialog = false">取消</van-button>
-            <van-button type="primary" @click="confirmNewSession" :disabled="!newSessionQuery.trim()">开始对话</van-button>
-          </div>
-        </div>
-      </van-popup>
     </div>
   </van-popup>
 </template>
@@ -95,9 +77,6 @@ const emit = defineEmits(['update:show']);
 const router = useRouter();
 const sessionStore = useSessionStore();
 const userStore = useUserStore();
-
-const showNewSessionDialog = ref(false);
-const newSessionQuery = ref('');
 
 // 打开时自动刷新列表
 watch(() => props.show, async (val) => {
@@ -139,26 +118,9 @@ const deleteSession = async (sessionId) => {
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
 };
 
-const createNewSession = () => { showNewSessionDialog.value = true; };
-
-const confirmNewSession = async () => {
-  if (!newSessionQuery.value.trim()) return;
-  const toast = showToast({ type: 'loading', message: '创建中...', forbidClick: true, duration: 0 });
-  try {
-    const result = await sessionStore.createSession(newSessionQuery.value);
-    if (result.success && result.data?.session_id) {
-      showNewSessionDialog.value = false;
-      newSessionQuery.value = '';
-      emit('update:show', false);
-      router.push(`/aichat/${result.data.session_id}`);
-    } else {
-      showToast(result.message || '创建失败');
-    }
-  } catch (e) {
-    showToast('创建失败');
-  } finally {
-    toast?.close?.();
-  }
+const createNewSession = () => {
+  emit('update:show', false);
+  router.push('/aichat');
 };
 </script>
 
@@ -264,26 +226,4 @@ const confirmNewSession = async () => {
 
 .delete-btn:hover { opacity: 1; }
 .delete-btn:active { background: var(--color-border-light, #f0f0f0); }
-
-.new-session-dialog {
-  background: var(--color-card);
-  border-radius: 16px 16px 0 0;
-  padding: 20px;
-}
-
-.new-session-dialog h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0 0 16px;
-  text-align: center;
-}
-
-.dialog-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.dialog-buttons .van-button { flex: 1; }
 </style>

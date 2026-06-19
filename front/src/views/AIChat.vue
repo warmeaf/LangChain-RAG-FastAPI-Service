@@ -439,6 +439,15 @@ const scrollToBottom = () => {
   }
 };
 
+// 重置为欢迎状态
+const resetToWelcome = () => {
+  messages.value = [
+    { role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' }
+  ];
+  sessionId.value = '';
+  sessionStore.currentSession = null;
+};
+
 // 监听消息变化，自动滚动
 watch(messages, () => {
   nextTick(() => {
@@ -447,7 +456,7 @@ watch(messages, () => {
 }, { deep: true });
 
 // 监听路由参数变化，重新加载会话历史
-watch(() => route.params.sessionId, async (newSessionId) => {
+watch(() => route.params.sessionId, async (newSessionId, oldSessionId) => {
   if (newSessionId) {
     try {
       const result = await sessionStore.getSession(newSessionId);
@@ -460,6 +469,9 @@ watch(() => route.params.sessionId, async (newSessionId) => {
       console.error('加载会话历史失败:', error);
       showToast('加载会话历史失败');
     }
+  } else if (oldSessionId) {
+    // 从会话页面回到 /aichat（无 sessionId），重置为欢迎页
+    resetToWelcome();
   }
 }, { immediate: true });
 
