@@ -69,15 +69,6 @@ const routes = [
     }
   },
   {
-    path: '/aboutus',
-    name: 'AboutUs',
-    component: () => import('../views/AboutUs.vue'),
-    meta: {
-      title: '关于我们',
-      keepAlive: false
-    }
-  },
-  {
     path: '/knowledgebase',
     name: 'KnowledgeBase',
     component: () => import('../views/KnowledgeBase.vue'),

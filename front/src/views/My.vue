@@ -33,7 +33,6 @@
       <van-cell-group inset>
         <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
         <van-cell :title="$t('my.knowledgeBase')" is-link @click="goToKnowledgeBase" />
-        <van-cell :title="$t('my.aboutUs')" is-link @click="goToAboutUs" />
         <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
       </van-cell-group>
     </div>
@@ -86,11 +85,6 @@ const goToSettings = () => {
 // 跳转到知识库管理页面
 const goToKnowledgeBase = () => {
   router.push('/knowledgebase');
-};
-
-// 跳转到关于我们页面
-const goToAboutUs = () => {
-  router.push('/aboutus');
 };
 
 // 退出登录
