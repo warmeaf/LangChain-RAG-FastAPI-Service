@@ -5,7 +5,7 @@
     <div class="sessions-content">
       <div class="sessions-header">
         <div class="header-title">
-          <van-icon name="chat-o" size="24" color="#1989fa" />
+          <van-icon name="chat-o" size="24" color="var(--van-primary-color)" />
           <h2>历史会话</h2>
         </div>
         <van-button type="primary" @click="createNewSession">
@@ -14,7 +14,7 @@
       </div>
       
       <div v-if="sessionStore.isLoading" class="loading">
-        <van-loading type="spinner" color="#1989fa" />
+        <van-loading type="spinner" color="var(--van-primary-color)" />
         <p>加载中...</p>
       </div>
       
@@ -235,7 +235,6 @@ const confirmNewSession = async () => {
 .sessions-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   padding-bottom: var(--van-tabbar-height);
   box-sizing: border-box;
   background-color: var(--van-background);
@@ -273,7 +272,6 @@ const confirmNewSession = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
 }
 
 .loading p {
@@ -286,8 +284,7 @@ const confirmNewSession = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn var(--van-duration-base) ease-out;
 }
 
 .empty-icon {
@@ -332,7 +329,7 @@ const confirmNewSession = async () => {
 
 .new-session-dialog {
   background-color: var(--van-background-2);
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--van-padding-md) var(--van-padding-md) 0 0;
   padding: var(--van-padding-lg);
 }
 

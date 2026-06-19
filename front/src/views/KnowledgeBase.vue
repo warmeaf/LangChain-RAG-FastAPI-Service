@@ -35,7 +35,7 @@
             @click="removeFile(index)"
           >
             <template #right-icon>
-              <van-icon name="delete" color="#f44" />
+              <van-icon name="delete" color="var(--van-danger-color)" />
             </template>
           </van-cell>
         </van-cell-group>
@@ -63,7 +63,7 @@
           <p class="progress-message">{{ progress.message }}</p>
         </div>
         <div v-if="uploadComplete" class="upload-result">
-          <van-icon name="success" size="32" color="#07c160" />
+          <van-icon name="success" size="32" color="var(--van-success-color)" />
           <p>{{ $t('knowledgebase.uploadComplete') }}</p>
           <p>{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }} {{ $t('knowledgebase.failed') }}</p>
         </div>
@@ -105,7 +105,7 @@
             <template #right-icon>
               <van-icon 
                 name="delete" 
-                color="#ee0a24" 
+                color="var(--van-danger-color)" 
                 size="18" 
                 class="delete-icon"
                 @click.stop="handleDeleteDocument(doc)"
@@ -697,7 +697,6 @@ onMounted(() => {
 
 <style scoped>
 .knowledgebase-container {
-  min-height: 100vh;
   background-color: var(--van-background);
   color: var(--van-text-color);
   padding-bottom: var(--van-padding-lg);
@@ -709,7 +708,6 @@ onMounted(() => {
 
 .upload-area {
   border: calc(var(--van-border-width) * 2) dashed var(--van-border-color);
-  border-radius: 12px;
   padding: var(--van-padding-lg);
   text-align: center;
   cursor: pointer;
@@ -720,7 +718,7 @@ onMounted(() => {
 
 .upload-area:active {
   border-color: var(--van-primary-color);
-  background: rgba(212, 145, 74, 0.04);
+  background: var(--van-active-color);
 }
 
 .upload-icon {
@@ -801,7 +799,6 @@ onMounted(() => {
   background: var(--van-background-2);
   padding: var(--van-padding-sm);
   border-radius: var(--van-radius-lg);
-  box-shadow: 0 var(--van-border-width) calc(var(--van-border-width) * 2) rgba(0, 0, 0, 0.08);
 }
 
 .progress-header {
@@ -855,7 +852,7 @@ onMounted(() => {
 .detail-content {
   padding: var(--van-padding-md);
   overflow-y: auto;
-  height: calc(100% - 60px);
+  height: calc(100% - var(--van-nav-bar-height));
 }
 
 .detail-meta {
@@ -895,8 +892,8 @@ onMounted(() => {
 
 .chunk-item {
   display: flex;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
+  margin-bottom: var(--van-padding-sm);
+  padding-bottom: var(--van-padding-sm);
   border-bottom: var(--van-border-width) dashed var(--van-border-color);
 }
 
@@ -905,8 +902,6 @@ onMounted(() => {
 }
 
 .chunk-index {
-  min-width: 26px;
-  height: 26px;
   background-color: var(--van-primary-color);
   color: var(--van-white);
   border-radius: 50%;
@@ -954,9 +949,7 @@ onMounted(() => {
 .detail-image-item {
   width: 100%;
   margin-bottom: var(--van-padding-sm);
-  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 var(--van-border-width) calc(var(--van-border-width) * 3) rgba(0, 0, 0, 0.08);
 }
 
 .chunk-images {
@@ -966,7 +959,6 @@ onMounted(() => {
 .chunk-image-item {
   width: 100%;
   margin-bottom: var(--van-padding-xs);
-  border-radius: 6px;
   overflow: hidden;
 }
 

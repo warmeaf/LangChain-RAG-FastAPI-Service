@@ -3,6 +3,7 @@
     <van-nav-bar 
       title="AI问答" 
       fixed
+      placeholder
     >
       <template #left>
         <span class="nav-sessions-btn" @click="showDrawer = true">
@@ -50,7 +51,7 @@
               </div>
               <div v-show="!message.thinkingCollapsed" class="thinking-body">
                 <div v-for="(step, sIndex) in message.thinking" :key="sIndex" class="thinking-step">
-                  <van-tag :color="getStageColor(step.stage)" size="medium" text-color="#fff">
+                  <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
                     {{ getStageLabel(step.stage) }}
                   </van-tag>
                   <span class="thinking-step-content">{{ step.content }}</span>
@@ -538,9 +539,7 @@ const loadSessionHistory = async (session) => {
 .ai-chat-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  padding-top: 46px;
-  padding-bottom: 50px;
+  padding-bottom: var(--van-tabbar-height);
   box-sizing: border-box;
   background-color: var(--van-background);
 }
@@ -552,7 +551,7 @@ const loadSessionHistory = async (session) => {
   cursor: pointer;
   color: var(--van-text-color);
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity var(--van-duration-fast);
 }
 .nav-sessions-btn:active { opacity: 1; }
 
@@ -566,21 +565,19 @@ const loadSessionHistory = async (session) => {
 /* ==================== 欢迎卡片 ==================== */
 .welcome-card {
   text-align: center;
-  padding: var(--van-padding-lg) var(--van-padding-lg) var(--van-padding-lg);
-  animation: fadeIn 0.5s ease-out;
+  padding: var(--van-padding-lg);
+  animation: fadeIn var(--van-duration-base) ease-out;
 }
 
 .welcome-icon {
   color: var(--van-primary-color);
-  margin-bottom: 12px;
+  margin-bottom: var(--van-padding-sm);
   opacity: 0.8;
 }
 
 .welcome-title {
-  
-  font-size: 20px;
   color: var(--van-text-color);
-  margin: 0 0 8px;
+  margin: 0 0 var(--van-padding-xs);
   font-weight: var(--van-font-bold);
 }
 
@@ -595,8 +592,7 @@ const loadSessionHistory = async (session) => {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  max-width: 320px;
+  gap: calc(var(--van-padding-xs) + var(--van-border-width) * 2);
   margin: 0 auto;
 }
 
@@ -606,14 +602,12 @@ const loadSessionHistory = async (session) => {
   font-size: var(--van-font-size-md);
   color: var(--van-text-color-2);
   background: var(--van-background-2);
-  padding: var(--van-padding-sm) 18px;
-  border-radius: 24px;
+  padding: var(--van-padding-sm) var(--van-padding-md);
+  border-radius: var(--van-radius-max);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--van-border-color);
-  transition: all 0.15s ease;
+  border: var(--van-border-width) solid var(--van-border-color);
+  transition: all var(--van-duration-fast) ease;
   line-height: 1.4;
-  
 }
 
 .quick-question:active {
@@ -627,13 +621,13 @@ const loadSessionHistory = async (session) => {
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: var(--van-padding-md) 12px;
+  padding: var(--van-padding-md) var(--van-padding-sm);
 }
 
 .message {
-  margin-bottom: 14px;
+  margin-bottom: calc(var(--van-padding-sm) + var(--van-border-width) * 2);
   max-width: 80%;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn var(--van-duration-base) ease-out;
 }
 
 .user-message {
@@ -645,42 +639,36 @@ const loadSessionHistory = async (session) => {
 }
 
 .message-content {
-  padding: var(--van-padding-sm) 14px;
-  border-radius: 12px;
+  padding: var(--van-padding-sm) calc(var(--van-padding-sm) + var(--van-border-width) * 2);
   word-break: break-word;
   line-height: 1.6;
 }
 
-/* 用户气泡 — 暖灰底 + 深棕文字 + 原角 */
 .user-message .message-content {
-  background-color: #EDE4D8;
+  background-color: var(--van-active-color);
   color: var(--van-text-color);
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  border-bottom-right-radius: var(--van-radius-md);
 }
 
-/* AI 气泡 — 卡片底 + 暖棕文字 + 微阴影 */
 .ai-message .message-content {
   background-color: var(--van-background-2);
   color: var(--van-text-color);
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-bottom-left-radius: var(--van-radius-md);
 }
 
 /* ==================== 输入区域 ==================== */
 .input-container {
   display: flex;
-  padding: var(--van-padding-xs) 12px;
-  border-top: 1px solid var(--van-border-color);
+  padding: var(--van-padding-xs) var(--van-padding-sm);
+  border-top: var(--van-border-width) solid var(--van-border-color);
   background-color: var(--van-background-2);
   align-items: flex-end;
 }
 
 .chat-input {
   flex: 1;
-  margin-right: 10px;
+  margin-right: calc(var(--van-padding-xs) + var(--van-border-width) * 2);
   --van-field-background: var(--van-background);
-  --van-field-border-radius: 10px;
 }
 
 .send-button {
@@ -689,17 +677,17 @@ const loadSessionHistory = async (session) => {
 
 /* ==================== Markdown 排版 ==================== */
 :deep(p) {
-  margin: 6px 0;
+  margin: calc(var(--van-padding-base) + var(--van-border-width) * 2) 0;
   line-height: 1.7;
 }
 
 :deep(ul), :deep(ol) {
-  padding-left: 20px;
-  margin: 6px 0;
+  padding-left: calc(var(--van-padding-md) + var(--van-padding-base));
+  margin: calc(var(--van-padding-base) + var(--van-border-width) * 2) 0;
 }
 
 :deep(li) {
-  margin: 3px 0;
+  margin: calc(var(--van-border-width) * 3) 0;
   line-height: 1.6;
 }
 
@@ -713,7 +701,7 @@ const loadSessionHistory = async (session) => {
 }
 
 :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
-  margin: 10px 0 6px;
+  margin: calc(var(--van-padding-xs) + var(--van-border-width) * 2) 0 calc(var(--van-padding-base) + var(--van-border-width) * 2);
   font-weight: var(--van-font-bold);
   color: var(--van-text-color);
 }
@@ -723,25 +711,25 @@ const loadSessionHistory = async (session) => {
 :deep(h3) { font-size: 1.1em; }
 
 :deep(blockquote) {
-  border-left: 3px solid var(--van-primary-color);
+  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
   padding: var(--van-padding-xs) var(--van-padding-sm);
   margin: var(--van-padding-xs) 0;
   color: var(--van-text-color-2);
   background-color: var(--van-background);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 calc(var(--van-padding-base) + var(--van-border-width) * 2) calc(var(--van-padding-base) + var(--van-border-width) * 2) 0;
   font-size: 0.95em;
 }
 
 :deep(hr) {
   border: 0;
-  border-top: 1px solid var(--van-border-color);
-  margin: 14px 0;
+  border-top: var(--van-border-width) solid var(--van-border-color);
+  margin: calc(var(--van-padding-sm) + var(--van-border-width) * 2) 0;
 }
 
 :deep(img) {
   max-width: 100%;
-  border-radius: 6px;
-  margin: 6px 0;
+  border-radius: calc(var(--van-padding-base) + var(--van-border-width) * 2);
+  margin: calc(var(--van-padding-base) + var(--van-border-width) * 2) 0;
 }
 
 :deep(table) {
@@ -752,7 +740,7 @@ const loadSessionHistory = async (session) => {
 }
 
 :deep(th), :deep(td) {
-  border: 1px solid var(--van-border-color);
+  border: var(--van-border-width) solid var(--van-border-color);
   padding: var(--van-padding-xs) var(--van-padding-sm);
   text-align: left;
 }
@@ -762,14 +750,13 @@ const loadSessionHistory = async (session) => {
   font-weight: var(--van-font-bold);
 }
 
-/* 代码块 — 暖调浅底 */
 :deep(pre) {
   background-color: var(--van-background);
   padding: var(--van-padding-md);
-  border-radius: 8px;
+  border-radius: var(--van-radius-lg);
   overflow-x: auto;
-  margin: 10px 0;
-  border: 1px solid var(--van-border-color);
+  margin: calc(var(--van-padding-xs) + var(--van-border-width) * 2) 0;
+  border: var(--van-border-width) solid var(--van-border-color);
   font-size: 0.9em;
   line-height: 1.5;
 }
@@ -787,7 +774,7 @@ const loadSessionHistory = async (session) => {
   font-family: 'Consolas', 'Monaco', 'Courier New', 'Source Code Pro', monospace;
   background-color: var(--van-background);
   padding: var(--van-padding-base) var(--van-padding-xs);
-  border-radius: 4px;
+  border-radius: var(--van-radius-md);
   font-size: 0.9em;
   color: var(--van-text-color-2);
 }
@@ -800,20 +787,20 @@ const loadSessionHistory = async (session) => {
 }
 
 .typing-indicator span {
-  height: 7px;
-  width: 7px;
+  height: calc(var(--van-padding-base) + var(--van-border-width) * 3);
+  width: calc(var(--van-padding-base) + var(--van-border-width) * 3);
   background-color: var(--van-text-color-3);
   border-radius: 50%;
   display: inline-block;
   animation: bounce 1.4s infinite ease-in-out;
 }
 
-.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+.typing-indicator span:nth-child(2) { animation-delay: var(--van-duration-fast); }
+.typing-indicator span:nth-child(3) { animation-delay: var(--van-duration-base); }
 
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); }
-  30%           { transform: translateY(-6px); }
+  30%           { transform: translateY(calc((var(--van-padding-base) + var(--van-border-width) * 2) * -1)); }
 }
 
 @keyframes fadeIn {
@@ -823,11 +810,11 @@ const loadSessionHistory = async (session) => {
 
 /* ==================== 思考过程 ==================== */
 .thinking-section {
-  margin-bottom: 8px;
-  border-left: 3px solid rgba(212, 145, 74, 0.25);
+  margin-bottom: var(--van-padding-xs);
+  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
   background-color: var(--van-background);
-  border-radius: 6px;
-  padding: var(--van-padding-xs) 10px;
+  border-radius: calc(var(--van-padding-base) + var(--van-border-width) * 2);
+  padding: var(--van-padding-xs) calc(var(--van-padding-xs) + var(--van-border-width) * 2);
   font-size: var(--van-font-size-sm);
 }
 
@@ -837,7 +824,7 @@ const loadSessionHistory = async (session) => {
   align-items: center;
   cursor: pointer;
   user-select: none;
-  padding: 2px 0;
+  padding: calc(var(--van-border-width) * 2) 0;
 }
 
 .thinking-label {
@@ -852,12 +839,12 @@ const loadSessionHistory = async (session) => {
 }
 
 .thinking-body {
-  margin-top: 6px;
+  margin-top: calc(var(--van-padding-base) + var(--van-border-width) * 2);
 }
 
 .thinking-step {
   padding: var(--van-padding-base) 0;
-  border-bottom: 1px solid var(--van-border-color);
+  border-bottom: var(--van-border-width) solid var(--van-border-color);
   line-height: 1.4;
 }
 
@@ -873,9 +860,9 @@ const loadSessionHistory = async (session) => {
 
 .thinking-details {
   margin-top: var(--van-padding-base);
-  padding: var(--van-padding-xs) var(--van-padding-xs);
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
+  padding: var(--van-padding-xs);
+  background-color: var(--van-background-2);
+  border-radius: var(--van-radius-md);
   font-size: var(--van-font-size-sm);
   color: var(--van-text-color-3);
 }
@@ -906,7 +893,7 @@ const loadSessionHistory = async (session) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 0;
+  padding: calc(var(--van-border-width) * 2) 0;
   line-height: 1.5;
 }
 
@@ -922,21 +909,21 @@ const loadSessionHistory = async (session) => {
 .thinking-doc-score {
   color: var(--van-text-color-2);
   font-size: var(--van-font-size-sm);
-  margin-left: 8px;
+  margin-left: var(--van-padding-xs);
   white-space: nowrap;
 }
 
 .thinking-doc-more {
   color: var(--van-text-color-3);
   font-size: var(--van-font-size-sm);
-  margin-top: 2px;
+  margin-top: calc(var(--van-border-width) * 2);
 }
 
 .thinking-score-item {
   display: flex;
-  gap: 6px;
+  gap: calc(var(--van-padding-base) + var(--van-border-width) * 2);
   align-items: center;
-  padding: 2px 0;
+  padding: calc(var(--van-border-width) * 2) 0;
   line-height: 1.5;
   font-size: var(--van-font-size-sm);
   color: var(--van-text-color-3);

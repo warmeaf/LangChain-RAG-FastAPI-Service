@@ -228,7 +228,6 @@ const goToLogin = () => {
 
 <style scoped>
 .register-page {
-  min-height: 100vh;
   background-color: var(--van-background);
 }
 
@@ -242,8 +241,6 @@ const goToLogin = () => {
 }
 
 .logo-mark {
-  width: 72px;
-  height: 72px;
   border-radius: 50%;
   background: var(--van-background);
   display: flex;
@@ -251,11 +248,9 @@ const goToLogin = () => {
   justify-content: center;
   margin: 0 auto var(--van-padding-md);
   color: var(--van-primary-color);
-  box-shadow: 0 calc(var(--van-border-width) * 2) var(--van-padding-xs) rgba(0, 0, 0, 0.08);
 }
 
 .register-logo h2 {
-  font-size: 22px;
   color: var(--van-text-color);
   font-weight: var(--van-font-bold);
 }

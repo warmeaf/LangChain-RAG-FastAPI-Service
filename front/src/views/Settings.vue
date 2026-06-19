@@ -126,7 +126,6 @@ const changeLanguage = () => {
 
 <style scoped>
 .settings-container {
-  min-height: 100vh;
   background-color: var(--van-background);
   color: var(--van-text-color);
   padding-bottom: var(--van-padding-lg);
@@ -155,13 +154,11 @@ const changeLanguage = () => {
 
 .theme-item {
   width: 40%;
-  max-width: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
   padding: var(--van-padding-sm) var(--van-padding-xs);
-  border-radius: 10px;
   transition: background var(--van-duration-fast);
 }
 
@@ -175,8 +172,6 @@ const changeLanguage = () => {
 }
 
 .theme-preview {
-  width: 72px;
-  height: 48px;
   border-radius: var(--van-radius-lg);
   margin-bottom: var(--van-padding-xs);
   padding: var(--van-padding-xs);
@@ -184,7 +179,6 @@ const changeLanguage = () => {
   flex-direction: column;
   gap: var(--van-padding-base);
   overflow: hidden;
-  box-shadow: 0 calc(var(--van-border-width)) calc(var(--van-border-width) * 3) rgba(0, 0, 0, 0.1);
 }
 
 .theme-preview-light { background: var(--van-background); }
@@ -192,14 +186,12 @@ const changeLanguage = () => {
 
 .theme-preview-bar {
   width: 100%;
-  height: 6px;
   border-radius: var(--van-radius-sm);
   background: var(--van-primary-color);
 }
 
 .theme-preview-card {
   width: 70%;
-  height: 10px;
   border-radius: var(--van-radius-sm);
   background: var(--van-text-color-3);
 }

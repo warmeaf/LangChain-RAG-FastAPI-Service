@@ -511,7 +511,6 @@ const showAvatarDialog = () => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
   background-color: var(--van-background);
 }
 
@@ -526,15 +525,12 @@ const showAvatarDialog = () => {
 }
 
 .profile-avatar-letter {
-  width: 60px;
-  height: 60px;
   border-radius: 50%;
   background: var(--van-background);
   color: var(--van-primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
   font-weight: var(--van-font-bold);
   border: calc(var(--van-border-width) * 2) solid var(--van-border-color);
 }

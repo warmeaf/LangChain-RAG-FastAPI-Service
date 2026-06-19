@@ -29,7 +29,6 @@ onMounted(async () => {
 
 <style scoped>
 .analytics-container {
-  max-width: 900px;
   margin: 0 auto;
   padding: var(--van-padding-lg);
 }
@@ -53,8 +52,7 @@ onMounted(async () => {
   text-align: center;
   padding: var(--van-padding-sm);
   background: var(--van-background);
-  border-radius: 6px;
 }
 .stat-label { font-size: var(--van-font-size-md); color: var(--van-text-color-3); display: block; }
-.stat-value { font-size: 24px; font-weight: var(--van-font-bold); color: var(--van-primary-color); margin-top: var(--van-padding-base); }
+.stat-value { font-weight: var(--van-font-bold); color: var(--van-primary-color); margin-top: var(--van-padding-base); }
 </style>

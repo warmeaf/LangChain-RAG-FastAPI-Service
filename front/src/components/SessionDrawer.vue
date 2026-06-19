@@ -130,7 +130,6 @@ const createNewSession = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 200px;
   color: var(--van-text-color-2);
 }
 .active {
