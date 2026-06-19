@@ -5,6 +5,7 @@ from langsmith import traceable
 
 from app.rag.vector_store import VectorStoreService
 from app.rag.reorder_service import reorder_service
+from app.utils.config import chroma_config
 from app.utils.factory import chat_model
 from app.utils.prompt_loader import load_prompt
 from app.core.logger_handler import logger
@@ -221,7 +222,7 @@ class RagService:
             try:
                 # 对每个文档单独总结（使用线程池并发处理）
                 individual_summaries = []
-                max_documents = 3  # 使用前3个最相关的文档
+                max_documents = chroma_config.get('max_documents', 3)  # 可配置的总结文档数
                 
                 if self.thinking_callback:
                     await self.thinking_callback({
