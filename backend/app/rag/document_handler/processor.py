@@ -120,7 +120,7 @@ class DocumentProcessor:
         else:
             allowed_file_path: tuple[str] = await listdir_allowed_type(
                 chroma_config['data_path'],
-                tuple(chroma_config['allow_knowledge_file_types'])
+                tuple(chroma_config['allow_file_types'])
             )
             file_paths = list(allowed_file_path)
 

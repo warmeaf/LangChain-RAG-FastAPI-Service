@@ -63,7 +63,7 @@ class RRFRetriever(BaseRetriever):
                     doc_scores[doc_id] = (doc, rrf_score)
 
         sorted_docs = sorted(doc_scores.values(), key=lambda x: x[1], reverse=True)
-        top_k = chroma_config.get('k', 5)
+        top_k = chroma_config.get('retrieval', {}).get('coarse_k', 100)
         return [doc for doc, _ in sorted_docs[:top_k]]
 
 
@@ -133,12 +133,12 @@ class HybridRetriever:
             return None
         docs = await self._get_all_documents_for_user(user_id)
         if docs:
-            return BM25Retriever(documents=docs, k=chroma_config.get('k', 5))
+            return BM25Retriever(documents=docs, k=chroma_config.get('retrieval', {}).get('coarse_k', 100))
         return None
 
     async def _create_vector_retriever(self, user_id: str) -> BaseRetriever:
         """创建向量检索器"""
-        k = chroma_config.get('k', 5)
+        k = chroma_config.get('retrieval', {}).get('coarse_k', 100)
         return ChromadbVectorRetriever(
             self._vss.collection, self._vss._embedding_fn, user_id, k
         )
@@ -152,7 +152,7 @@ class HybridRetriever:
         user_docs = await self._get_all_documents_for_user(user_id)
 
         if user_docs and len(user_docs) > 0:
-            bm25_retriever = BM25Retriever(user_docs, k=chroma_config.get('k', 5))
+            bm25_retriever = BM25Retriever(user_docs, k=chroma_config.get('retrieval', {}).get('coarse_k', 100))
             return RRFRetriever(retrievers=[vector_retriever, bm25_retriever])
         else:
             return vector_retriever

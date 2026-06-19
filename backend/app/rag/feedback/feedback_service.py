@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy import select, func
-from app.db.db_config import get_session
+from app.db.db_config import AsyncSessionLocal
 from app.models.feedback import UserFeedback, DocWeight
 from app.core.logger_handler import logger
 
@@ -19,7 +19,7 @@ class FeedbackService:
         clicked_doc_md5: Optional[str] = None,
         doc_filename: Optional[str] = None,
     ):
-        async with get_session() as session:
+        async with AsyncSessionLocal() as session:
             fb = UserFeedback(
                 user_id=user_id,
                 session_id=session_id,
@@ -64,7 +64,7 @@ class FeedbackService:
             dw.weight = max(0.1, dw.weight - 0.05)
 
     async def get_stats(self, user_id: str):
-        async with get_session() as session:
+        async with AsyncSessionLocal() as session:
             total = await session.scalar(
                 select(func.count()).select_from(UserFeedback).where(
                     UserFeedback.user_id == user_id
