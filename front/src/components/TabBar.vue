@@ -1,22 +1,13 @@
 <template>
   <van-tabbar v-model="active" route>
-    <van-tabbar-item to="/aichat">
+    <van-tabbar-item to="/aichat" name="aichat" icon="chat-o">
       <span>{{ $t('nav.aiChat') }}</span>
-      <template #icon>
-        <van-icon name="chat-o" size="22" />
-      </template>
     </van-tabbar-item>
-    <van-tabbar-item to="/knowledgebase">
+    <van-tabbar-item to="/knowledgebase" name="knowledgebase" icon="records-o">
       <span>{{ $t('nav.knowledge') }}</span>
-      <template #icon>
-        <van-icon name="records-o" size="22" />
-      </template>
     </van-tabbar-item>
-    <van-tabbar-item to="/my">
+    <van-tabbar-item to="/my" name="my" icon="user-o">
       <span>{{ $t('nav.my') }}</span>
-      <template #icon>
-        <van-icon name="user-o" size="22" />
-      </template>
     </van-tabbar-item>
   </van-tabbar>
 </template>
