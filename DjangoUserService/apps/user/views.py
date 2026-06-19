@@ -64,6 +64,7 @@ class LoginView(APIView):
             if hasattr(user, 'save') and callable(user.save):
                 user.last_login = datetime.now()  # 更新用户最后登录时间
                 user.save()  # 保存用户对象
+                clear_user_cache(user.uuid)  # 清除缓存，确保前端立即看到最新的 last_login
             # 生成JWT token - 正确处理返回的元组
             token, expire_time = jwttoken.generate_token(user)
             return Response({"message": f"{user.username} 登录成功", "user": UserSerializer(user).data, "token": token}, status=status.HTTP_200_OK)
