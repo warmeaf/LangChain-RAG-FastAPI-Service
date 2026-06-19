@@ -365,27 +365,15 @@ def create_chat_model(
     )
 
 
-def create_embedding_model(embed_type: Optional[str] = None) -> Embeddings:
-    """创建 Embedding 模型实例"""
-    embed_type = (embed_type or os.getenv("EMBED_MODEL_TYPE", "OLLAMA")).upper()
+def create_embedding_model() -> Embeddings:
+    """创建 BGE Embedding 模型 (bge-large-zh, 1024维)"""
+    from sentence_transformers import SentenceTransformer
 
-    if embed_type == "OLLAMA":
-        model_name = os.getenv("TEXT_EMBEDDING_MODEL_NAME", "qwen3-embedding:0.6b")
-        base_url = (os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") + "/v1")
-        logger.info(f"📦 EmbedModel 使用Ollama嵌入模型: {model_name}, 地址: {base_url}")
-        return OpenAICompatibleEmbeddings(
-            model_name=model_name,
-            base_url=base_url,
-        )
+    model_name = os.getenv("EMBED_MODEL_NAME", "BAAI/bge-large-zh")
+    logger.info(f"📦 EmbedModel 加载 BGE 模型: {model_name}")
 
-    elif embed_type == "ALIYUN":
-        model_name = os.getenv("ALIYUN_EMBED_MODEL_NAME", "qwen3-embedding")
-        api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
-        logger.info(f"📦 EmbedModel 使用阿里云嵌入模型: {model_name}")
-        return DashScopeEmbeddingsWrapper(model_name=model_name, api_key=api_key)
-
-    else:
-        raise ValueError(f"不支持的 EMBED_MODEL_TYPE: {embed_type}，可选值: OLLAMA, ALIYUN")
+    model = SentenceTransformer(model_name)
+    return model
 
 
 def create_vision_model() -> Optional[ChatModel]:
