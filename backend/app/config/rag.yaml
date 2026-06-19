@@ -1,6 +1,44 @@
-# 注意：此文件已不再使用，模型配置已迁移到 .env 文件
-# 请在 .env 文件中配置以下变量：
-# - CHAT_MODEL_NAME: 阿里云聊天模型名称
-# - OLLAMA_CHAT_MODEL_NAME: Ollama聊天模型名称  
-# - TEXT_EMBEDDING_MODEL_NAME: 嵌入模型名称
-# - RERANKER_MODEL_NAME: 重排序模型名称
+# RAG 企业级配置 (替代 chroma.yaml)
+
+retrieval:
+  coarse_k: 100          # 粗排召回数
+  max_documents: 5       # 最终总结文档数
+
+reranker:
+  model: "BAAI/bge-reranker-large"
+  max_length: 512
+
+ranking:
+  w_relevance: 0.5
+  w_time: 0.3
+  w_weight: 0.2
+  time_decay_lambda: 1.0
+
+query_processing:
+  max_length: 400
+  max_sub_queries: 5
+  max_expansions: 3
+
+chunking:
+  default:
+    chunk_size: 400
+    chunk_overlap: 40
+  separators: ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
+
+milvus:
+  host: "localhost"
+  port: 19530
+  collection_name: "rag_collection"
+  index_type: "IVF_FLAT"
+  metric_type: "COSINE"
+  nlist: 128
+
+allow_file_types: ["txt", "pdf", "md", "pptx", "docx", "xlsx", "xls", "py", "js", "ts", "java", "go"]
+
+ocr:
+  enabled: true
+  language: "ch"
+
+# 保留 ChromaDB 时代的配置供过渡使用
+md5_hex_store: data/md5_hex_store/md5_hex_store.txt
+data_path: data
