@@ -102,7 +102,6 @@ const showThemePopup = ref(false);
 // 切换主题
 const changeTheme = (themeId) => {
   themeStore.setTheme(themeId);
-  showToast(t('settings.themeChanged'));
   showThemePopup.value = false;
 };
 
