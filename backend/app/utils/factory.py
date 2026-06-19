@@ -75,6 +75,11 @@ class ChatModel(BaseChatModel):
         logger.info(f"🤖 ChatModel 初始化: type={llm_type}, model={self._model_name}, base_url={BASE_URL_MAP[llm_type]}")
 
     @property
+    def model_name(self) -> str:
+        """公开的模型名称属性（兼容 vision_service.py 等外部使用者）"""
+        return self._model_name
+
+    @property
     def _llm_type(self) -> str:
         return "openai-compatible-chat"
 
@@ -201,7 +206,7 @@ class ChatModel(BaseChatModel):
 
         ai_message = AIMessage(
             content=choice.message.content or "",
-            tool_calls=tool_calls if tool_calls else [],
+            tool_calls=tool_calls if tool_calls else None,
         )
         return ChatResult(generations=[ChatGeneration(message=ai_message)])
 
@@ -248,7 +253,7 @@ class ChatModel(BaseChatModel):
                     tool_call_chunks.append(tc_dict)
             yield AIMessageChunk(
                 content=content,
-                tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
+                tool_call_chunks=tool_call_chunks if tool_call_chunks else None,
             )
 
 
