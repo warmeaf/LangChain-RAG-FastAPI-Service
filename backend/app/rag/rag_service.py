@@ -145,32 +145,17 @@ class RagService:
             return query
 
     async def _batch_summarize(self, query: str, documents: list) -> str:
-        """分批总结"""
+        """直接汇总所有文档原文（不做逐篇总结，保留完整上下文）"""
         if not documents:
             return "抱歉，我没有找到相关的信息。"
 
         max_docs = rag_config["retrieval"]["max_documents"]
         docs = documents[:max_docs]
 
-        async def summarize_one(i, doc):
-            context = f"【参考资料{i}】：{doc.page_content}\n"
-            try:
-                return await asyncio.wait_for(
-                    self.chain.ainvoke({"input": query, "context": context}),
-                    timeout=30.0,
-                )
-            except asyncio.TimeoutError:
-                return "(总结超时)"
-
-        tasks = [summarize_one(i + 1, doc) for i, doc in enumerate(docs)]
-        summaries = await asyncio.gather(*tasks)
-
-        if len(summaries) == 1:
-            return summaries[0]
-
-        combined = "以下是多个文档的摘要：\n\n"
-        for i, s in enumerate(summaries, 1):
-            combined += f"【文档{i}摘要】：{s}\n\n"
+        # 直接拼接所有文档原文作为上下文
+        combined = ""
+        for i, doc in enumerate(docs, 1):
+            combined += f"【参考资料{i}】\n{doc.page_content}\n\n"
 
         try:
             final = await asyncio.wait_for(
@@ -179,7 +164,7 @@ class RagService:
             )
             return final
         except asyncio.TimeoutError:
-            return summaries[0] if summaries else "生成摘要超时"
+            return "生成摘要超时，请稍后重试。"
 
     @traceable
     async def rag_summary(self, query: str) -> str:
