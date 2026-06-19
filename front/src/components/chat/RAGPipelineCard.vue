@@ -1,10 +1,10 @@
 <template>
-  <div v-if="stages.length > 0" class="pipeline-card">
-    <div class="pipeline-title">🔍 RAG 检索过程</div>
+  <div v-if="stages.length > 0">
+    <div>🔍 RAG 检索过程</div>
     <van-collapse>
       <van-collapse-item v-for="stage in stages" :key="stage.stage" :title="stage.title">
         <p>{{ stage.content }}</p>
-        <div v-if="stage.details?.documents" class="doc-tags">
+        <div v-if="stage.details?.documents">
           <van-tag v-for="d in stage.details.documents" :key="d.index" size="medium">
             #{{ d.index }} {{ d.preview?.slice(0, 60) }}
           </van-tag>

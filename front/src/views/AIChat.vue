@@ -1,12 +1,12 @@
 <template>
-  <div class="ai-chat-container">
+  <div>
     <van-nav-bar 
       title="AI问答" 
       fixed
       placeholder
     >
       <template #left>
-        <span class="nav-sessions-btn" @click="showDrawer = true">
+        <span @click="showDrawer = true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"/>
             <line x1="3" y1="12" x2="21" y2="12"/>
@@ -16,20 +16,20 @@
       </template>
     </van-nav-bar>
     
-    <div class="chat-content">
-      <div class="messages-container" ref="messagesContainer">
+    <div>
+      <div ref="messagesContainer">
         <!-- 欢迎状态（仅首次进入时显示） -->
-        <div v-if="showWelcome" class="welcome-card">
-          <div class="welcome-icon">
+        <div v-if="showWelcome">
+          <div>
             <van-icon name="service-o" size="36" />
           </div>
-          <h3 class="welcome-title">RAG 智能问答</h3>
-          <p class="welcome-desc">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
-          <div class="welcome-questions">
+          <h3>RAG 智能问答</h3>
+          <p>基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
+          <div>
             <button
               v-for="(q, i) in quickQuestions"
               :key="i"
-              class="quick-question"
+             
               @click="sendQuickQuestion(q)"
             >
               {{ q }}
@@ -40,45 +40,45 @@
           v-for="(message, index) in messages" 
           v-show="!showWelcome || message.role === 'user' || index > 0"
           :key="index"
-          :class="['message', message.role === 'user' ? 'user-message' : 'ai-message']"
+         
         >
-          <div class="message-content">
+          <div>
             <!-- 思考过程区域 -->
-            <div v-if="message.thinking && message.thinking.length > 0" class="thinking-section">
-              <div class="thinking-header" @click="toggleThinking(message)">
-                <span class="thinking-label">💬 思考过程</span>
-                <span class="thinking-toggle">{{ message.thinkingCollapsed ? '展开' : '收起' }}</span>
+            <div v-if="message.thinking && message.thinking.length > 0">
+              <div @click="toggleThinking(message)">
+                <span>💬 思考过程</span>
+                <span>{{ message.thinkingCollapsed ? '展开' : '收起' }}</span>
               </div>
-              <div v-show="!message.thinkingCollapsed" class="thinking-body">
-                <div v-for="(step, sIndex) in message.thinking" :key="sIndex" class="thinking-step">
+              <div v-show="!message.thinkingCollapsed">
+                <div v-for="(step, sIndex) in message.thinking" :key="sIndex">
                   <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
                     {{ getStageLabel(step.stage) }}
                   </van-tag>
-                  <span class="thinking-step-content">{{ step.content }}</span>
-                  <div v-if="step.details" class="thinking-details">
+                  <span>{{ step.content }}</span>
+                  <div v-if="step.details">
                     <template v-if="step.details.documents">
-                      <div v-for="(doc, dIndex) in step.details.documents.slice(0, 3)" :key="dIndex" class="thinking-doc-item">
-                        <span class="thinking-doc-source">{{ doc.source }}</span>
-                        <span class="thinking-doc-score" v-if="doc.score !== undefined && doc.score !== null">{{ (doc.score * 100).toFixed(0) }}%</span>
+                      <div v-for="(doc, dIndex) in step.details.documents.slice(0, 3)" :key="dIndex">
+                        <span>{{ doc.source }}</span>
+                        <span v-if="doc.score !== undefined && doc.score !== null">{{ (doc.score * 100).toFixed(0) }}%</span>
                       </div>
-                      <div v-if="step.details.documents.length > 3" class="thinking-doc-more">
+                      <div v-if="step.details.documents.length > 3">
                         ... 还有 {{ step.details.documents.length - 3 }} 个文档
                       </div>
                     </template>
                     <template v-else-if="step.details.scores">
-                      <div v-for="(sc, cIndex) in step.details.scores.slice(0, 3)" :key="cIndex" class="thinking-score-item">
+                      <div v-for="(sc, cIndex) in step.details.scores.slice(0, 3)" :key="cIndex">
                         <span>#{{ sc.rank || sc.index }}</span>
                         <span>{{ (sc.score * 100).toFixed(0) }}%</span>
-                        <span class="thinking-score-preview">{{ truncateText(sc.preview, 40) }}</span>
+                        <span>{{ truncateText(sc.preview, 40) }}</span>
                       </div>
                     </template>
                     <template v-else-if="step.details.hypothetical_doc_preview">
-                      <div class="thinking-detail-text">{{ truncateText(step.details.hypothetical_doc_preview, 80) }}</div>
+                      <div>{{ truncateText(step.details.hypothetical_doc_preview, 80) }}</div>
                     </template>
                     <template v-else>
-                      <div v-for="(val, key) in step.details" :key="key" class="thinking-detail-kv">
-                        <span class="thinking-detail-key">{{ key }}:</span>
-                        <span class="thinking-detail-val">{{ typeof val === 'object' ? JSON.stringify(val) : val }}</span>
+                      <div v-for="(val, key) in step.details" :key="key">
+                        <span>{{ key }}:</span>
+                        <span>{{ typeof val === 'object' ? JSON.stringify(val) : val }}</span>
                       </div>
                     </template>
                   </div>
@@ -88,7 +88,7 @@
             <!-- 回复正文 -->
             <div v-if="message.content" v-html="formatMessage(message.content)"></div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
-            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)" class="typing-indicator">
+            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)">
               <span></span>
               <span></span>
               <span></span>
@@ -97,19 +97,19 @@
         </div>
       </div>
       
-      <div class="input-container">
+      <div>
         <van-field
           v-model="userInput"
           rows="1"
           autosize
           type="textarea"
           placeholder="请输入问题..."
-          class="chat-input"
+         
           @keypress.enter.prevent="sendMessage"
         />
         <van-button 
           type="primary" 
-          class="send-button" 
+          
           :disabled="isLoading || !userInput.trim()" 
           @click="sendMessage"
         >

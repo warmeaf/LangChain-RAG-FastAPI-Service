@@ -1,15 +1,15 @@
 <template>
-  <div class="analytics-container">
-    <div class="analytics-card">
+  <div>
+    <div>
       <h3>反馈统计</h3>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-label">总反馈数</span>
-          <span class="stat-value">{{ stats.total_feedback }}</span>
+      <div>
+        <div>
+          <span>总反馈数</span>
+          <span>{{ stats.total_feedback }}</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">好评率</span>
-          <span class="stat-value">{{ (stats.like_rate * 100).toFixed(1) }}%</span>
+        <div>
+          <span>好评率</span>
+          <span>{{ (stats.like_rate * 100).toFixed(1) }}%</span>
         </div>
       </div>
     </div>

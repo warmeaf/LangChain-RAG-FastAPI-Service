@@ -5,17 +5,17 @@
     :style="{ width: '85%', height: '100%' }"
     @update:show="$emit('update:show', $event)"
   >
-    <div class="drawer-container">
-      <div class="drawer-header">
-        <div class="header-title">
+    <div>
+      <div>
+        <div>
           <van-icon name="chat-o" size="20" />
           <span>历史会话</span>
         </div>
         <van-button size="small" type="primary" @click="createNewSession">新会话</van-button>
       </div>
 
-      <div class="drawer-content">
-        <div v-if="sessionStore.isLoading" class="loading">
+      <div>
+        <div v-if="sessionStore.isLoading">
           <van-loading type="spinner" />
           <p>加载中...</p>
         </div>
@@ -29,7 +29,7 @@
             <van-cell
               :title="session.title || '新会话'"
               :label="formatSessionTime(session.created_at)"
-              :class="{ active: sessionStore.currentSession?.session_id === session.session_id }"
+             
               @click="selectSession(session)"
             />
             <template #right>

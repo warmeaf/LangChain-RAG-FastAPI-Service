@@ -1,15 +1,15 @@
 <template>
-  <div class="feedback-bar">
+  <div>
     <span
-      class="feedback-btn"
-      :class="{ active: value === 'like' }"
+     
+     
       @click="$emit('feedback', 'like')"
     >
       <van-icon name="good-job" />
     </span>
     <span
-      class="feedback-btn"
-      :class="{ active: value === 'dislike' }"
+     
+     
       @click="$emit('feedback', 'dislike')"
     >
       <van-icon name="good-job-o" />
