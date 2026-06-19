@@ -55,4 +55,6 @@ class QueryLog(Base):
     retrieved_docs = Column(JSON)
     clicked_doc_md5 = Column(String(64))
     session_id = Column(String(64))
+    query_embedding = Column(JSON)
+    feedback_applied = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=func.now())

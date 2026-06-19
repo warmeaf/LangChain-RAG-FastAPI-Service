@@ -121,7 +121,10 @@ class RagService:
                     "content": f"多因素排序完成: {len(final_docs)} 篇文档",
                 })
 
-            # ⑤ 分批总结
+            # ⑤ 异步写入 QueryLog（不阻塞主流程）
+            asyncio.create_task(self._log_query(query, final_docs))
+
+            # ⑥ 分批总结
             summary = await self._batch_summarize(query, final_docs)
 
             return {
@@ -165,6 +168,28 @@ class RagService:
             return final
         except asyncio.TimeoutError:
             return "生成摘要超时，请稍后重试。"
+
+    async def _log_query(self, query: str, docs: list):
+        """异步记录查询日志"""
+        try:
+            from app.models.feedback import QueryLog
+            from app.db.db_config import AsyncSessionLocal
+
+            retrieved_docs = [
+                {"md5": doc.metadata.get("md5", ""), "source": doc.metadata.get("source", "")}
+                for doc in docs if doc.metadata.get("md5")
+            ]
+
+            async with AsyncSessionLocal() as session:
+                ql = QueryLog(
+                    user_id=self.user_id,
+                    query=query,
+                    retrieved_docs=retrieved_docs,
+                )
+                session.add(ql)
+                await session.commit()
+        except Exception:
+            pass
 
     @traceable
     async def rag_summary(self, query: str) -> str:

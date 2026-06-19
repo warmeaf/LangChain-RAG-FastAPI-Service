@@ -54,14 +54,39 @@ class FeedbackService:
                 user_id=user_id,
                 doc_md5=doc_md5,
                 doc_filename=filename,
-                weight=1.0,
+                weight=0.5,
+                impression_count=0,
+                click_count=0,
+                quality_score=0.7,
             )
             session.add(dw)
 
+        # 更新曝光和点击计数
+        dw.impression_count = (dw.impression_count or 0) + 1
         if feedback_type == "like":
-            dw.weight = min(1.0, dw.weight + 0.05)
+            dw.click_count = (dw.click_count or 0) + 1
+
+        # 贝叶斯平滑 CTR: (clicks + prior_click) / (impressions + prior_impression)
+        prior_click = 1.0
+        prior_impression = 2.0
+        smoothed_ctr = (dw.click_count + prior_click) / (dw.impression_count + prior_impression)
+
+        # 反馈即时调整
+        if feedback_type == "like":
+            feedback_bonus = 0.05
         elif feedback_type in ("dislike", "skip"):
-            dw.weight = max(0.1, dw.weight - 0.05)
+            feedback_bonus = -0.05
+        else:
+            feedback_bonus = 0.0
+
+        # 新权重 = 贝叶斯CTR (0.6) + 历史权重 (0.2) + 即时反馈 (0.2)
+        dw.weight = round(
+            smoothed_ctr * 0.6 +
+            (dw.weight or 0.5) * 0.2 +
+            (0.5 + feedback_bonus) * 0.2,
+            3
+        )
+        dw.weight = max(0.1, min(1.0, dw.weight))
 
     async def get_stats(self, user_id: str):
         async with AsyncSessionLocal() as session:
