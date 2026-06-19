@@ -72,7 +72,7 @@ const props = defineProps({
   show: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:show']);
+const emit = defineEmits(['update:show', 'new-session']);
 
 const router = useRouter();
 const sessionStore = useSessionStore();
@@ -119,6 +119,7 @@ const deleteSession = async (sessionId) => {
 };
 
 const createNewSession = () => {
+  emit('new-session');
   emit('update:show', false);
   router.push('/aichat');
 };

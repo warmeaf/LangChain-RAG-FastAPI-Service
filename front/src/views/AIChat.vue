@@ -120,7 +120,7 @@
     </div>
     
     <tab-bar />
-    <SessionDrawer v-model:show="showDrawer" />
+    <SessionDrawer v-model:show="showDrawer" @new-session="resetToWelcome" />
   </div>
 </template>
 
@@ -456,7 +456,7 @@ watch(messages, () => {
 }, { deep: true });
 
 // 监听路由参数变化，重新加载会话历史
-watch(() => route.params.sessionId, async (newSessionId, oldSessionId) => {
+watch(() => route.params.sessionId, async (newSessionId) => {
   if (newSessionId) {
     try {
       const result = await sessionStore.getSession(newSessionId);
@@ -469,9 +469,6 @@ watch(() => route.params.sessionId, async (newSessionId, oldSessionId) => {
       console.error('加载会话历史失败:', error);
       showToast('加载会话历史失败');
     }
-  } else if (oldSessionId) {
-    // 从会话页面回到 /aichat（无 sessionId），重置为欢迎页
-    resetToWelcome();
   }
 }, { immediate: true });
 
