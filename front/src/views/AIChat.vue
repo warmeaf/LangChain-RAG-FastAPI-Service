@@ -2,10 +2,18 @@
   <div class="ai-chat-container">
     <van-nav-bar 
       title="AI问答" 
-      fixed 
-      right-text="会话" 
-      @click-right="goToSessions"
-    />
+      fixed
+    >
+      <template #left>
+        <span class="nav-sessions-btn" @click="showDrawer = true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </span>
+      </template>
+    </van-nav-bar>
     
     <div class="chat-content">
       <div class="messages-container" ref="messagesContainer">
@@ -112,6 +120,7 @@
     </div>
     
     <tab-bar />
+    <SessionDrawer v-model:show="showDrawer" />
   </div>
 </template>
 
@@ -119,6 +128,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import TabBar from '../components/TabBar.vue';
+import SessionDrawer from '../components/SessionDrawer.vue';
 import { showToast } from 'vant';
 import { marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
@@ -149,6 +159,7 @@ const isLoading = ref(false);
 const sessionId = ref('');
 const hasJumped = ref(false);
 const autoCollapseTimer = ref(null);
+const showDrawer = ref(false);
 
 const router = useRouter();
 const route = useRoute();
@@ -421,11 +432,6 @@ const fetchAIResponse = async (userMessage) => {
   }
 };
 
-// 跳转到会话管理页面
-const goToSessions = () => {
-  router.push('/sessions');
-};
-
 // 滚动到底部
 const scrollToBottom = () => {
   if (messagesContainer.value) {
@@ -531,6 +537,17 @@ const loadSessionHistory = async (session) => {
   box-sizing: border-box;
   background-color: var(--color-bg);
 }
+
+.nav-sessions-btn {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.nav-sessions-btn:active { opacity: 1; }
 
 .chat-content {
   flex: 1;
