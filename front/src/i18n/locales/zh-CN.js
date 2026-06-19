@@ -18,6 +18,7 @@ export default {
     home: '首页',
     aiChat: 'AI问答',
     sessions: '会话管理',
+    knowledge: '知识库',
     my: '我的'
   },
   home: {

@@ -18,6 +18,7 @@ export default {
     home: 'Home',
     aiChat: 'AI Chat',
     sessions: 'Sessions',
+    knowledge: 'Knowledge',
     my: 'My'
   },
   home: {

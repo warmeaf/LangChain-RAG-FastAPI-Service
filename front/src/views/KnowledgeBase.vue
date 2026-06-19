@@ -2,8 +2,7 @@
   <div class="knowledgebase-container">
     <van-nav-bar
       :title="$t('knowledgebase.title')"
-      left-arrow
-      @click-left="onClickLeft"
+      fixed
     />
 
     <div class="knowledgebase-content">
@@ -212,6 +211,7 @@
         </template>
       </div>
     </van-popup>
+    <tab-bar />
   </div>
 </template>
 
@@ -221,6 +221,7 @@ import { useRouter } from 'vue-router';
 import { showToast, showDialog } from 'vant';
 import { useI18n } from 'vue-i18n';
 import { useUserStore } from '../store/user';
+import TabBar from '../components/TabBar.vue';
 // 图片鉴权钩子：负责获取带 token 的图片URL，或通过 /images/all/{md5} 缓存全部 base64 图片
 import { useAuthImage } from '../composables/useAuthImage';
 
@@ -278,9 +279,6 @@ const documentActions = ref([
   { name: '删除文档', action: 'deleteDoc', color: '#ee0a24' }
 ]);
 
-const onClickLeft = () => {
-  router.back();
-};
 
 const openFilePicker = () => {
   fileInput.value?.click();
