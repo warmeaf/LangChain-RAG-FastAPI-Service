@@ -17,7 +17,7 @@ from app.core.failed_response_register import register_exception_handlers
 from app.core.rate_limit import RateLimitMiddleware
 from app.core.logger_handler import logger
 
-from app.rag.reorder_service import check_and_download_reranker_model
+from app.rag.milvus_store import MilvusService
 
 # 加载环境变量
 load_dotenv()
@@ -70,7 +70,7 @@ async def say_hello(name: str):
 
 @app.on_event("startup")
 async def startup_event():
-    """应用启动时初始化会话管理器"""
+    """应用启动时初始化所有服务"""
     # 初始化数据库表结构
     await init_db()
     logger.info("数据库表结构初始化完成")
@@ -83,12 +83,15 @@ async def startup_event():
     await connect_redis()
     logger.info("Redis连接初始化完成")
     
-    # 检查并重排序模型，并预加载到内存（避免首次请求时死锁）
-    check_and_download_reranker_model()
-    logger.info("重排序模型检查完成，开始预加载...")
+    # 初始化 Milvus 向量数据库
+    MilvusService()
+    logger.info("Milvus 向量数据库初始化完成")
+    
+    # 预加载 BGE Reranker 模型（避免首次请求时阻塞）
+    logger.info("开始预加载 BGE Reranker 模型...")
     from app.rag.reorder_service import reorder_service
     await reorder_service._get_model()
-    logger.info("重排序模型预加载完成")
+    logger.info("BGE Reranker 模型预加载完成")
 
 @app.on_event("shutdown")
 async def shutdown_event():

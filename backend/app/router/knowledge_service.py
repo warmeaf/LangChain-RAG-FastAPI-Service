@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException, UploadFile
 
 from app.core.logger_handler import logger
-from app.rag.vector_store import VectorStoreService
+from app.rag.milvus_store import MilvusService as VectorStoreService
 from app.rag.task_queue import TaskQueue
 from app.rag.sse_models import SSEEvent, SliceResult
 from app.utils.file_handler import get_file_md5_hex_sync
