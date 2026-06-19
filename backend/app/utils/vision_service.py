@@ -39,6 +39,9 @@ class VisionService:
 
     def _is_ollama(self) -> bool:
         """检测当前使用的模型是否为 Ollama 本地部署模型"""
+        # 新 ChatModel 有 provider_type 属性；回退到类名检测（兼容旧版）
+        if hasattr(self.model, 'provider_type'):
+            return self.model.provider_type == 'OLLAMA'
         return 'ChatOllama' in type(self.model).__name__
 
     def _encode_image(self, image_path: str) -> tuple[str, str]:

@@ -63,6 +63,7 @@ class ChatModel(BaseChatModel):
             raise ValueError(f"不支持的 LLM_TYPE: {llm_type}，可选值: {', '.join(BASE_URL_MAP)}")
 
         self._model_name = model_name or MODEL_NAME_MAP[llm_type]
+        self._provider_type = llm_type  # for vision_service detection
         self._streaming = streaming
         self._temperature = temperature
         self._max_tokens = max_tokens
@@ -78,6 +79,11 @@ class ChatModel(BaseChatModel):
     def model_name(self) -> str:
         """公开的模型名称属性（兼容 vision_service.py 等外部使用者）"""
         return self._model_name
+
+    @property
+    def provider_type(self) -> str:
+        """提供商类型：OLLAMA / ALIYUN / DEEPSEEK（用于外部检测）"""
+        return self._provider_type
 
     @property
     def _llm_type(self) -> str:
@@ -127,6 +133,7 @@ class ChatModel(BaseChatModel):
         openai_msgs = []
         for msg in messages:
             if isinstance(msg, HumanMessage):
+                # 支持多模态 content（list 类型）和纯文本 content
                 openai_msgs.append({"role": "user", "content": msg.content})
             elif isinstance(msg, AIMessage):
                 entry = {"role": "assistant", "content": msg.content or ""}
