@@ -95,6 +95,13 @@ const routes = [
       keepAlive: true
     }
   },
+
+  {
+    path: '/analytics',
+    name: 'Analytics',
+    component: () => import('../views/AnalyticsView.vue'),
+    meta: { title: '数据分析', keepAlive: false }
+  },
 ]
 
 const router = createRouter({
