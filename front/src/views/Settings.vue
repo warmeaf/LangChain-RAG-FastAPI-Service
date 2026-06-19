@@ -22,19 +22,27 @@
     >
       <div class="popup-title">{{ $t('settings.selectTheme') }}</div>
       <div class="theme-list">
-        <div 
-          v-for="theme in themeList" 
-          :key="theme.id" 
+        <div
           class="theme-item"
-          :class="{ active: currentTheme === theme.id }"
-          @click="changeTheme(theme.id)"
+          :class="{ active: themeStore.currentTheme === 'light' }"
+          @click="changeTheme('light')"
         >
-          <div class="theme-preview" :style="{ backgroundColor: theme.bgColor || '#FAF7F2' }">
-            <div class="theme-preview-primary" :style="{ backgroundColor: theme.primaryColor }"></div>
-            <div class="theme-preview-text" :style="{ backgroundColor: '#3D3226' }"></div>
-            <div class="theme-preview-text2" :style="{ backgroundColor: '#8B7E6F' }"></div>
+          <div class="theme-preview theme-preview-light">
+            <div class="theme-preview-bar"></div>
+            <div class="theme-preview-card"></div>
           </div>
-          <div class="theme-name">{{ theme.name }}</div>
+          <div class="theme-name">浅色</div>
+        </div>
+        <div
+          class="theme-item"
+          :class="{ active: themeStore.currentTheme === 'dark' }"
+          @click="changeTheme('dark')"
+        >
+          <div class="theme-preview theme-preview-dark">
+            <div class="theme-preview-bar"></div>
+            <div class="theme-preview-card"></div>
+          </div>
+          <div class="theme-name">深色</div>
         </div>
       </div>
     </van-popup>
@@ -90,8 +98,6 @@ const onClickLeft = () => {
 
 // 主题相关
 const showThemePopup = ref(false);
-const themeList = computed(() => themeStore.getAllThemes);
-const currentTheme = computed(() => themeStore.getCurrentTheme);
 
 // 切换主题
 const changeTheme = (themeId) => {
@@ -163,12 +169,12 @@ const changeLanguage = () => {
 }
 
 .theme-item:active {
-  background: var(--color-surface);
+  background: var(--van-background);
 }
 
 .theme-item.active {
-  background: var(--color-surface);
-  box-shadow: 0 0 0 2px var(--color-primary);
+  background: var(--van-background);
+  box-shadow: 0 0 0 2px var(--van-primary-color);
 }
 
 .theme-preview {
@@ -176,33 +182,34 @@ const changeLanguage = () => {
   height: 48px;
   border-radius: 8px;
   margin-bottom: 8px;
-  padding: 8px;
+  padding: 6px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
-  align-content: flex-start;
   overflow: hidden;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.theme-preview-primary {
+.theme-preview-light { background: #f7f8fa; }
+.theme-preview-dark  { background: #1c1c1e; }
+
+.theme-preview-bar {
   width: 100%;
   height: 6px;
   border-radius: 2px;
+  background: var(--van-primary-color);
 }
 
-.theme-preview-text {
-  width: 60%;
-  height: 4px;
+.theme-preview-card {
+  width: 70%;
+  height: 10px;
   border-radius: 2px;
-  opacity: 0.6;
+  background: rgba(127,127,127,0.3);
 }
 
-.theme-preview-text2 {
-  width: 40%;
-  height: 4px;
-  border-radius: 2px;
-  opacity: 0.3;
+.theme-name {
+  font-size: 13px;
+  color: var(--color-text-light);
 }
 
 .theme-name {

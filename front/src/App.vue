@@ -1,20 +1,26 @@
 <template>
-  <div class="app">
-    <router-view v-slot="{ Component }">
-      <template v-if="$route.meta.keepAlive">
-        <keep-alive>
+  <van-config-provider :theme="themeStore.currentTheme === 'dark' ? 'dark' : ''">
+    <div class="app">
+      <router-view v-slot="{ Component }">
+        <template v-if="$route.meta.keepAlive">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </template>
+        <template v-else>
           <component :is="Component" />
-        </keep-alive>
-      </template>
-      <template v-else>
-        <component :is="Component" />
-      </template>
-    </router-view>
-  </div>
+        </template>
+      </router-view>
+    </div>
+  </van-config-provider>
 </template>
 
 <script setup>
-// App.vue 作为根组件
+import { onMounted } from 'vue'
+import { useThemeStore } from './store/theme'
+
+const themeStore = useThemeStore()
+onMounted(() => themeStore.initTheme())
 </script>
 
 <style>
