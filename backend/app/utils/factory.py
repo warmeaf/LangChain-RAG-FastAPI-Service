@@ -2,6 +2,7 @@ import os
 import json
 from typing import Optional, List, AsyncIterator
 
+import httpx
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
@@ -72,6 +73,7 @@ class ChatModel(BaseChatModel):
         self._client = AsyncOpenAI(
             api_key=API_KEY_MAP[llm_type],
             base_url=BASE_URL_MAP[llm_type],
+            http_client=httpx.AsyncClient(trust_env=False),
         )
         logger.info(f"🤖 ChatModel 初始化: type={llm_type}, model={self._model_name}, base_url={BASE_URL_MAP[llm_type]}")
 
@@ -309,8 +311,14 @@ class OpenAICompatibleEmbeddings(Embeddings):
     """基于 OpenAI 兼容 API 的嵌入模型封装（适用于 Ollama）"""
 
     def __init__(self, model_name: str, base_url: str, api_key: str = "ollama"):
+        import httpx
         from openai import OpenAI
-        self._client = OpenAI(api_key=api_key, base_url=base_url)
+        # trust_env=False 禁用系统代理，确保 localhost 请求不经过代理
+        self._client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            http_client=httpx.Client(trust_env=False),
+        )
         self.model_name = model_name
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
