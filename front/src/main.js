@@ -10,7 +10,7 @@ import {
   Empty, Form, Field, Image, Toast, Icon, Popup,
   Radio, RadioGroup, Collapse, CollapseItem,
   Rate, Slider, Tag, Loading, Dialog,
-  ConfigProvider, Uploader, Progress, Switch
+  ConfigProvider, Uploader, Progress, Switch, ActionSheet
 } from 'vant'
 import 'vant/lib/index.css'
 
@@ -32,7 +32,7 @@ app.use(Empty); app.use(Form); app.use(Field); app.use(Image)
 app.use(Toast); app.use(Icon); app.use(Popup)
 app.use(Radio); app.use(RadioGroup); app.use(Collapse); app.use(CollapseItem)
 app.use(Rate); app.use(Slider); app.use(Tag); app.use(Loading); app.use(Dialog)
-app.use(ConfigProvider); app.use(Uploader); app.use(Progress); app.use(Switch)
+app.use(ConfigProvider); app.use(Uploader); app.use(Progress); app.use(Switch); app.use(ActionSheet)
 
 app.use(router)
 app.use(pinia)
