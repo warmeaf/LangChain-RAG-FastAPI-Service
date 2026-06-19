@@ -169,6 +169,171 @@ class MilvusService:
                            original: str = None, user_id: str = None):
         self.md5_store.save_md5_hex_sync(md5, filename, original, user_id)
 
+    async def delete_user_md5(self, user_id: str, delete_documents: bool = True):
+        await self.md5_store.delete_user_md5(user_id)
+
+    async def delete_single_md5(self, user_id: str, md5_value: str, delete_documents: bool = True):
+        return await self.md5_store.delete_single_md5(user_id, md5_value)
+
+    async def delete_by_filename(self, user_id: str, filename: str, delete_documents: bool = True):
+        return await self.md5_store.delete_by_filename(user_id, filename)
+
+    async def get_md5_info(self, user_id: str, md5_value: str):
+        return await self.md5_store.get_md5_info(user_id, md5_value)
+
+    async def get_all_md5_records(self, user_id: str):
+        return await self.md5_store.get_all_md5_records(user_id)
+
+    # ── 文档查询方法 ──
+
+    async def get_user_documents(self, user_id: str = None):
+        """获取用户的知识库文档列表"""
+        try:
+            def _query():
+                if user_id:
+                    return self.client.query(
+                        collection_name=self.collection_name,
+                        filter=f'user_id == "{user_id}"',
+                        output_fields=["text", "metadata"],
+                        limit=10000,
+                    )
+                else:
+                    return self.client.query(
+                        collection_name=self.collection_name,
+                        output_fields=["text", "metadata"],
+                        limit=10000,
+                    )
+
+            all_docs = await asyncio.to_thread(_query)
+            docs_info = {}
+
+            for doc in all_docs:
+                metadata = doc.get("metadata", {})
+                content = doc.get("text", "")
+                source = metadata.get("source", metadata.get("filename", "unknown"))
+                if isinstance(source, str) and "\\" in source:
+                    source = os.path.basename(source)
+                filename = metadata.get("original_filename", source)
+
+                if filename not in docs_info:
+                    docs_info[filename] = {
+                        "id": doc.get("id", ""),
+                        "filename": filename,
+                        "original_filename": metadata.get("original_filename", filename),
+                        "user_id": metadata.get("user_id"),
+                        "chunk_count": 0,
+                        "preview": "",
+                        "created_at": metadata.get("created_at"),
+                    }
+
+                docs_info[filename]["chunk_count"] += 1
+                if not docs_info[filename]["preview"] and content:
+                    preview_length = 100
+                    docs_info[filename]["preview"] = content[:preview_length] + (
+                        "..." if len(content) > preview_length else ""
+                    )
+
+            result = list(docs_info.values())
+            logger.info(f"获取用户 {user_id} 的知识库文档，共 {len(result)} 个文件")
+            return result
+        except Exception as e:
+            logger.error(f"获取用户 {user_id} 的知识库文档时出错: {e}")
+            raise
+
+    async def get_document_detail(self, user_id: str, filename: str):
+        """获取文档的详细内容"""
+        try:
+            def _query():
+                return self.client.query(
+                    collection_name=self.collection_name,
+                    filter=f'user_id == "{user_id}"',
+                    output_fields=["text", "metadata"],
+                    limit=10000,
+                )
+
+            all_docs = await asyncio.to_thread(_query)
+            doc_info = None
+            full_content = []
+            chunk_count = 0
+
+            for doc in all_docs:
+                metadata = doc.get("metadata", {})
+                content = doc.get("text", "")
+                source = metadata.get("source", "")
+                if isinstance(source, str):
+                    source_name = os.path.basename(source)
+                else:
+                    source_name = str(source)
+                original_filename = metadata.get("original_filename", "")
+
+                if source_name == filename or original_filename == filename:
+                    if not doc_info:
+                        doc_info = {
+                            "id": doc.get("id", ""),
+                            "filename": filename,
+                            "user_id": metadata.get("user_id"),
+                            "chunk_count": 0,
+                            "content": "",
+                            "images": [],
+                            "md5": metadata.get("md5"),
+                            "created_at": metadata.get("created_at"),
+                        }
+                    chunk_count += 1
+                    full_content.append(content)
+
+            if doc_info:
+                doc_info["chunk_count"] = chunk_count
+                doc_info["content"] = "\n".join(full_content)
+
+            return doc_info
+        except Exception as e:
+            logger.error(f"获取文档详情 {filename} 时出错: {e}")
+            raise
+
+    async def get_document_chunks(self, user_id: str, filename: str):
+        """获取文档的所有切片信息"""
+        try:
+            def _query():
+                return self.client.query(
+                    collection_name=self.collection_name,
+                    filter=f'user_id == "{user_id}"',
+                    output_fields=["text", "metadata"],
+                    limit=10000,
+                )
+
+            all_docs = await asyncio.to_thread(_query)
+            chunks = []
+            chunk_index = 0
+
+            for doc in all_docs:
+                metadata = doc.get("metadata", {})
+                content = doc.get("text", "")
+                source = metadata.get("source", "")
+                if isinstance(source, str):
+                    source_name = os.path.basename(source)
+                else:
+                    source_name = str(source)
+                original_filename = metadata.get("original_filename", "")
+
+                if source_name == filename or original_filename == filename:
+                    chunks.append({
+                        "chunk_id": doc.get("id", ""),
+                        "index": chunk_index,
+                        "content": content,
+                        "metadata": metadata,
+                        "images": [],
+                    })
+                    chunk_index += 1
+
+            return {
+                "filename": filename,
+                "total_chunks": len(chunks),
+                "chunks": chunks,
+            }
+        except Exception as e:
+            logger.error(f"获取文档切片 {filename} 时出错: {e}")
+            raise
+
     # DocumentProcessor 代理
     async def get_file_document(self, path: str, md5: str = None, user_id: str = None):
         return await self.document_processor.get_file_document(path, md5, user_id)
