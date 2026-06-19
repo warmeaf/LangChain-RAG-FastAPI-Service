@@ -35,12 +35,13 @@ class BM25Retriever(BaseRetriever):
 
 
 class RRFRetriever(BaseRetriever):
-    """自研 RRF (Reciprocal Rank Fusion) 融合检索器"""
+    """自研 RRF (Reciprocal Rank Fusion) 融合检索器，支持动态权重"""
 
-    def __init__(self, retrievers: List[BaseRetriever], k: int = 60):
+    def __init__(self, retrievers: List[BaseRetriever], k: int = 60, weights: List[float] = None):
         super().__init__()
         self._retrievers = retrievers
         self._k = k
+        self._weights = weights or [1.0 / len(retrievers)] * len(retrievers)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun = None
@@ -52,10 +53,11 @@ class RRFRetriever(BaseRetriever):
 
         doc_scores: dict[str, tuple[Document, float]] = {}
 
-        for retriever_docs in all_results:
+        for i, retriever_docs in enumerate(all_results):
+            weight = self._weights[i] if i < len(self._weights) else 1.0 / len(self._retrievers)
             for rank, doc in enumerate(retriever_docs):
                 doc_id = doc.page_content
-                rrf_score = 1.0 / (self._k + rank + 1)
+                rrf_score = weight / (self._k + rank + 1)
                 if doc_id in doc_scores:
                     existing_doc, existing_score = doc_scores[doc_id]
                     doc_scores[doc_id] = (existing_doc, existing_score + rrf_score)

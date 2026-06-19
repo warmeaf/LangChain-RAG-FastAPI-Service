@@ -127,7 +127,8 @@ class MilvusService:
         all_docs = await self._get_all_documents_for_user(user_id)
         if all_docs:
             bm25_retriever = BM25Retriever(all_docs, k=k)
-            return RRFRetriever(retrievers=[milvus_retriever, bm25_retriever])
+            weights = await self.get_dynamic_weights(query)
+            return RRFRetriever(retrievers=[milvus_retriever, bm25_retriever], weights=weights)
         return milvus_retriever
 
     async def _get_all_documents_for_user(self, user_id: str) -> List[Document]:
@@ -349,7 +350,28 @@ class MilvusService:
 
     @staticmethod
     async def get_dynamic_weights(query: str = None):
-        return [0.5, 0.5]
+        """根据查询类型动态返回 [bm25_weight, vector_weight]"""
+        if not query:
+            return [0.5, 0.5]
+
+        import re
+        hybrid_cfg = rag_config.get("hybrid_search", {}).get("weights", {})
+
+        # 精确匹配特征检测
+        has_number_code = bool(re.search(r'\b[A-Z]?\d{3,}\b', query))
+        has_date = bool(re.search(r'\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日号]?', query))
+        has_email = bool(re.search(r'[\w.-]+@[\w.-]+', query))
+        has_url = bool(re.search(r'https?://', query))
+        has_version = bool(re.search(r'v?\d+\.\d+(\.\d+)?', query))
+
+        precise_score = sum([has_number_code, has_date, has_email, has_url, has_version])
+
+        if precise_score >= 1:
+            return hybrid_cfg.get("precise", [0.65, 0.35])
+        elif len(query) > 50:
+            return hybrid_cfg.get("semantic", [0.3, 0.7])
+
+        return hybrid_cfg.get("balanced", [0.5, 0.5])
 
 
 # 向后兼容别名
