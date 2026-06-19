@@ -216,7 +216,7 @@ class ChatModel(BaseChatModel):
 
         ai_message = AIMessage(
             content=choice.message.content or "",
-            tool_calls=tool_calls if tool_calls else None,
+            tool_calls=tool_calls if tool_calls else [],
         )
         return ChatResult(generations=[ChatGeneration(message=ai_message)])
 
@@ -263,7 +263,7 @@ class ChatModel(BaseChatModel):
                     tool_call_chunks.append(tc_dict)
             yield AIMessageChunk(
                 content=content,
-                tool_call_chunks=tool_call_chunks if tool_call_chunks else None,
+                tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
             )
 
 
