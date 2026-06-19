@@ -1,0 +1,82 @@
+from typing import Optional
+from sqlalchemy import select, func
+from app.db.db_config import get_session
+from app.models.feedback import UserFeedback, DocWeight
+from app.core.logger_handler import logger
+
+
+class FeedbackService:
+    """用户反馈服务"""
+
+    async def record_feedback(
+        self,
+        user_id: str,
+        session_id: str,
+        query: str,
+        feedback_type: str,
+        rating: Optional[int] = None,
+        dwell_time_ms: Optional[int] = None,
+        clicked_doc_md5: Optional[str] = None,
+        doc_filename: Optional[str] = None,
+    ):
+        async with get_session() as session:
+            fb = UserFeedback(
+                user_id=user_id,
+                session_id=session_id,
+                query=query,
+                feedback_type=feedback_type,
+                rating=rating,
+                dwell_time_ms=dwell_time_ms,
+                clicked=True if clicked_doc_md5 else False,
+                doc_md5=clicked_doc_md5,
+                doc_filename=doc_filename,
+            )
+            session.add(fb)
+
+            if clicked_doc_md5:
+                await self._update_weight(
+                    session, user_id, clicked_doc_md5, doc_filename, feedback_type
+                )
+
+            await session.commit()
+
+    async def _update_weight(self, session, user_id, doc_md5, filename, feedback_type):
+        result = await session.execute(
+            select(DocWeight).where(
+                DocWeight.user_id == user_id,
+                DocWeight.doc_md5 == doc_md5,
+            )
+        )
+        dw = result.scalar_one_or_none()
+
+        if dw is None:
+            dw = DocWeight(
+                user_id=user_id,
+                doc_md5=doc_md5,
+                doc_filename=filename,
+                weight=1.0,
+            )
+            session.add(dw)
+
+        if feedback_type == "like":
+            dw.weight = min(1.0, dw.weight + 0.05)
+        elif feedback_type in ("dislike", "skip"):
+            dw.weight = max(0.1, dw.weight - 0.05)
+
+    async def get_stats(self, user_id: str):
+        async with get_session() as session:
+            total = await session.scalar(
+                select(func.count()).select_from(UserFeedback).where(
+                    UserFeedback.user_id == user_id
+                )
+            )
+            likes = await session.scalar(
+                select(func.count()).select_from(UserFeedback).where(
+                    UserFeedback.user_id == user_id,
+                    UserFeedback.feedback_type == "like",
+                )
+            )
+            return {
+                "total_feedback": total or 0,
+                "like_rate": (likes / total) if total else 0,
+            }
