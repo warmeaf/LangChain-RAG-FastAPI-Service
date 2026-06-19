@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from langchain_core.documents import Document
 
 from app.rag.text_spliter import AsyncTextSplitter
-from app.utils.config import chroma_config
+from app.utils.config import rag_config
 from app.utils.factory import embed_model
 from app.utils.file_handler import pdf_loader, txt_loader, listdir_allowed_type, get_file_md5_hex, markdown_loader, \
     ppt_loader, word_loader, pdf_loader_sync, txt_loader_sync, markdown_loader_sync, ppt_loader_sync, word_loader_sync
@@ -20,30 +20,58 @@ class DocumentProcessor:
     def __init__(self, vectors_store, md5_store):
         self.vectors_store = vectors_store
         self.md5_store = md5_store
+        chunk_cfg = rag_config.get("chunking", {}).get("default", {})
         self.spliter = AsyncTextSplitter(
-            chunk_size=chroma_config['chunk_size'],
-            chunk_overlap=chroma_config['chunk_overlap'],
-            separators=chroma_config['separators'],
+            chunk_size=chunk_cfg.get('chunk_size', 400),
+            chunk_overlap=chunk_cfg.get('chunk_overlap', 40),
+            separators=rag_config.get('chunking', {}).get('separators', ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]),
             embedding_model=embed_model
         )
 
     async def get_file_document(self, read_path: str, md5: str = None, user_id: str = None) -> list[Document]:
-        """异步加载文件"""
+        """异步加载文件（集成类型路由器）"""
+        from .type_router import DocumentTypeRouter
+
+        strategy = DocumentTypeRouter.get_strategy(read_path)
+
+        # Excel 处理
+        if strategy == "excel":
+            from .excel_processor import ExcelProcessor
+            docs = await ExcelProcessor().process(read_path)
+            if docs:
+                return docs
+
+        # 代码文件处理
+        if strategy == "code":
+            from .code_processor import CodeProcessor
+            docs = await CodeProcessor().process(read_path)
+            if docs:
+                return docs
+
+        # 默认文件类型
         if read_path.endswith('.txt'):
             return await txt_loader(read_path)
         elif read_path.endswith('.pdf'):
-            # 优先使用多模态加载器（提取图片+视觉描述），仅当提供了md5和user_id时才启用；
-            # 这两个参数用于定位图片的存储路径 data/extracted_images/{user_id}/{md5}/
+            # OCR 先行尝试
+            from .ocr_processor import OCRProcessor
+            ocr_docs = await OCRProcessor().process(read_path)
+            if ocr_docs and len(ocr_docs) > 0 and len(ocr_docs[0].page_content) > 50:
+                return ocr_docs
             if md5 and user_id:
                 return await pdf_multimodal_loader(read_path, md5, user_id)
-            # 回退到纯文本加载器（仅提取文字，无图片）
             return await pdf_loader(read_path)
         elif read_path.endswith('.md'):
             return await markdown_loader(read_path)
         elif read_path.endswith('.pptx'):
-            return await ppt_loader(read_path)
+            from .format_preserver import preserve_format
+            from unstructured.partition.pptx import partition_pptx
+            elements = partition_pptx(filename=read_path)
+            return preserve_format(elements, read_path)
         elif read_path.endswith('.docx'):
-            return await word_loader(read_path)
+            from .format_preserver import preserve_format
+            from unstructured.partition.docx import partition_docx
+            elements = partition_docx(filename=read_path)
+            return preserve_format(elements, read_path)
         else:
             return []
 
