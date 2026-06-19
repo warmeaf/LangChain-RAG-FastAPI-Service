@@ -66,3 +66,14 @@ default = true
 
 [tool.uv]
 index-url = "https://pypi.org/simple/"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end tests requiring running services",
+    "db: tests requiring database connection",
+    "slow: slow tests (model loading)",
+]
+addopts = "-v --tb=short"

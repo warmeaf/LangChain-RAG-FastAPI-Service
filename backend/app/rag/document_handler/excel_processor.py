@@ -79,22 +79,51 @@ class ExcelProcessor:
     def _detect_headers(self, rows: list) -> Tuple[List[int], int]:
         """
         检测多级表头行，返回 (表头行号列表, 数据起始行号)
-        启发式：前 N 行中，如果某行大部分单元格非空且长度较短(<30字)，识别为表头行
+        启发式：
+        - 第一行始终视为表头
+        - 后续行如果全部单元格都是纯文本标签（不含数字、长度<30）
+          且与上一行列数一致 → 识别为表头
+        - 最多识别 3 级表头
         """
-        header_rows = [1]  # 第一行始终视为表头
+        header_rows = [1]
         max_scan = min(5, len(rows))
 
         for i in range(1, max_scan):
             row = rows[i]
             if not row:
                 break
-            non_empty = [str(v) for v in row if v is not None and str(v).strip()]
+            # 过滤有效值
+            str_vals = []
+            for v in row:
+                if v is None:
+                    str_vals.append("")
+                else:
+                    s = str(v).strip()
+                    str_vals.append(s)
+
+            non_empty = [s for s in str_vals if s]
             if not non_empty:
                 break
-            short_cells = sum(1 for v in non_empty if len(v) < 30)
-            short_ratio = short_cells / len(non_empty) if non_empty else 0
-            if short_ratio > 0.5:
-                header_rows.append(i + 1)  # 行号从 1 开始
+
+            # 数据行特征：包含数字、或文本较长（>50字）
+            has_number = any(
+                s.replace(".", "").replace("-", "").isdigit()
+                for s in non_empty
+            )
+            has_long = any(len(s) > 50 for s in non_empty)
+
+            # 与前一行列数一致（排除空列尾部）
+            prev_cols = len([c for c in rows[i - 1] if c is not None and str(c).strip()]) if i > 0 else len(non_empty)
+
+            is_label_row = (
+                not has_number
+                and not has_long
+                and len(header_rows) < 3
+                and len(non_empty) <= prev_cols + 2  # 允许少量列扩展
+            )
+
+            if is_label_row:
+                header_rows.append(i + 1)
             else:
                 break
 
