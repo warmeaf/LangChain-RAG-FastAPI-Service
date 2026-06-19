@@ -144,7 +144,10 @@ class ChatModel(BaseChatModel):
                             "type": "function",
                             "function": {
                                 "name": tc["name"] if isinstance(tc, dict) else tc.name,
-                                "arguments": tc["args"] if isinstance(tc, dict) else tc.args if isinstance(tc.args, str) else json.dumps(tc.args, ensure_ascii=False),
+                                "arguments": json.dumps(
+                            tc["args"] if isinstance(tc, dict) else tc.args,
+                            ensure_ascii=False
+                        ),
                             },
                         }
                         for tc in msg.tool_calls
