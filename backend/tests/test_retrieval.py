@@ -9,12 +9,21 @@ class TestOCRPostProcess:
     """企业级验收标准：OCR 常见错字纠正确认"""
 
     def test_corrections(self):
+        """P5: 扩展 OCR 纠错词表 — 原有 5 条 + 新增"""
         from app.rag.document_handler.ocr_processor import OCRProcessor
         op = OCRProcessor()
+        # 原有
         assert op._post_process("白勺") == "的"
         assert op._post_process("己经") == "已经"
         assert op._post_process("土也") == "地"
         assert op._post_process("午") == "年"
+        # P5 新增：常见形近字纠错
+        assert op._post_process("人账") == "入账"
+        assert op._post_process("曰期") == "日期"
+        assert op._post_process("末来") == "未来"
+        assert op._post_process("千扰") == "干扰"
+        assert op._post_process("折口") == "折扣"
+        assert op._post_process("折和") == "折扣"
 
     def test_correction_in_context(self):
         from app.rag.document_handler.ocr_processor import OCRProcessor
@@ -24,12 +33,35 @@ class TestOCRPostProcess:
         assert "的测试" in result
         assert "已经完成" in result
 
+    def test_extended_corrections_in_context(self):
+        """P5 扩展：复杂上下文中批量纠错"""
+        from app.rag.document_handler.ocr_processor import OCRProcessor
+        op = OCRProcessor()
+        text = "请确认人账曰期，末来三天内处理千扰问题，享受折和优惠。"
+        result = op._post_process(text)
+        assert "入账" in result
+        assert "日期" in result
+        assert "未来" in result
+        assert "干扰" in result
+        assert "折扣" in result
+
     def test_no_change_on_correct_text(self):
         from app.rag.document_handler.ocr_processor import OCRProcessor
         op = OCRProcessor()
         text = "这是一段正常的文字。"
         result = op._post_process(text)
         assert result == text
+
+    def test_partial_word_not_over_corrected(self):
+        """P5: 不应对正确词语过度纠错"""
+        from app.rag.document_handler.ocr_processor import OCRProcessor
+        op = OCRProcessor()
+        # "人口" 不应变成 "入口"
+        assert op._post_process("人口普查") == "人口普查"
+        # "昨日" 不应被修改
+        assert op._post_process("昨日重现") == "昨日重现"
+        # "周末" 不应变成 "周未"
+        assert op._post_process("周末愉快") == "周末愉快"
 
 
 # ════════════════ 2.2 动态权重 ════════════════

@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import List, Optional
 
 from rank_bm25 import BM25Okapi
@@ -9,24 +10,64 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from app.utils.config import chroma_config
 from .empty_retriever import EmptyRetriever
 
+# 延迟加载 jieba，避免硬依赖
+_jieba = None
+
+
+def _get_jieba():
+    global _jieba
+    if _jieba is None:
+        try:
+            import jieba as _j
+            _jieba = _j
+        except ImportError:
+            _jieba = False
+    return _jieba
+
+
+def _chinese_tokenize(text: str) -> List[str]:
+    """中文分词：用 jieba 切词，同时保留英文/数字的空白分词作为补充"""
+    jieba = _get_jieba()
+    if not jieba:
+        # 回退：按空白分词（英文场景可用，中文场景退化）
+        return text.split()
+
+    # jieba 分词
+    tokens = list(jieba.cut(text))
+    # 过滤纯空白 token
+    tokens = [t.strip() for t in tokens if t.strip()]
+    # 对每个 token 内部再做英文空白分词（如 "API v2.0" 若被 jieba 粘合则拆开）
+    result = []
+    for token in tokens:
+        if re.search(r'[a-zA-Z]', token) and ' ' in token:
+            result.extend(token.split())
+        else:
+            result.append(token)
+    return result
+
 
 class BM25Retriever(BaseRetriever):
-    """自研 BM25 检索器，基于 rank-bm25 库"""
+    """自研 BM25 检索器，基于 rank-bm25 库，支持中文 jieba 分词"""
 
     def __init__(self, documents: List[Document], k: int = 5):
         super().__init__()
         self._documents = documents
         self._corpus = [doc.page_content for doc in documents]
-        self._tokenized_corpus = [text.split() for text in self._corpus]
+        self._tokenized_corpus = [self._tokenize(text) for text in self._corpus]
         self._bm25 = BM25Okapi(self._tokenized_corpus) if self._tokenized_corpus else None
         self._k = k
+
+    @staticmethod
+    def _tokenize(text: str) -> List[str]:
+        """对文本分词，中文用 jieba，英文用空白分词"""
+        return _chinese_tokenize(text)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun = None
     ) -> List[Document]:
         if not self._documents or self._bm25 is None:
             return []
-        tokenized_query = query.split()
+        tokenized_query = self._tokenize(query)
         scores = self._bm25.get_scores(tokenized_query)
         indexed_scores = list(enumerate(scores))
         indexed_scores.sort(key=lambda x: x[1], reverse=True)

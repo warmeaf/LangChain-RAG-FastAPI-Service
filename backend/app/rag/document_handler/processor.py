@@ -77,10 +77,10 @@ class DocumentProcessor:
         elif read_path.endswith('.md'):
             return await markdown_loader(read_path)
         elif read_path.endswith('.pptx'):
-            from .format_preserver import preserve_format
+            from .format_preserver import aggregate_by_slide
             from unstructured.partition.pptx import partition_pptx
             elements = partition_pptx(filename=read_path)
-            return preserve_format(elements, read_path)
+            return aggregate_by_slide(elements, read_path)
         elif read_path.endswith('.docx'):
             from .format_preserver import preserve_format
             from unstructured.partition.docx import partition_docx
@@ -224,6 +224,9 @@ class DocumentProcessor:
                 for doc in document:
                     doc.metadata['original_filename'] = filename
                     doc.metadata['md5'] = md5_hex
+                    # 语言检测：用于后续 Embedding 模型自动选择
+                    from app.utils.language_detector import detect_language
+                    doc.metadata['language'] = detect_language(doc.page_content)
 
                 await asyncio.to_thread(self.vectors_store.add_documents, document)
 

@@ -53,9 +53,14 @@ class OCRProcessor:
         return documents
 
     def _post_process(self, text: str) -> str:
+        # 越长越优先替换（避免短词误伤长词），按长度降序排列
         corrections = {
-            "己": "已", "己经": "已经", "白勺": "的",
-            "土也": "地", "午": "年",
+            "己经": "已经", "白勺": "的",
+            "土也": "地",
+            "人账": "入账", "曰期": "日期", "末来": "未来",
+            "千扰": "干扰", "折和": "折扣", "折口": "折扣",
+            "己": "已",
+            "午": "年",
         }
         for wrong, correct in corrections.items():
             text = text.replace(wrong, correct)
