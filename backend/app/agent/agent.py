@@ -47,10 +47,10 @@ def _build_agent_graph(tools: List[BaseTool], system_prompt: str):
     tools_by_name = {tool.name: tool for tool in tools}
 
     # ── LLM 调用节点 ──
-    def llm_call(state: AgentState):
+    async def llm_call(state: AgentState):
         logger.info(f"[llm_call] 模型调用，当前消息数: {len(state['messages'])}")
         messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
-        response = llm_with_tools.invoke(messages)
+        response = await llm_with_tools.ainvoke(messages)
         logger.info(f"[llm_call] 模型响应: tool_calls={bool(response.tool_calls)}, content_len={len(response.content or '')}")
         return {"messages": [response]}
 
