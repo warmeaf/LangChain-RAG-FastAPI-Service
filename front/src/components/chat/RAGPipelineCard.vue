@@ -1,21 +1,21 @@
 <template>
-  <n-card v-if="stages.length > 0" size="small" title="🔍 RAG 检索过程" class="pipeline-card">
-    <n-collapse>
-      <n-collapse-item v-for="stage in stages" :key="stage.stage" :title="stage.title">
+  <div v-if="stages.length > 0" class="pipeline-card">
+    <div class="pipeline-title">🔍 RAG 检索过程</div>
+    <van-collapse>
+      <van-collapse-item v-for="stage in stages" :key="stage.stage" :title="stage.title">
         <p>{{ stage.content }}</p>
-        <div v-if="stage.details?.documents">
-          <n-tag v-for="d in stage.details.documents" :key="d.index" size="small" style="margin: 2px">
+        <div v-if="stage.details?.documents" class="doc-tags">
+          <van-tag v-for="d in stage.details.documents" :key="d.index" size="medium" style="margin: 2px">
             #{{ d.index }} {{ d.preview?.slice(0, 60) }}
-          </n-tag>
+          </van-tag>
         </div>
-      </n-collapse-item>
-    </n-collapse>
-  </n-card>
+      </van-collapse-item>
+    </van-collapse>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NCard, NCollapse, NCollapseItem, NTag } from 'naive-ui'
 
 const stages = ref<any[]>([])
 const stageMap: Record<string, string> = {
@@ -33,3 +33,19 @@ function addStage(data: any) {
 function reset() { stages.value = [] }
 defineExpose({ addStage, reset })
 </script>
+
+<style scoped>
+.pipeline-card {
+  margin: 8px 0;
+  background: var(--color-card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pipeline-title {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.doc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+</style>
