@@ -194,3 +194,93 @@ class AsyncTextSplitter:
         if magnitude1 == 0 or magnitude2 == 0:
             return 0.0
         return dot_product / (magnitude1 * magnitude2)
+
+
+import re
+
+
+class HeadingSplitter:
+    """Markdown 标题层级切分器：按 # 标题切分，保留标题路径作上下文"""
+
+    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self._heading_pattern = re.compile(r'^(#{1,6})\s+(.+)$', re.MULTILINE)
+
+    def split_text(self, text: str) -> list:
+        """按 Markdown 标题切分文本，保留标题路径上下文"""
+        lines = text.split('\n')
+        sections = self._parse_sections(lines)
+
+        chunks = []
+        for heading_path, content in sections:
+            content = content.strip()
+            if not content:
+                continue
+            prefix = ' > '.join(heading_path) + '\n\n' if heading_path else ''
+            full_text = prefix + content
+
+            if len(full_text) <= self.chunk_size:
+                chunks.append(full_text)
+            else:
+                sub_chunks = self._split_long_section(full_text)
+                chunks.extend(sub_chunks)
+
+        return chunks if chunks else [text]
+
+    def _parse_sections(self, lines: list) -> list:
+        """解析文本为 (heading_path, content) 列表"""
+        sections = []
+        current_heading = []
+        current_content = []
+        heading_stack = {}  # level -> heading_text
+
+        for line in lines:
+            m = self._heading_pattern.match(line)
+            if m:
+                if current_content:
+                    sections.append((list(current_heading), '\n'.join(current_content)))
+
+                level = len(m.group(1))
+                heading_text = m.group(2).strip()
+                heading_stack[level] = heading_text
+                for lv in list(heading_stack.keys()):
+                    if lv > level:
+                        del heading_stack[lv]
+                current_heading = [heading_stack[lv] for lv in sorted(heading_stack.keys())]
+                current_content = []
+            else:
+                current_content.append(line)
+
+        if current_content:
+            sections.append((list(current_heading), '\n'.join(current_content)))
+
+        return sections
+
+    def _split_long_section(self, text: str) -> list:
+        """对超长 section 进行回退切分"""
+        sep = '\n\n'
+        parts = text.split(sep)
+        chunks = []
+        current = ''
+        for part in parts:
+            if len(current) + len(part) + len(sep) <= self.chunk_size:
+                current = (current + sep + part) if current else part
+            else:
+                if current:
+                    chunks.append(current)
+                current = part
+        if current:
+            chunks.append(current)
+        return chunks
+
+    def split_documents(self, documents: list) -> list:
+        from langchain_core.documents import Document
+        result = []
+        for doc in documents:
+            chunks = self.split_text(doc.page_content)
+            for i, chunk in enumerate(chunks):
+                metadata = doc.metadata.copy()
+                metadata['chunk_index'] = i
+                result.append(Document(page_content=chunk, metadata=metadata))
+        return result

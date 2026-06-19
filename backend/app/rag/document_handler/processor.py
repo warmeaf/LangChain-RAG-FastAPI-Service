@@ -48,6 +48,20 @@ class DocumentProcessor:
             if docs:
                 return docs
 
+        # Markdown 标题层级切分
+        if strategy == "markdown":
+            from app.rag.text_spliter import HeadingSplitter
+            chunk_cfg = rag_config.get("chunking", {}).get("default", {})
+            heading_splitter = HeadingSplitter(
+                chunk_size=chunk_cfg.get('chunk_size', 400),
+                chunk_overlap=chunk_cfg.get('chunk_overlap', 40),
+            )
+            raw_docs = await markdown_loader(read_path)
+            if raw_docs:
+                split_docs = heading_splitter.split_documents(raw_docs)
+                return split_docs
+            return raw_docs
+
         # 默认文件类型
         if read_path.endswith('.txt'):
             return await txt_loader(read_path)

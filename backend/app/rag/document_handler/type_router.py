@@ -8,6 +8,7 @@ class DocumentTypeRouter:
     ROUTES = {
         ".xlsx": "excel",
         ".xls": "excel",
+        ".md": "markdown",
         ".py": "code",
         ".js": "code",
         ".ts": "code",
