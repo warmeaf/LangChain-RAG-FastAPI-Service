@@ -47,7 +47,7 @@ class OCRProcessor:
                 page_text = self._post_process(page_text)
                 documents.append(Document(
                     page_content=page_text,
-                    metadata={"source": file_path, "page": page_num, "ocr": True},
+                    metadata={"source": file_path, "page": page_num, "ocr": True, "chunk_type": "image_ocr"},
                 ))
 
         return documents

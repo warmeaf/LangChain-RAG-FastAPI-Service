@@ -49,6 +49,12 @@ hybrid_search:
     precise: [0.65, 0.35]
     semantic: [0.3, 0.7]
 
+image_retrieval:
+  enabled: true
+  clip_model: "openai/clip-vit-base-patch32"
+  visual_collection: "rag_image_collection"
+  max_image_chunks: 5
+
 ocr:
   enabled: true
   language: "ch"

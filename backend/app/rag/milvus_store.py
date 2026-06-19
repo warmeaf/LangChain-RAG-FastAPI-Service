@@ -82,6 +82,37 @@ class MilvusService:
         )
         logger.info(f"Milvus collection '{self.collection_name}' 创建完成")
 
+        # 创建图片向量 collection
+        img_collection = rag_config.get("image_retrieval", {}).get("visual_collection", "rag_image_collection")
+        if not self.client.has_collection(img_collection):
+            img_schema = self.client.create_schema()
+            img_schema.add_field("id", DataType.VARCHAR, max_length=128, is_primary=True)
+            img_schema.add_field("image_md5", DataType.VARCHAR, max_length=64)
+            img_schema.add_field("visual_embedding", DataType.FLOAT_VECTOR, dim=512)
+            img_schema.add_field("user_id", DataType.VARCHAR, max_length=64, is_partition_key=True)
+            img_schema.add_field("parent_doc_md5", DataType.VARCHAR, max_length=64)
+            img_schema.add_field("ocr_text", DataType.VARCHAR, max_length=65535)
+            img_schema.add_field("description", DataType.VARCHAR, max_length=65535)
+            img_schema.add_field("created_at", DataType.INT64)
+            img_schema.add_field("metadata", DataType.JSON)
+
+            img_index_params = MilvusClient.prepare_index_params()
+            img_index_params.add_index(
+                field_name="visual_embedding",
+                index_type="IVF_FLAT",
+                metric_type="COSINE",
+                params={"nlist": 128},
+            )
+
+            self.client.create_collection(
+                collection_name=img_collection,
+                schema=img_schema,
+                index_params=img_index_params,
+            )
+            logger.info(f"Milvus image collection '{img_collection}' 创建完成")
+
+        self.img_collection_name = img_collection
+
     def _embed_texts(self, texts: List[str]) -> List[List[float]]:
         """批量向量化文本 (bge-large-zh, 1024维)"""
         return embed_model.encode(texts, normalize_embeddings=True).tolist()
@@ -347,6 +378,73 @@ class MilvusService:
 
     async def get_document(self, files=None, user_id=None, progress_callback=None):
         await self.document_processor.get_document(files, user_id, progress_callback)
+
+    def add_image_vectors(self, image_data: list) -> List[str]:
+        """向图片 collection 添加图片向量"""
+        if not image_data:
+            return []
+
+        ids = [str(uuid.uuid4()) for _ in image_data]
+        now = int(time.time())
+        img_coll = getattr(self, 'img_collection_name', 'rag_image_collection')
+
+        data = []
+        for i, item in enumerate(image_data):
+            data.append({
+                "id": ids[i],
+                "image_md5": item.get("image_md5", ""),
+                "visual_embedding": item.get("visual_embedding", []),
+                "user_id": item.get("user_id", ""),
+                "parent_doc_md5": item.get("parent_doc_md5", ""),
+                "ocr_text": item.get("ocr_text", ""),
+                "description": item.get("description", ""),
+                "created_at": now,
+                "metadata": item.get("metadata", {}),
+            })
+
+        self.client.insert(collection_name=img_coll, data=data)
+        self.client.flush(collection_name=img_coll)
+        return ids
+
+    async def search_images(self, query_text: str, user_id: str, top_k: int = 5) -> list:
+        """跨模态图片检索：文本 → CLIP 文本编码 → 图片向量的相似度搜索"""
+        from app.rag.image_embedder import image_embedder
+        try:
+            text_embedding = await image_embedder.encode_text(query_text)
+        except Exception:
+            return []
+
+        img_coll = getattr(self, 'img_collection_name', 'rag_image_collection')
+        search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
+
+        def _search():
+            return self.client.search(
+                collection_name=img_coll,
+                data=[text_embedding],
+                limit=top_k,
+                filter=f'user_id == "{user_id}"',
+                search_params=search_params,
+                output_fields=["ocr_text", "description", "image_md5", "parent_doc_md5"],
+            )
+
+        results = await asyncio.to_thread(_search)
+        docs = []
+        for hits in results:
+            for hit in hits:
+                entity = hit.get("entity", {})
+                ocr = entity.get("ocr_text", "")
+                desc = entity.get("description", "")
+                content = desc if desc else ocr
+                if content:
+                    docs.append(Document(
+                        page_content=content,
+                        metadata={
+                            "chunk_type": "image_visual",
+                            "image_md5": entity.get("image_md5", ""),
+                            "score": hit.get("distance", 0),
+                        }
+                    ))
+        return docs
 
     @staticmethod
     async def get_dynamic_weights(query: str = None):

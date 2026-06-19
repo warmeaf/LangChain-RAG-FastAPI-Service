@@ -234,6 +234,8 @@ class DocumentProcessor:
                     await self._init_doc_weights(
                         md5_hex, user_id, filename, category, quality_score
                     )
+                    # 存储图片视觉向量 (CLIP)
+                    await self._store_image_vectors(md5_hex, file_path, user_id)
 
                 original_filename = file_names.get(file_path, filename) if files else filename
                 await self.md5_store.save_md5_hex(md5_hex, filename, original_filename, user_id)
@@ -325,3 +327,44 @@ class DocumentProcessor:
                 )
                 session.add(dw)
                 await session.commit()
+
+    async def _store_image_vectors(self, md5_hex: str, file_path: str, user_id: str):
+        """提取并存储 PDF 中的图片视觉向量 (CLIP)"""
+        if not file_path.lower().endswith('.pdf'):
+            return
+
+        try:
+            from app.rag.image_embedder import image_embedder
+            from app.utils.path_tool import get_data_path
+            from PIL import Image
+
+            image_dir = os.path.join(get_data_path(), 'extracted_images', user_id, md5_hex)
+            if not os.path.isdir(image_dir):
+                return
+
+            image_data = []
+            for img_file in sorted(os.listdir(image_dir)):
+                img_path = os.path.join(image_dir, img_file)
+                if not os.path.isfile(img_path):
+                    continue
+                try:
+                    pil_image = Image.open(img_path).convert("RGB")
+                    visual_emb = await image_embedder.encode_image(pil_image)
+
+                    image_data.append({
+                        "image_md5": img_file,
+                        "visual_embedding": visual_emb,
+                        "user_id": user_id,
+                        "parent_doc_md5": md5_hex,
+                        "ocr_text": "",
+                        "description": "",
+                        "metadata": {"source": file_path},
+                    })
+                except Exception as e:
+                    logger.warning(f"CLIP encoding failed for {img_file}: {e}")
+
+            if image_data:
+                await asyncio.to_thread(self.vectors_store.add_image_vectors, image_data)
+                logger.info(f"Stored {len(image_data)} image vectors for doc {md5_hex}")
+        except Exception as e:
+            logger.warning(f"Image vector storage failed: {e}")

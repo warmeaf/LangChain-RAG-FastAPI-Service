@@ -406,3 +406,5 @@ chat_model = create_chat_model()
 embed_model = create_embedding_model()
 vision_model = create_vision_model()
 reranker_model = None
+
+from app.rag.image_embedder import image_embedder as clip_model

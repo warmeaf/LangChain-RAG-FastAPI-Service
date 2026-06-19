@@ -87,6 +87,30 @@ class RagService:
                     "content": f"粗排检索完成: {len(documents)} 个候选文档",
                 })
 
+            # 图片视觉检索通路（跨模态 CLIP）
+            image_docs = []
+            if rag_config.get("image_retrieval", {}).get("enabled", True):
+                try:
+                    image_docs = await self.milvus.search_images(
+                        query, self.user_id,
+                        top_k=rag_config.get("image_retrieval", {}).get("max_image_chunks", 5)
+                    )
+                except Exception:
+                    pass
+
+            if image_docs:
+                image_contents = set(doc.page_content for doc in documents)
+                for idoc in image_docs:
+                    if idoc.page_content not in image_contents:
+                        documents.append(idoc)
+
+            if self.thinking_callback:
+                await self.thinking_callback({
+                    "type": "thinking",
+                    "stage": "retrieval",
+                    "content": f"粗排检索完成: {len(documents)} 个候选文档 (含 {len(image_docs)} 个图片结果)",
+                })
+
             if not documents:
                 return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
 
