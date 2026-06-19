@@ -1,6 +1,6 @@
 <template>
-  <div class="my-container">
-    <van-nav-bar :title="$t('my.title')" />
+  <div class="my-page">
+    <van-nav-bar :title="$t('my.title')" fixed placeholder />
 
     <!-- 已登录：用户信息卡片 -->
     <van-cell-group v-if="isLogin" inset class="user-info-group">
@@ -42,7 +42,7 @@
           <span class="cell-username">{{ $t('my.notLoggedIn') }}</span>
         </template>
         <template #label>
-          <van-button type="primary" size="small" @click="goToLogin" style="margin-right: 10px">
+          <van-button type="primary" size="small" class="login-btn-gap" @click="goToLogin">
             {{ $t('my.goToLogin') }}
           </van-button>
           <van-button size="small" plain @click="goToRegister">
@@ -53,12 +53,11 @@
     </van-cell-group>
 
     <!-- 菜单列表 -->
-    <div class="menu-list">
-      <van-cell-group inset>
-        <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
-        <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
-      </van-cell-group>
-    </div>
+    <van-cell-group inset class="menu-list">
+      <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
+      <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
+    </van-cell-group>
+
     <tab-bar />
   </div>
 </template>
@@ -130,41 +129,33 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.my-container {
-  padding-top: 46px;
-  padding-bottom: 50px;
+/* ======== 页面容器 ======== */
+.my-page {
+  min-height: 100vh;
   background-color: var(--van-background);
   color: var(--van-text-color);
-  min-height: 100vh;
+  padding-bottom: var(--van-tabbar-height);
   box-sizing: border-box;
 }
 
-.van-nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 999;
-}
-
-/* 用户信息卡片区域 */
+/* ======== 用户信息卡片 ======== */
 .user-info-group {
   margin: var(--van-padding-md);
 }
 
 .user-info-group :deep(.van-cell) {
   background: linear-gradient(135deg, var(--van-background-2) 0%, var(--van-background) 100%);
-  border-radius: 12px;
-  padding: var(--van-padding-lg) 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-radius: calc(var(--van-radius-lg) + var(--van-padding-base));
+  padding: var(--van-padding-lg) var(--van-padding-md);
+  box-shadow: 0 var(--van-border-width) var(--van-padding-base) rgba(0, 0, 0, 0.08);
 }
 
 .user-info-group :deep(.van-cell__icon) {
-  margin-right: 16px;
+  margin-right: var(--van-padding-md);
   font-size: 0;
 }
 
-/* 头像字母兜底 */
+/* ======== 头像字母兜底 ======== */
 .avatar-letter {
   width: 72px;
   height: 72px;
@@ -176,31 +167,35 @@ onMounted(async () => {
   justify-content: center;
   font-size: 28px;
   font-weight: var(--van-font-bold);
-  border: 2px solid var(--van-border-color);
+  border: calc(var(--van-border-width) * 2) solid var(--van-border-color);
 }
 
-/* 用户名 */
+/* ======== 用户名与简介 ======== */
 .cell-username {
-  font-size: 18px;
+  font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
   color: var(--van-text-color);
 }
 
-/* 个人简介 */
 .cell-bio {
   font-size: var(--van-font-size-md);
   color: var(--van-text-color-3);
 }
 
-/* 菜单列表 */
+/* ======== 未登录按钮间距 ======== */
+.login-btn-gap {
+  margin-right: var(--van-padding-sm);
+}
+
+/* ======== 菜单列表 ======== */
 .menu-list {
   margin: 0 var(--van-padding-md);
 }
 
 .menu-list :deep(.van-cell) {
-  border-radius: 8px;
-  margin-bottom: 6px;
+  border-radius: var(--van-radius-lg);
+  margin-bottom: calc(var(--van-padding-base) + var(--van-border-width) * 2);
   background: var(--van-background-2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 var(--van-border-width) calc(var(--van-border-width) * 2) rgba(0, 0, 0, 0.08);
 }
 </style>
