@@ -1,21 +1,260 @@
-from abc import ABC, abstractmethod
-from typing import Optional, List
 import os
-from dotenv import load_dotenv
+import json
+from typing import Optional, List, AsyncIterator
 
-from langchain_community.chat_models.tongyi import ChatTongyi
-from langchain_core.embeddings import Embeddings
+from dotenv import load_dotenv
+from openai import AsyncOpenAI
+
+load_dotenv()
+
 from langchain_core.language_models import BaseChatModel
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
+from langchain_core.embeddings import Embeddings
+from langchain_core.outputs import ChatResult, ChatGeneration
+from langchain_core.callbacks import CallbackManagerForLLMRun
+
 from app.core.logger_handler import logger
 
-# 加载环境变量
-load_dotenv()
+
+# OpenAI-compatible base_url 映射
+BASE_URL_MAP = {
+    "OLLAMA": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") + "/v1",
+    "ALIYUN": os.getenv("ALIYUN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+    "DEEPSEEK": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+}
+
+# API key 映射（Ollama 不需要真实 key）
+API_KEY_MAP = {
+    "OLLAMA": "ollama",
+    "ALIYUN": os.getenv("ALIYUN_ACCESS_KEY_SECRET", ""),
+    "DEEPSEEK": os.getenv("DEEPSEEK_API_KEY", ""),
+}
+
+# 模型名映射
+MODEL_NAME_MAP = {
+    "OLLAMA": os.getenv("OLLAMA_MODEL_NAME", "qwen3.5:0.8b"),
+    "ALIYUN": os.getenv("CHAT_MODEL_NAME", "qwen3-max"),
+    "DEEPSEEK": os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-v4-flash"),
+}
+
+
+class ChatModel(BaseChatModel):
+    """统一 Chat 模型，基于 openai.AsyncOpenAI，兼容 Ollama/阿里云百炼/DeepSeek"""
+
+    _bound_tools: Optional[List[dict]] = None
+    _model_name: str
+    _streaming: bool
+    _temperature: float
+    _max_tokens: Optional[int]
+    _extra_body: Optional[dict]
+
+    def __init__(
+        self,
+        llm_type: Optional[str] = None,
+        model_name: Optional[str] = None,
+        streaming: bool = True,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        extra_body: Optional[dict] = None,
+    ):
+        super().__init__()
+        llm_type = (llm_type or os.getenv("LLM_TYPE", "ALIYUN")).upper()
+        if llm_type not in BASE_URL_MAP:
+            raise ValueError(f"不支持的 LLM_TYPE: {llm_type}，可选值: {', '.join(BASE_URL_MAP)}")
+
+        self._model_name = model_name or MODEL_NAME_MAP[llm_type]
+        self._streaming = streaming
+        self._temperature = temperature
+        self._max_tokens = max_tokens
+        self._extra_body = extra_body or {}
+
+        self._client = AsyncOpenAI(
+            api_key=API_KEY_MAP[llm_type],
+            base_url=BASE_URL_MAP[llm_type],
+        )
+        logger.info(f"🤖 ChatModel 初始化: type={llm_type}, model={self._model_name}, base_url={BASE_URL_MAP[llm_type]}")
+
+    @property
+    def _llm_type(self) -> str:
+        return "openai-compatible-chat"
+
+    @property
+    def _identifying_params(self) -> dict:
+        return {"model": self._model_name}
+
+    def bind_tools(
+        self,
+        tools: list,
+        **kwargs,
+    ) -> "ChatModel":
+        """绑定工具，返回新的 ChatModel 实例"""
+        tool_schemas = []
+        for tool in tools:
+            if hasattr(tool, "args_schema") and tool.args_schema:
+                try:
+                    schema = tool.args_schema.model_json_schema()
+                except Exception:
+                    schema = {"type": "object", "properties": {}}
+            else:
+                schema = {"type": "object", "properties": {}}
+            tool_schemas.append({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description or "",
+                    "parameters": schema,
+                },
+            })
+
+        new_model = ChatModel(
+            model_name=self._model_name,
+            streaming=self._streaming,
+            temperature=self._temperature,
+            max_tokens=self._max_tokens,
+            extra_body=self._extra_body,
+        )
+        new_model._client = self._client
+        new_model._bound_tools = tool_schemas
+        return new_model
+
+    def _messages_to_openai(self, messages: List[BaseMessage]) -> List[dict]:
+        """将 langchain_core messages 转为 OpenAI 格式"""
+        openai_msgs = []
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                openai_msgs.append({"role": "user", "content": msg.content})
+            elif isinstance(msg, AIMessage):
+                entry = {"role": "assistant", "content": msg.content or ""}
+                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    entry["tool_calls"] = [
+                        {
+                            "id": tc["id"] if isinstance(tc, dict) else tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc["name"] if isinstance(tc, dict) else tc.name,
+                                "arguments": tc["args"] if isinstance(tc, dict) else tc.args if isinstance(tc.args, str) else json.dumps(tc.args, ensure_ascii=False),
+                            },
+                        }
+                        for tc in msg.tool_calls
+                    ]
+                openai_msgs.append(entry)
+            elif hasattr(msg, "type") and msg.type == "system":
+                openai_msgs.append({"role": "system", "content": msg.content})
+            elif hasattr(msg, "type") and msg.type == "tool":
+                openai_msgs.append({
+                    "role": "tool",
+                    "tool_call_id": msg.tool_call_id,
+                    "content": msg.content,
+                })
+            else:
+                openai_msgs.append({"role": "user", "content": str(msg.content)})
+        return openai_msgs
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> ChatResult:
+        raise NotImplementedError("ChatModel 仅支持异步调用，请使用 ainvoke/astream")
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> ChatResult:
+        """异步非流式生成"""
+        openai_msgs = self._messages_to_openai(messages)
+
+        params = {
+            "model": self._model_name,
+            "messages": openai_msgs,
+            "temperature": self._temperature,
+        }
+        if self._max_tokens:
+            params["max_tokens"] = self._max_tokens
+        if self._bound_tools:
+            params["tools"] = self._bound_tools
+        if self._extra_body:
+            params["extra_body"] = self._extra_body
+        if stop:
+            params["stop"] = stop
+
+        response = await self._client.chat.completions.create(**params)
+        choice = response.choices[0]
+
+        tool_calls = []
+        if choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
+                try:
+                    args = json.loads(tc.function.arguments)
+                except (json.JSONDecodeError, TypeError):
+                    args = {}
+                tool_calls.append({
+                    "name": tc.function.name,
+                    "args": args,
+                    "id": tc.id,
+                })
+
+        ai_message = AIMessage(
+            content=choice.message.content or "",
+            tool_calls=tool_calls if tool_calls else [],
+        )
+        return ChatResult(generations=[ChatGeneration(message=ai_message)])
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> AsyncIterator[AIMessageChunk]:
+        """异步流式生成"""
+        openai_msgs = self._messages_to_openai(messages)
+
+        params = {
+            "model": self._model_name,
+            "messages": openai_msgs,
+            "temperature": self._temperature,
+            "stream": True,
+        }
+        if self._max_tokens:
+            params["max_tokens"] = self._max_tokens
+        if self._bound_tools:
+            params["tools"] = self._bound_tools
+        if self._extra_body:
+            params["extra_body"] = self._extra_body
+        if stop:
+            params["stop"] = stop
+
+        stream = await self._client.chat.completions.create(**params)
+        async for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta is None:
+                continue
+            content = delta.content or ""
+            tool_call_chunks = []
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    tc_dict = {
+                        "name": tc.function.name if tc.function and tc.function.name else None,
+                        "args": tc.function.arguments if tc.function and tc.function.arguments else None,
+                        "id": tc.id,
+                        "index": tc.index,
+                    }
+                    tool_call_chunks.append(tc_dict)
+            yield AIMessageChunk(
+                content=content,
+                tool_call_chunks=tool_call_chunks if tool_call_chunks else [],
+            )
 
 
 class DashScopeEmbeddingsWrapper(Embeddings):
-    """阿里云DashScope嵌入模型封装"""
-    
+    """阿里云DashScope嵌入模型封装（直接使用 dashscope SDK）"""
+
     def __init__(self, model_name: str = "qwen3-embedding", api_key: str = None):
         try:
             import dashscope
@@ -24,9 +263,8 @@ class DashScopeEmbeddingsWrapper(Embeddings):
             self.model_name = model_name
         except ImportError:
             raise ImportError("需要安装 dashscope 库: pip install dashscope")
-    
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """批量嵌入文档"""
         results = []
         for text in texts:
             resp = self.dashscope.TextEmbedding.call(
@@ -39,9 +277,8 @@ class DashScopeEmbeddingsWrapper(Embeddings):
                 logger.error(f"阿里云嵌入调用失败: {resp.message}")
                 results.append([])
         return results
-    
+
     def embed_query(self, text: str) -> List[float]:
-        """嵌入单个查询"""
         resp = self.dashscope.TextEmbedding.call(
             model=self.model_name,
             input=text
@@ -53,167 +290,108 @@ class DashScopeEmbeddingsWrapper(Embeddings):
             return []
 
 
-class BaseModelFactory(ABC):
-    """基础模型工厂"""
+class OpenAICompatibleEmbeddings(Embeddings):
+    """基于 OpenAI 兼容 API 的嵌入模型封装（适用于 Ollama）"""
 
-    @abstractmethod
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        """生成模型"""
-        pass
+    def __init__(self, model_name: str, base_url: str, api_key: str = "ollama"):
+        from openai import OpenAI
+        self._client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model_name = model_name
 
-
-class ChatModelFactory(BaseModelFactory):
-    """聊天模型工厂 - 支持阿里云百炼、Ollama和DeepSeek"""
-    
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        """根据LLM_TYPE生成对应的聊天模型"""
-        llm_type = os.getenv("LLM_TYPE", "ALIYUN").upper()
-        
-        if llm_type == "OLLAMA":
-            model_name = os.getenv("OLLAMA_MODEL_NAME", os.getenv("OLLAMA_CHAT_MODEL_NAME", "qwen3:7b"))
-            base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-            
-            logger.info(f"📦 ChatModel 使用Ollama模型: {model_name}, 地址: {base_url}")
-            
-            return ChatOllama(
-                model=model_name,
-                base_url=base_url,
-                streaming=True,
-                top_p=0.7,
-                client_kwargs={'trust_env': False},
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        result = []
+        for text in texts:
+            resp = self._client.embeddings.create(
+                model=self.model_name,
+                input=text,
             )
-        
-        elif llm_type == "ALIYUN":
-            model_name = os.getenv("ALIYUN_MODEL_NAME", os.getenv("CHAT_MODEL_NAME", "qwen3-max"))
-            api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
-            base_url = os.getenv("ALIYUN_BASE_URL")
+            result.append(resp.data[0].embedding)
+        return result
 
-            logger.info(f"📦 ChatModel 使用阿里云百炼模型: {model_name}")
-
-            return ChatTongyi(
-                model=model_name,
-                api_key=api_key,
-                base_url=base_url,
-                streaming=True,
-                top_p=0.7,
-            )
-
-        elif llm_type == "DEEPSEEK":
-            from langchain_deepseek import ChatDeepSeek
-            model_name = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-v4-flash")
-            api_key = os.getenv("DEEPSEEK_API_KEY")
-            api_base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-
-            logger.info(f"📦 ChatModel 使用DeepSeek模型(ChatDeepSeek): {model_name}")
-
-            return ChatDeepSeek(
-                model=model_name,
-                api_key=api_key,
-                api_base=api_base,
-                streaming=True,
-                top_p=0.7,
-                extra_body={"thinking": {"type": "disabled"}},
-            )
-
-        else:
-            raise ValueError(f"不支持的LLM_TYPE: {llm_type}，可选值: ALIYUN, OLLAMA, DEEPSEEK")
+    def embed_query(self, text: str) -> List[float]:
+        resp = self._client.embeddings.create(
+            model=self.model_name,
+            input=text,
+        )
+        return resp.data[0].embedding
 
 
-class EmbedModelFactory(BaseModelFactory):
-    """嵌入模型工厂 - 支持Ollama和阿里云百炼"""
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        """根据EMBED_MODEL_TYPE生成对应的嵌入模型"""
-        embed_type = os.getenv("EMBED_MODEL_TYPE", "OLLAMA").upper()
-        
-        if embed_type == "OLLAMA":
-            model_name = os.getenv("TEXT_EMBEDDING_MODEL_NAME", "qwen3-embedding:0.6b")
-            base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-            
-            logger.info(f"📦 EmbedModel 使用Ollama嵌入模型: {model_name}, 地址: {base_url}")
-            
-            return OllamaEmbeddings(
-                model=model_name,
-                base_url=base_url,
-                client_kwargs={'trust_env': False},
-            )
-        
-        elif embed_type == "ALIYUN":
-            model_name = os.getenv("ALIYUN_EMBED_MODEL_NAME", "qwen3-embedding")
-            api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
-            
-            logger.info(f"📦 EmbedModel 使用阿里云嵌入模型: {model_name}")
-            
-            return DashScopeEmbeddingsWrapper(
-                model_name=model_name,
-                api_key=api_key
-            )
-        
-        else:
-            raise ValueError(f"不支持的EMBED_MODEL_TYPE: {embed_type}，可选值: OLLAMA, ALIYUN")
+# ── 工厂函数 ──
+
+def create_chat_model(
+    llm_type: Optional[str] = None,
+    model_name: Optional[str] = None,
+    streaming: bool = True,
+    temperature: float = 0.7,
+    max_tokens: Optional[int] = None,
+    extra_body: Optional[dict] = None,
+) -> ChatModel:
+    """创建 Chat 模型实例"""
+    llm_type = (llm_type or os.getenv("LLM_TYPE", "ALIYUN")).upper()
+
+    if llm_type == "DEEPSEEK" and extra_body is None:
+        extra_body = {"thinking": {"type": "disabled"}}
+
+    return ChatModel(
+        llm_type=llm_type,
+        model_name=model_name,
+        streaming=streaming,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        extra_body=extra_body,
+    )
 
 
-class VisionModelFactory(BaseModelFactory):
-    """
-    视觉模型工厂 - 支持阿里云百炼和Ollama多模态模型。
-    用于 PDF 多模态加载场景：将 PDF 页面渲染为图片，然后调用视觉模型进行图片理解，
-    提取纯文本提取难以获取的图表、表格、流程图等视觉信息。
+def create_embedding_model(embed_type: Optional[str] = None) -> Embeddings:
+    """创建 Embedding 模型实例"""
+    embed_type = (embed_type or os.getenv("EMBED_MODEL_TYPE", "OLLAMA")).upper()
 
-    之所以单独为一个视觉模型工厂而不是复用 ChatModelFactory，是因为：
-    1. ChatModel 使用 streaming=True（流式输出），而视觉模型只能用 streaming=False
-       （图片理解不适合流式）
-    2. 视觉模型可能有独立的模型配置（如 VISION_OLLAMA_MODEL_NAME 区分于 OLLAMA_MODEL_NAME）
-    3. 部分用户可能希望视觉模型使用更大的参数量或专门的多模态模型（如 qwen-vl 系列）
-    """
+    if embed_type == "OLLAMA":
+        model_name = os.getenv("TEXT_EMBEDDING_MODEL_NAME", "qwen3-embedding:0.6b")
+        base_url = (os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") + "/v1")
+        logger.info(f"📦 EmbedModel 使用Ollama嵌入模型: {model_name}, 地址: {base_url}")
+        return OpenAICompatibleEmbeddings(
+            model_name=model_name,
+            base_url=base_url,
+        )
 
-    def generator(self) -> Optional[BaseChatModel]:
-        """根据VISION_MODEL_TYPE生成对应的视觉模型"""
-        # 未设置 VISION_MODEL_TYPE 时，默认跟随 LLM_TYPE（保持向后兼容）
-        vision_type = os.getenv("VISION_MODEL_TYPE", "").upper() or os.getenv("LLM_TYPE", "ALIYUN").upper()
+    elif embed_type == "ALIYUN":
+        model_name = os.getenv("ALIYUN_EMBED_MODEL_NAME", "qwen3-embedding")
+        api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
+        logger.info(f"📦 EmbedModel 使用阿里云嵌入模型: {model_name}")
+        return DashScopeEmbeddingsWrapper(model_name=model_name, api_key=api_key)
 
-        if vision_type == "OLLAMA":
-            model_name = os.getenv("VISION_OLLAMA_MODEL_NAME") or os.getenv("OLLAMA_MODEL_NAME") or "qwen3-vl:4b"
-            base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-
-            logger.info(f"🎨 VisionModel 使用Ollama多模态模型: {model_name}, 地址: {base_url}")
-
-            return ChatOllama(
-                model=model_name,
-                base_url=base_url,
-                # 视觉模型禁用 streaming，因为图片理解需要在完整的上下文上做推理
-                streaming=False,
-                top_p=0.7,
-                client_kwargs={'trust_env': False},
-            )
-        
-        elif vision_type == "ALIYUN":
-            model_name = os.getenv("VISION_CHAT_MODEL_NAME") or os.getenv("CHAT_MODEL_NAME") or "qwen3-max"
-            api_key = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
-            base_url = os.getenv("ALIYUN_BASE_URL")
-
-            logger.info(f"🎨 VisionModel 使用阿里云百炼多模态模型: {model_name}")
-
-            return ChatTongyi(
-                model=model_name,
-                api_key=api_key,
-                base_url=base_url,
-                streaming=False,
-                top_p=0.7,
-            )
-
-        else:
-            logger.warning(f"🎨 VisionModel 不支持的类型: {vision_type}，PDF多模态功能已禁用")
-            logger.warning(f"   如需使用，请设置 VISION_MODEL_TYPE=OLLAMA 或 VISION_MODEL_TYPE=ALIYUN")
-            return None
+    else:
+        raise ValueError(f"不支持的 EMBED_MODEL_TYPE: {embed_type}，可选值: OLLAMA, ALIYUN")
 
 
-class RerankerModelFactory(BaseModelFactory):
-    """重排序模型工厂 - 已废弃，使用CrossEncoder模型"""
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        """生成模型"""
+def create_vision_model() -> Optional[ChatModel]:
+    """创建 Vision 模型实例（非流式），用于 PDF 多模态加载"""
+    vision_type = os.getenv("VISION_MODEL_TYPE", "").upper() or os.getenv("LLM_TYPE", "ALIYUN").upper()
+
+    vision_model_names = {
+        "OLLAMA": os.getenv("VISION_OLLAMA_MODEL_NAME") or os.getenv("OLLAMA_MODEL_NAME") or "qwen3-vl:8b",
+        "ALIYUN": os.getenv("VISION_CHAT_MODEL_NAME") or os.getenv("CHAT_MODEL_NAME") or "qwen3-max",
+    }
+
+    if vision_type not in vision_model_names:
+        logger.warning(f"🎨 VisionModel 不支持的类型: {vision_type}，PDF多模态功能已禁用")
+        logger.warning(f"   如需使用，请设置 VISION_MODEL_TYPE=OLLAMA 或 VISION_MODEL_TYPE=ALIYUN")
         return None
 
+    model_name = vision_model_names[vision_type]
+    logger.info(f"🎨 VisionModel 使用{vision_type}多模态模型: {model_name}")
 
-chat_model = ChatModelFactory().generator()
-embed_model = EmbedModelFactory().generator()
+    return create_chat_model(
+        llm_type=vision_type,
+        model_name=model_name,
+        streaming=False,
+        temperature=0.7,
+    )
+
+
+# 模块级单例（兼容旧代码的 import）
+chat_model = create_chat_model()
+embed_model = create_embedding_model()
+vision_model = create_vision_model()
 reranker_model = None
-vision_model = VisionModelFactory().generator()
