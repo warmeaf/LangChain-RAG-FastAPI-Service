@@ -1,87 +1,75 @@
 <template>
-  <div class="register-page">
-    <van-nav-bar
-      title="用户注册"
-      left-arrow
-      @click-left="onClickLeft"
-      fixed
-      placeholder
-    />
-    
-    <div class="register-container">
-      <div class="register-logo">
-        <div class="logo-mark">
-          <van-icon name="service-o" size="36" />
-        </div>
-        <h2>用户注册</h2>
-      </div>
-      
-      <div class="register-form">
-        <van-cell-group inset>
-          <van-field
-            v-model="form.username"
-            placeholder="请输入用户名"
-            :rules="usernameRules"
-            required
-            left-icon="user-o"
-            @blur="validateUsername"
-          />
-          
-          <van-field
-            v-model="form.email"
-            placeholder="请输入邮箱地址"
-            :rules="emailRules"
-            required
-            type="email"
-            left-icon="envelop-o"
-            @blur="validateEmail"
-          />
-          
-          <van-field
-            v-model="form.telephone"
-            placeholder="请输入手机号码"
-            type="tel"
-            left-icon="phone"
-            maxlength="11"
-          />
-          
-          <van-field
-            v-model="form.password"
-            placeholder="请输入密码（6-20位）"
-            :rules="passwordRules"
-            required
-            type="password"
-            left-icon="lock"
-            @blur="validatePassword"
-          />
-          
-          <van-field
-            v-model="form.confirm_password"
-            placeholder="请确认密码"
-            :rules="confirmPasswordRules"
-            required
-            type="password"
-            left-icon="lock"
-            @blur="validateConfirmPassword"
-          />
-        </van-cell-group>
-        
-        <div class="register-btn-container">
-          <van-button
-            type="primary"
-            block
-            :loading="loading"
-            @click="handleRegister"
-          >
-            {{ loading ? '注册中...' : '注册' }}
-          </van-button>
-        </div>
-      </div>
-      
-      <div class="login-link">
-        已有账号？<span @click="goToLogin">去登录</span>
-      </div>
-    </div>
+  <van-nav-bar
+    title="用户注册"
+    left-arrow
+    @click-left="onClickLeft"
+    fixed
+    placeholder
+  />
+
+  <div>
+    <van-icon name="service-o" size="36" />
+    <h2>用户注册</h2>
+  </div>
+
+  <div>
+    <van-cell-group inset>
+      <van-field
+        v-model="form.username"
+        placeholder="请输入用户名"
+        :rules="usernameRules"
+        required
+        left-icon="user-o"
+        @blur="validateUsername"
+      />
+      <van-field
+        v-model="form.email"
+        placeholder="请输入邮箱地址"
+        :rules="emailRules"
+        required
+        type="email"
+        left-icon="envelop-o"
+        @blur="validateEmail"
+      />
+      <van-field
+        v-model="form.telephone"
+        placeholder="请输入手机号码"
+        type="tel"
+        left-icon="phone"
+        maxlength="11"
+      />
+      <van-field
+        v-model="form.password"
+        placeholder="请输入密码（6-20位）"
+        :rules="passwordRules"
+        required
+        type="password"
+        left-icon="lock"
+        @blur="validatePassword"
+      />
+      <van-field
+        v-model="form.confirm_password"
+        placeholder="请确认密码"
+        :rules="confirmPasswordRules"
+        required
+        type="password"
+        left-icon="lock"
+        @blur="validateConfirmPassword"
+      />
+    </van-cell-group>
+
+    <van-button
+      type="primary"
+      block
+      :loading="loading"
+      @click="handleRegister"
+    >
+      {{ loading ? '注册中...' : '注册' }}
+    </van-button>
+  </div>
+
+  <div>
+    已有账号？<span @click="goToLogin">去登录</span>
   </div>
 </template>
 
@@ -174,27 +162,27 @@ const validateForm = () => {
 const handleRegister = async () => {
   console.log('handleRegister函数被调用');
   console.log('表单数据:', form);
-  
+
   if (!validateForm()) {
     console.log('表单验证失败');
     return;
   }
-  
+
   console.log('表单验证通过，开始注册');
   loading.value = true;
-  
+
   try {
     console.log('调用userStore.register方法');
     const result = await userStore.register(form);
-    
+
     console.log('注册结果:', result);
-    
+
     if (result.success) {
       showToast({
         message: result.message,
         position: 'top'
       });
-      
+
       setTimeout(() => {
         router.push('/aichat');
       }, 1500);
@@ -225,53 +213,3 @@ const goToLogin = () => {
   router.push('/login');
 };
 </script>
-
-<style scoped>
-.register-page {
-  background-color: var(--van-background);
-}
-
-.register-container {
-  padding-bottom: var(--van-padding-lg);
-}
-
-.register-logo {
-  margin: var(--van-padding-xl) 0;
-  text-align: center;
-}
-
-.logo-mark {
-  border-radius: 50%;
-  background: var(--van-background);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto var(--van-padding-md);
-  color: var(--van-primary-color);
-}
-
-.register-logo h2 {
-  color: var(--van-text-color);
-  font-weight: var(--van-font-bold);
-}
-
-.register-form {
-  padding: 0 var(--van-padding-md);
-}
-
-.register-btn-container {
-  margin-top: var(--van-padding-lg);
-  padding: 0 var(--van-padding-md);
-}
-
-.login-link {
-  text-align: center;
-  margin-top: var(--van-padding-lg);
-  color: var(--van-text-color-3);
-  font-size: var(--van-font-size-md);
-}
-
-.login-link span {
-  color: var(--van-primary-color);
-}
-</style>

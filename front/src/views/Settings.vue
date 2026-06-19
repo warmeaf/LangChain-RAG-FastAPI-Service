@@ -1,81 +1,64 @@
 <template>
-  <div class="settings-container">
-    <van-nav-bar
-      :title="$t('settings.title')"
-      left-arrow
-      @click-left="onClickLeft"
-    />
-    
-    <div class="settings-list">
-      <van-cell-group inset :title="$t('settings.personalization')">
-        <van-cell :title="$t('settings.themeCustomization')" is-link @click="showThemePopup = true" />
-        <van-cell :title="$t('settings.languageSettings')" is-link @click="showLanguagePopup = true" />
-      </van-cell-group>
+  <van-nav-bar
+    :title="$t('settings.title')"
+    left-arrow
+    @click-left="onClickLeft"
+  />
+
+  <van-cell-group inset :title="$t('settings.personalization')">
+    <van-cell :title="$t('settings.themeCustomization')" is-link @click="showThemePopup = true" />
+    <van-cell :title="$t('settings.languageSettings')" is-link @click="showLanguagePopup = true" />
+  </van-cell-group>
+
+  <van-popup
+    v-model:show="showThemePopup"
+    position="bottom"
+    round
+  >
+    <div>{{ $t('settings.selectTheme') }}</div>
+    <div>
+      <div @click="changeTheme('light')">
+        <div>
+          <div></div>
+          <div></div>
+        </div>
+        <div>浅色</div>
+      </div>
+      <div @click="changeTheme('dark')">
+        <div>
+          <div></div>
+          <div></div>
+        </div>
+        <div>深色</div>
+      </div>
     </div>
-    
-    <!-- 主题选择弹出层 -->
-    <van-popup
-      v-model:show="showThemePopup"
-      position="bottom"
-      round
-      :style="{ height: '40%' }"
-    >
-      <div class="popup-title">{{ $t('settings.selectTheme') }}</div>
-      <div class="theme-list">
-        <div
-          class="theme-item"
-          :class="{ active: themeStore.currentTheme === 'light' }"
-          @click="changeTheme('light')"
+  </van-popup>
+
+  <van-popup
+    v-model:show="showLanguagePopup"
+    position="bottom"
+    round
+  >
+    <div>{{ $t('settings.selectLanguage') }}</div>
+    <van-radio-group v-model="currentLanguage">
+      <van-cell-group inset>
+        <van-cell
+          v-for="lang in languageOptions"
+          :key="lang.value"
+          :title="lang.label"
+          clickable
+          @click="currentLanguage = lang.value"
         >
-          <div class="theme-preview theme-preview-light">
-            <div class="theme-preview-bar"></div>
-            <div class="theme-preview-card"></div>
-          </div>
-          <div class="theme-name">浅色</div>
-        </div>
-        <div
-          class="theme-item"
-          :class="{ active: themeStore.currentTheme === 'dark' }"
-          @click="changeTheme('dark')"
-        >
-          <div class="theme-preview theme-preview-dark">
-            <div class="theme-preview-bar"></div>
-            <div class="theme-preview-card"></div>
-          </div>
-          <div class="theme-name">深色</div>
-        </div>
-      </div>
-    </van-popup>
-    
-    <!-- 语言选择弹出层 -->
-    <van-popup
-      v-model:show="showLanguagePopup"
-      position="bottom"
-      round
-      :style="{ height: '40%' }"
-    >
-      <div class="popup-title">{{ $t('settings.selectLanguage') }}</div>
-      <van-radio-group v-model="currentLanguage">
-        <van-cell-group inset>
-          <van-cell 
-            v-for="lang in languageOptions" 
-            :key="lang.value" 
-            :title="lang.label" 
-            clickable 
-            @click="currentLanguage = lang.value"
-            :class="{ 'language-active': currentLanguage === lang.value }"
-          >
-            <template #right-icon>
-              <van-radio :name="lang.value" />
-            </template>
-          </van-cell>
-        </van-cell-group>
-      </van-radio-group>
-      <div class="popup-footer">
-        <van-button type="primary" block @click="changeLanguage">{{ $t('common.confirm') }}</van-button>
-      </div>
-    </van-popup>
-  </div>
+          <template #right-icon>
+            <van-radio :name="lang.value" />
+          </template>
+        </van-cell>
+      </van-cell-group>
+    </van-radio-group>
+    <div>
+      <van-button type="primary" block @click="changeLanguage">{{ $t('common.confirm') }}</van-button>
+    </div>
+  </van-popup>
 </template>
 
 <script setup>
@@ -123,89 +106,3 @@ const changeLanguage = () => {
   window.location.reload();
 };
 </script>
-
-<style scoped>
-.settings-container {
-  background-color: var(--van-background);
-  color: var(--van-text-color);
-  padding-bottom: var(--van-padding-lg);
-}
-
-.settings-list {
-  margin-top: var(--van-padding-lg);
-}
-
-.popup-title {
-  text-align: center;
-  padding: var(--van-padding-md);
-  font-size: var(--van-font-size-lg);
-  font-weight: var(--van-font-bold);
-  border-bottom: var(--van-border-width) solid var(--van-border-color);
-  color: var(--van-text-color);
-}
-
-.theme-list {
-  display: flex;
-  flex-wrap: wrap;
-  padding: var(--van-padding-lg) var(--van-padding-md);
-  gap: var(--van-padding-sm);
-  justify-content: center;
-}
-
-.theme-item {
-  width: 40%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  padding: var(--van-padding-sm) var(--van-padding-xs);
-  transition: background var(--van-duration-fast);
-}
-
-.theme-item:active {
-  background: var(--van-background);
-}
-
-.theme-item.active {
-  background: var(--van-background);
-  box-shadow: 0 0 0 calc(var(--van-border-width) * 2) var(--van-primary-color);
-}
-
-.theme-preview {
-  border-radius: var(--van-radius-lg);
-  margin-bottom: var(--van-padding-xs);
-  padding: var(--van-padding-xs);
-  display: flex;
-  flex-direction: column;
-  gap: var(--van-padding-base);
-  overflow: hidden;
-}
-
-.theme-preview-light { background: var(--van-background); }
-.theme-preview-dark  { background: var(--van-background-2); }
-
-.theme-preview-bar {
-  width: 100%;
-  border-radius: var(--van-radius-sm);
-  background: var(--van-primary-color);
-}
-
-.theme-preview-card {
-  width: 70%;
-  border-radius: var(--van-radius-sm);
-  background: var(--van-text-color-3);
-}
-
-.theme-name {
-  font-size: var(--van-font-size-sm);
-  color: var(--van-text-color-2);
-}
-
-.popup-footer {
-  padding: var(--van-padding-md);
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-</style>

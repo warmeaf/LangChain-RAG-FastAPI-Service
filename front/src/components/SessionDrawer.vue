@@ -102,37 +102,3 @@ const createNewSession = () => {
 };
 </script>
 
-<style scoped>
-.drawer-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--van-background);
-}
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--van-padding-md);
-  border-bottom: var(--van-border-width) solid var(--van-border-color);
-}
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: var(--van-padding-xs);
-  font-size: var(--van-font-size-lg);
-  font-weight: var(--van-font-bold);
-  color: var(--van-text-color);
-}
-.drawer-content { flex: 1; overflow-y: auto; padding: var(--van-padding-sm); }
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--van-text-color-2);
-}
-.active {
-  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
-}
-</style>

@@ -1,5 +1,5 @@
 <template>
-  <van-tabbar v-model="active" route>
+  <van-tabbar v-model="active" route placeholder>
     <van-tabbar-item to="/aichat" name="aichat" icon="chat-o">
       <span>{{ $t('nav.aiChat') }}</span>
     </van-tabbar-item>

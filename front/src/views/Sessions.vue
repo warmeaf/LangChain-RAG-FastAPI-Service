@@ -1,86 +1,78 @@
 <template>
-  <div class="sessions-container">
-    <van-nav-bar title="会话管理" fixed placeholder />
-    
-    <div class="sessions-content">
-      <div class="sessions-header">
-        <div class="header-title">
-          <van-icon name="chat-o" size="24" color="var(--van-primary-color)" />
-          <h2>历史会话</h2>
-        </div>
-        <van-button type="primary" @click="createNewSession">
-          新会话
-        </van-button>
-      </div>
-      
-      <div v-if="sessionStore.isLoading" class="loading">
-        <van-loading type="spinner" color="var(--van-primary-color)" />
-        <p>加载中...</p>
-      </div>
-      
-      <div v-else-if="sessionStore.sessions.length === 0" class="empty-sessions">
-        <div class="empty-icon">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            <line x1="9" y1="10" x2="15" y2="10"/>
-            <line x1="12" y1="7" x2="12" y2="13"/>
-          </svg>
-        </div>
-        <p>暂无会话记录</p>
-        <p class="empty-sub">开始一段新的对话吧</p>
-        <van-button type="primary" round @click="createNewSession">
-          创建新会话
-        </van-button>
-      </div>
-      
-      <div v-else class="sessions-list">
-        <van-cell-group inset>
-          <van-cell
-            v-for="session in sessionStore.sessions"
-            :key="session.session_id"
-            :title="session.title || '新会话'"
-            :value="formatSessionTime(session.created_at)"
-            is-link
-            @click="selectSession(session)"
-            :class="{ active: sessionStore.currentSession?.session_id === session.session_id }"
-          >
-            <template #right-icon>
-              <span class="delete-btn" @click.stop="deleteSession(session.session_id)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
-                </svg>
-              </span>
-            </template>
-          </van-cell>
-        </van-cell-group>
-      </div>
+  <van-nav-bar title="会话管理" fixed placeholder />
+
+  <div>
+    <div>
+      <van-icon name="chat-o" size="24" color="var(--van-primary-color)" />
+      <h2>历史会话</h2>
+      <van-button type="primary" @click="createNewSession">
+        新会话
+      </van-button>
     </div>
-    
-    <!-- 新会话对话框 -->
-    <van-popup v-model:show="showNewSessionDialog" position="bottom">
-      <div class="new-session-dialog">
-        <h3>新会话</h3>
-        <van-field
-          v-model="newSessionQuery"
-          type="textarea"
-          rows="3"
-          placeholder="请输入您的问题..."
-          maxlength="200"
-        />
-        <div class="dialog-buttons">
-          <van-button @click="showNewSessionDialog = false">取消</van-button>
-          <van-button type="primary" @click="confirmNewSession" :disabled="!newSessionQuery.trim()">
-            开始对话
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
-    
-    <tab-bar />
+
+    <div v-if="sessionStore.isLoading">
+      <van-loading type="spinner" color="var(--van-primary-color)" />
+      <p>加载中...</p>
+    </div>
+
+    <div v-else-if="sessionStore.sessions.length === 0">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <line x1="9" y1="10" x2="15" y2="10"/>
+        <line x1="12" y1="7" x2="12" y2="13"/>
+      </svg>
+      <p>暂无会话记录</p>
+      <p>开始一段新的对话吧</p>
+      <van-button type="primary" round @click="createNewSession">
+        创建新会话
+      </van-button>
+    </div>
+
+    <div v-else>
+      <van-cell-group inset>
+        <van-cell
+          v-for="session in sessionStore.sessions"
+          :key="session.session_id"
+          :title="session.title || '新会话'"
+          :value="formatSessionTime(session.created_at)"
+          is-link
+          @click="selectSession(session)"
+        >
+          <template #right-icon>
+            <span @click.stop="deleteSession(session.session_id)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </span>
+          </template>
+        </van-cell>
+      </van-cell-group>
+    </div>
   </div>
+
+  <van-popup v-model:show="showNewSessionDialog" position="bottom">
+    <div>
+      <h3>新会话</h3>
+      <van-field
+        v-model="newSessionQuery"
+        type="textarea"
+        rows="3"
+        placeholder="请输入您的问题..."
+        maxlength="200"
+      />
+      <van-space>
+        <van-button @click="showNewSessionDialog = false">取消</van-button>
+        <van-button type="primary" @click="confirmNewSession" :disabled="!newSessionQuery.trim()">
+          开始对话
+        </van-button>
+      </van-space>
+    </div>
+  </van-popup>
+
+  <tab-bar />
 </template>
 
 <script setup>
@@ -230,130 +222,3 @@ const confirmNewSession = async () => {
   }
 };
 </script>
-
-<style scoped>
-.sessions-container {
-  display: flex;
-  flex-direction: column;
-  padding-bottom: var(--van-tabbar-height);
-  box-sizing: border-box;
-  background-color: var(--van-background);
-}
-
-.sessions-content {
-  flex: 1;
-  padding: var(--van-padding-md);
-  overflow-y: auto;
-}
-
-.sessions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--van-padding-lg);
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: var(--van-padding-xs);
-  color: var(--van-text-color);
-}
-
-.sessions-header h2 {
-  font-size: var(--van-font-size-lg);
-  font-weight: var(--van-font-bold);
-  color: var(--van-text-color);
-  margin: 0;
-}
-
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading p {
-  margin-top: var(--van-padding-md);
-  color: var(--van-text-color-2);
-}
-
-.empty-sessions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn var(--van-duration-base) ease-out;
-}
-
-.empty-icon {
-  color: var(--van-text-color-3);
-  margin-bottom: var(--van-padding-base);
-}
-
-.empty-sessions p {
-  margin: var(--van-padding-xs) 0 var(--van-padding-base);
-  color: var(--van-text-color-3);
-  font-size: var(--van-font-size-lg);
-}
-
-.empty-sub {
-  font-size: var(--van-font-size-md);
-  color: var(--van-text-color-3);
-  margin-bottom: var(--van-padding-lg);
-}
-
-.active {
-  background-color: var(--van-active-color);
-  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
-}
-
-.delete-btn {
-  display: flex;
-  align-items: center;
-  padding: var(--van-padding-base);
-  cursor: pointer;
-  color: var(--van-text-color-3);
-  border-radius: var(--van-radius-md);
-  transition: color var(--van-duration-fast), background var(--van-duration-fast);
-}
-
-.delete-btn:hover {
-  color: var(--van-text-color);
-}
-
-.delete-btn:active {
-  background: var(--van-border-color);
-}
-
-.new-session-dialog {
-  background-color: var(--van-background-2);
-  border-radius: var(--van-padding-md) var(--van-padding-md) 0 0;
-  padding: var(--van-padding-lg);
-}
-
-.new-session-dialog h3 {
-  font-size: var(--van-font-size-lg);
-  font-weight: var(--van-font-bold);
-  color: var(--van-text-color);
-  margin: 0 0 var(--van-padding-lg);
-  text-align: center;
-}
-
-.dialog-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--van-padding-lg);
-  gap: var(--van-padding-xs);
-}
-
-.dialog-buttons :deep(.van-button) {
-  flex: 1;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-</style>

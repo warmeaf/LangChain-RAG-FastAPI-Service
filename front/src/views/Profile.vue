@@ -1,42 +1,38 @@
 <template>
-  <div class="profile-page">
-    <van-nav-bar
-      title="个人信息"
-      left-arrow
-      @click-left="$router.back()"
-      fixed
-      placeholder
-    />
-    
-    <div class="profile-container">
-      <van-cell-group inset class="avatar-group">
-        <van-cell title="头像" center is-link @click="showAvatarDialog">
-          <template #right-icon>
-            <div v-if="userInfo?.avatar" class="profile-avatar">
-              <van-image round width="60" height="60" :src="`http://localhost:8001${userInfo.avatar}`" />
-            </div>
-            <div v-else class="profile-avatar-letter">
-              {{ (userInfo?.username || '?')[0].toUpperCase() }}
-            </div>
-          </template>
-        </van-cell>
-      </van-cell-group>
-      
-      <van-cell-group inset class="info-group">
-        <van-cell title="用户ID" :value="userInfo?.id || userInfo?.uuid || '未设置'" />
-        <van-cell title="用户名" :value="userInfo?.username || '未设置'" is-link @click="showUsernameDialog" />
-        <van-cell title="邮箱" :value="userInfo?.email || '未设置'" is-link @click="showEmailDialog" />
-        <van-cell title="手机号" :value="userInfo?.telephone || '未设置'" is-link @click="showPhoneDialog" />
-        <van-cell title="性别" :value="genderText || '未设置'" is-link @click="showGenderDialog" />
-        <van-cell title="个人简介" :value="userBio || '暂无简介'" is-link @click="showBioDialog" />
-        <van-cell title="注册时间" :value="createTimeText || '未设置'" />
-        <van-cell title="最后登录时间" :value="lastLoginText || '未设置'" />
-      </van-cell-group>
-      
-      <van-cell-group inset class="security-group">
-        <van-cell title="修改密码" is-link @click="showPasswordConfirm" />
-      </van-cell-group>
-    </div>
+  <van-nav-bar
+    title="个人信息"
+    left-arrow
+    @click-left="$router.back()"
+    fixed
+    placeholder
+  />
+
+  <div>
+    <van-cell-group inset>
+      <van-cell title="头像" center is-link @click="showAvatarDialog">
+        <template #right-icon>
+          <van-image v-if="userInfo?.avatar" round width="60" height="60" :src="`http://localhost:8001${userInfo.avatar}`" />
+          <div v-else>
+            {{ (userInfo?.username || '?')[0].toUpperCase() }}
+          </div>
+        </template>
+      </van-cell>
+    </van-cell-group>
+
+    <van-cell-group inset>
+      <van-cell title="用户ID" :value="userInfo?.id || userInfo?.uuid || '未设置'" />
+      <van-cell title="用户名" :value="userInfo?.username || '未设置'" is-link @click="showUsernameDialog" />
+      <van-cell title="邮箱" :value="userInfo?.email || '未设置'" is-link @click="showEmailDialog" />
+      <van-cell title="手机号" :value="userInfo?.telephone || '未设置'" is-link @click="showPhoneDialog" />
+      <van-cell title="性别" :value="genderText || '未设置'" is-link @click="showGenderDialog" />
+      <van-cell title="个人简介" :value="userBio || '暂无简介'" is-link @click="showBioDialog" />
+      <van-cell title="注册时间" :value="createTimeText || '未设置'" />
+      <van-cell title="最后登录时间" :value="lastLoginText || '未设置'" />
+    </van-cell-group>
+
+    <van-cell-group inset>
+      <van-cell title="修改密码" is-link @click="showPasswordConfirm" />
+    </van-cell-group>
   </div>
 </template>
 
@@ -508,30 +504,3 @@ const showAvatarDialog = () => {
   });
 };
 </script>
-
-<style scoped>
-.profile-page {
-  background-color: var(--van-background);
-}
-
-.profile-container {
-  padding-bottom: var(--van-padding-lg);
-}
-
-.avatar-group,
-.info-group,
-.security-group {
-  margin-top: var(--van-padding-sm);
-}
-
-.profile-avatar-letter {
-  border-radius: 50%;
-  background: var(--van-background);
-  color: var(--van-primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--van-font-bold);
-  border: calc(var(--van-border-width) * 2) solid var(--van-border-color);
-}
-</style>

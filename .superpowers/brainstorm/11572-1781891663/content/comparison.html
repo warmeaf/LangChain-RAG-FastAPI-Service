@@ -1,0 +1,125 @@
+<h2>My.vue 重构：自定义标签 → Vant UI 组件</h2>
+<p class="subtitle">左侧为当前代码结构，右侧为重构后使用 van-cell-group + van-cell 的方案</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">❌ 当前：自定义 div 结构</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.6;">
+      <div style="background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+        <b>div.user-info</b> (自定义)<br>
+        <span style="color:#999;">├── div.avatar</span><br>
+        <span style="color:#999;">│   ├── div.avatar-img (van-image)</span><br>
+        <span style="color:#999;">│   └── div.avatar-letter</span><br>
+        <span style="color:#999;">├── div.info</span><br>
+        <span style="color:#999;">│   ├── div.username</span><br>
+        <span style="color:#999;">│   └── div.desc</span><br>
+        <span style="color:#999;">└── van-icon (arrow)</span>
+      </div>
+      <div style="background: #e8f5e9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+        <b>div.menu-list</b> ✅ 已用 Vant<br>
+        <span style="color:#999;">└── van-cell-group inset</span><br>
+        <span style="color:#999;">    ├── van-cell (设置)</span><br>
+        <span style="color:#999;">    └── van-cell (退出登录)</span>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">✅ 重构后：全部使用 Vant 组件</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.6;">
+      <div style="background: #e8f5e9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+        <b>van-cell-group inset</b> ✅<br>
+        <span style="color:#999;">└── van-cell (center, is-link)</span><br>
+        <span style="color:#999;">    ├── #icon slot: van-image</span><br>
+        <span style="color:#999;">    │   └── #error slot: avatar-letter</span><br>
+        <span style="color:#999;">    ├── #title slot: username</span><br>
+        <span style="color:#999;">    └── #label slot: bio / buttons</span>
+      </div>
+      <div style="background: #e8f5e9; padding: 8px; border-radius: 4px;">
+        <b>van-cell-group inset</b> ✅ 已用 Vant<br>
+        <span style="color:#999;">└── van-cell (设置)</span><br>
+        <span style="color:#999;">└── van-cell (退出登录)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 24px;">核心变更点</h3>
+
+<div class="section">
+  <table style="width:100%; border-collapse: collapse;">
+    <tr style="background: var(--van-background-2);">
+      <th style="padding: 8px 12px; text-align: left;">自定义标签</th>
+      <th style="padding: 8px 12px; text-align: left;">替换为</th>
+      <th style="padding: 8px 12px; text-align: left;">理由</th>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--van-border-color);">
+      <td style="padding: 8px 12px;"><code>div.user-info</code></td>
+      <td style="padding: 8px 12px;"><code>van-cell-group inset + van-cell</code></td>
+      <td style="padding: 8px 12px;">与 Profile.vue / Settings.vue 模式统一</td>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--van-border-color);">
+      <td style="padding: 8px 12px;"><code>div.avatar + div.avatar-img</code></td>
+      <td style="padding: 8px 12px;"><code>#icon</code> slot 内直接放 van-image</td>
+      <td style="padding: 8px 12px;">减少嵌套层级，利用 slot 机制</td>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--van-border-color);">
+      <td style="padding: 8px 12px;"><code>div.avatar-letter</code></td>
+      <td style="padding: 8px 12px;">保留 + van-image #error slot</td>
+      <td style="padding: 8px 12px;">增加图片加载失败的兜底显示</td>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--van-border-color);">
+      <td style="padding: 8px 12px;"><code>div.info / div.username / div.desc</code></td>
+      <td style="padding: 8px 12px;"><code>#title</code> / <code>#label</code> slot</td>
+      <td style="padding: 8px 12px;">利用 van-cell 的结构化插槽</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px;"><code>van-icon name="arrow"</code></td>
+      <td style="padding: 8px 12px;"><code>is-link</code> 属性</td>
+      <td style="padding: 8px 12px;">van-cell 内置箭头，无需手动添加</td>
+    </tr>
+  </table>
+</div>
+
+<h3 style="margin-top: 24px;">视觉对比</h3>
+<p class="subtitle">重构后视觉效果保持完全一致（通过 :deep() 样式微调）</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">当前外观</div>
+    <div class="mockup-body" style="padding: 0;">
+      <!-- 模拟当前的 user-info card -->
+      <div style="display:flex;align-items:center;padding:16px;background:linear-gradient(135deg,#f5f5f5,#fff);border-radius:12px;margin:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+        <div style="width:72px;height:72px;border-radius:50%;background:#fff;color:#1989fa;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;border:2px solid #ebedf0;margin-right:16px;">W</div>
+        <div style="flex:1;">
+          <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">用户名</div>
+          <div style="font-size:14px;color:#999;">个人简介</div>
+        </div>
+        <div style="color:#c8c9cc;">→</div>
+      </div>
+      <!-- 模拟当前菜单 -->
+      <div style="margin:0 16px 16px;">
+        <div style="background:#f5f5f5;border-radius:8px;padding:10px 16px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,0.08);">设置 →</div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:10px 16px;box-shadow:0 1px 2px rgba(0,0,0,0.08);">退出登录</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">重构后外观（一致）</div>
+    <div class="mockup-body" style="padding: 0;">
+      <!-- 模拟重构后的 van-cell card -->
+      <div style="display:flex;align-items:center;padding:16px;background:linear-gradient(135deg,#f5f5f5,#fff);border-radius:12px;margin:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+        <div style="width:72px;height:72px;border-radius:50%;background:#fff;color:#1989fa;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;border:2px solid #ebedf0;margin-right:16px;">W</div>
+        <div style="flex:1;">
+          <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">用户名</div>
+          <div style="font-size:14px;color:#999;">个人简介</div>
+        </div>
+        <div style="color:#c8c9cc;">→</div>
+      </div>
+      <!-- 模拟重构后的菜单 -->
+      <div style="margin:0 16px 16px;">
+        <div style="background:#f5f5f5;border-radius:8px;padding:10px 16px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,0.08);">设置 →</div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:10px 16px;box-shadow:0 1px 2px rgba(0,0,0,0.08);">退出登录</div>
+      </div>
+    </div>
+  </div>
+</div>
