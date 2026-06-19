@@ -227,6 +227,14 @@ class DocumentProcessor:
 
                 await asyncio.to_thread(self.vectors_store.add_documents, document)
 
+                # 类别识别与初始权重写入
+                if user_id:
+                    category = self._detect_category(file_path, filename)
+                    quality_score = self._calc_quality_score(document)
+                    await self._init_doc_weights(
+                        md5_hex, user_id, filename, category, quality_score
+                    )
+
                 original_filename = file_names.get(file_path, filename) if files else filename
                 await self.md5_store.save_md5_hex(md5_hex, filename, original_filename, user_id)
 
@@ -259,3 +267,61 @@ class DocumentProcessor:
                     except:
                         pass
                 continue
+
+    def _detect_category(self, file_path: str, filename: str) -> str:
+        """基于文件名和路径检测文档类别"""
+        name_lower = (filename + file_path).lower()
+        category_keywords = {
+            "政策制度": ["政策", "制度", "规定", "办法", "条例", "章程"],
+            "技术文档": ["技术", "架构", "api", "接口", "代码", "开发", "部署", "运维"],
+            "产品手册": ["产品", "手册", "指南", "用户", "帮助", "使用说明"],
+            "周报日报": ["周报", "日报", "月报", "季度", "年终总结"],
+            "会议纪要": ["会议", "纪要", "记录", "讨论"],
+        }
+        for cat, keywords in category_keywords.items():
+            for kw in keywords:
+                if kw in name_lower:
+                    return cat
+        return "default"
+
+    def _calc_quality_score(self, documents: list) -> float:
+        """基于 chunk 数和平均长度评估文档完整度"""
+        if not documents:
+            return 0.5
+        total_length = sum(len(doc.page_content) for doc in documents)
+        avg_length = total_length / len(documents)
+        chunk_bonus = min(1.0, len(documents) / 20)
+        length_bonus = min(1.0, avg_length / 300)
+        return round(0.4 * chunk_bonus + 0.6 * length_bonus, 2)
+
+    async def _init_doc_weights(
+        self, md5_hex: str, user_id: str, filename: str,
+        category: str, quality_score: float
+    ):
+        """初始化文档权重记录"""
+        from app.models.feedback import DocWeight
+        from app.db.db_config import AsyncSessionLocal
+        from sqlalchemy import select
+
+        category_weights = rag_config.get("doc_category_weights", {})
+        category_weight = category_weights.get(category, category_weights.get("default", 0.7))
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(DocWeight).where(
+                    DocWeight.user_id == user_id,
+                    DocWeight.doc_md5 == md5_hex,
+                )
+            )
+            existing = result.scalar_one_or_none()
+            if existing is None:
+                dw = DocWeight(
+                    user_id=user_id,
+                    doc_md5=md5_hex,
+                    doc_filename=filename,
+                    category=category,
+                    weight=category_weight,
+                    quality_score=quality_score,
+                )
+                session.add(dw)
+                await session.commit()

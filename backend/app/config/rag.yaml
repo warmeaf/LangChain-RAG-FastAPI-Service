@@ -35,6 +35,14 @@ milvus:
 
 allow_file_types: ["txt", "pdf", "md", "pptx", "docx", "xlsx", "xls", "py", "js", "ts", "java", "go"]
 
+doc_category_weights:
+  政策制度: 1.0
+  技术文档: 0.9
+  产品手册: 0.85
+  周报日报: 0.4
+  会议纪要: 0.3
+  default: 0.7
+
 ocr:
   enabled: true
   language: "ch"

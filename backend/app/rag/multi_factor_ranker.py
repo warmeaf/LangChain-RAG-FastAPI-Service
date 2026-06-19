@@ -22,14 +22,41 @@ class MultiFactorRanker:
         query: str,
         docs: List[Document],
         relevance_scores: List[float],
+        user_id: str = None,
     ) -> List[Document]:
         """
         多因素排序
         :param query: 原始查询
         :param docs: 文档列表 (带 metadata)
         :param relevance_scores: 每个文档的 Reranker 相关性分数 [0,1]
+        :param user_id: 用户ID，用于查询文档类别权重和质量评分
         :return: 排序后的文档列表
         """
+        # 查询文档类别权重和质量评分
+        doc_weights_map = {}
+        if user_id:
+            try:
+                from app.models.feedback import DocWeight
+                from app.db.db_config import AsyncSessionLocal
+                from sqlalchemy import select
+
+                md5_list = [doc.metadata.get("md5", "") for doc in docs if doc.metadata.get("md5")]
+                if md5_list:
+                    async with AsyncSessionLocal() as session:
+                        result = await session.execute(
+                            select(DocWeight).where(
+                                DocWeight.user_id == user_id,
+                                DocWeight.doc_md5.in_(md5_list),
+                            )
+                        )
+                        for dw in result.scalars().all():
+                            doc_weights_map[dw.doc_md5] = {
+                                "weight": dw.weight or 1.0,
+                                "quality_score": dw.quality_score or 0.7,
+                            }
+            except Exception:
+                pass
+
         now = time.time()
         scored = []
 
@@ -41,8 +68,12 @@ class MultiFactorRanker:
             years_ago = (now - created_at) / (365 * 24 * 3600)
             time_decay = math.exp(-self.time_decay_lambda * years_ago)
 
-            # 文档权重
-            doc_weight = float(doc.metadata.get("doc_weight", 1.0))
+            # 文档权重 (类别预设 + 质量评分)
+            doc_md5 = doc.metadata.get("md5", "")
+            stored = doc_weights_map.get(doc_md5, {})
+            category_weight = stored.get("weight", float(doc.metadata.get("doc_weight", 1.0)))
+            quality_score = stored.get("quality_score", 0.7)
+            doc_weight = category_weight * 0.7 + quality_score * 0.3
 
             # 综合得分
             final_score = (

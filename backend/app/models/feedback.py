@@ -36,6 +36,9 @@ class DocWeight(Base):
     doc_filename = Column(String(512))
     category = Column(String(128))
     weight = Column(Float, default=1.0)
+    quality_score = Column(Float, default=0.7)
+    impression_count = Column(Integer, default=0)
+    click_count = Column(Integer, default=0)
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (

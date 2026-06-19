@@ -112,7 +112,7 @@ class RagService:
                 ordered_scores = [0.5] * len(documents)
 
             # ④ 多因素排序
-            final_docs = await self.ranker.rank(query, ordered_docs, ordered_scores)
+            final_docs = await self.ranker.rank(query, ordered_docs, ordered_scores, self.user_id)
 
             if self.thinking_callback:
                 await self.thinking_callback({
