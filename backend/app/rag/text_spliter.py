@@ -5,7 +5,7 @@ from typing import List, Optional, Any
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
-from app.utils.config import chroma_config
+from app.utils.config import rag_config
 
 
 class RecursiveTextSplitter:
@@ -20,7 +20,7 @@ class RecursiveTextSplitter:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         default_separators = ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""]
-        self.separators = separators or chroma_config.get('chunking', {}).get('separators', default_separators)
+        self.separators = separators or rag_config.get('chunking', {}).get('separators', default_separators)
 
     def _split_text_with_separator(self, text: str, separator: str) -> List[str]:
         """按单个分隔符切分文本，保留分隔符"""
@@ -115,7 +115,7 @@ class AsyncTextSplitter:
         separators: Optional[List[str]] = None,
         embedding_model: Optional[Embeddings] = None,
     ):
-        default_separators = chroma_config.get('chunking', {}).get('separators', ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""])
+        default_separators = rag_config.get('chunking', {}).get('separators', ["\n\n", "\n", "。", "！", "？", "!", "?", " ", ""])
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.separators = separators or default_separators

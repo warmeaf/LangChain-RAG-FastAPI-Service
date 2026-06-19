@@ -133,8 +133,8 @@ class DocumentProcessor:
                 file_names[temp_file_path.name] = file.filename
         else:
             allowed_file_path: tuple[str] = await listdir_allowed_type(
-                chroma_config['data_path'],
-                tuple(chroma_config['allow_file_types'])
+                rag_config['data_path'],
+                tuple(rag_config['allow_file_types'])
             )
             file_paths = list(allowed_file_path)
 

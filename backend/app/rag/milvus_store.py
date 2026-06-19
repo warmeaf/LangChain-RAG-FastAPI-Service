@@ -203,12 +203,58 @@ class MilvusService:
 
     async def delete_user_md5(self, user_id: str, delete_documents: bool = True):
         await self.md5_store.delete_user_md5(user_id)
+        if delete_documents:
+            self.client.delete(
+                collection_name=self.collection_name,
+                filter=f'user_id == "{user_id}"',
+            )
+            logger.info(f"【Milvus数据库】已删除用户 {user_id} 的所有文档")
 
     async def delete_single_md5(self, user_id: str, md5_value: str, delete_documents: bool = True):
-        return await self.md5_store.delete_single_md5(user_id, md5_value)
+        """删除单个MD5记录及其对应的知识库内容"""
+        success = await self.md5_store.delete_single_md5(user_id, md5_value)
+        if not success:
+            logger.warning(f"【Milvus数据库】MD5记录 {md5_value} 不存在")
+            return False
+
+        logger.info(f"【Milvus数据库】已删除用户 {user_id} 的MD5记录: {md5_value}")
+
+        if delete_documents:
+            filter_expr = f'user_id == "{user_id}" && metadata["md5"] == "{md5_value}"'
+            self.client.delete(
+                collection_name=self.collection_name,
+                filter=filter_expr,
+            )
+            logger.info(f"【Milvus数据库】已删除用户 {user_id} 中MD5为 {md5_value} 的文档")
+
+        # 清理磁盘上该用户的 PDF 提取图片
+        from app.utils.image_extractor import delete_image_directory
+        delete_image_directory(user_id, md5_value)
+
+        return True
 
     async def delete_by_filename(self, user_id: str, filename: str, delete_documents: bool = True):
-        return await self.md5_store.delete_by_filename(user_id, filename)
+        """通过文件名删除MD5记录及其对应的知识库内容"""
+        md5_to_delete = await self.md5_store.delete_by_filename(user_id, filename)
+        if md5_to_delete is None:
+            logger.warning(f"【Milvus数据库】文件 {filename} 不存在于用户 {user_id} 的MD5记录中")
+            return False
+
+        logger.info(f"【Milvus数据库】已删除用户 {user_id} 的文件 {filename} 的MD5记录")
+
+        if delete_documents:
+            filter_expr = f'user_id == "{user_id}" && metadata["md5"] == "{md5_to_delete}"'
+            self.client.delete(
+                collection_name=self.collection_name,
+                filter=filter_expr,
+            )
+            logger.info(f"【Milvus数据库】已删除用户 {user_id} 中文件 {filename} 对应的文档")
+
+        # 清理磁盘上该用户的 PDF 提取图片
+        from app.utils.image_extractor import delete_image_directory
+        delete_image_directory(user_id, md5_to_delete)
+
+        return True
 
     async def get_md5_info(self, user_id: str, md5_value: str):
         return await self.md5_store.get_md5_info(user_id, md5_value)

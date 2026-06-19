@@ -1,4 +1,4 @@
-# RAG 企业级配置 (替代 chroma.yaml)
+# RAG 企业级配置
 
 retrieval:
   coarse_k: 100          # 粗排召回数
@@ -59,6 +59,6 @@ ocr:
   enabled: true
   language: "ch"
 
-# 保留 ChromaDB 时代的配置供过渡使用
+
 md5_hex_store: data/md5_hex_store/md5_hex_store.txt
 data_path: data

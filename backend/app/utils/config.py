@@ -5,9 +5,6 @@ rag_config = load_config(config_path=get_abstract_path('app/config/rag.yaml'))
 prompt_config = load_config(config_path=get_abstract_path('app/config/prompt.yaml'))
 agent_config = load_config(config_path=get_abstract_path('app/config/agent.yaml'))
 
-# 向后兼容别名
-chroma_config = rag_config
-
 if __name__ == '__main__':
     print(rag_config)
     print(prompt_config)

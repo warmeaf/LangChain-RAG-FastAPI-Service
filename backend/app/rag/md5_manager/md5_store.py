@@ -5,7 +5,7 @@ from datetime import datetime
 import aiofiles
 from aiofiles import os as aio_os
 
-from app.utils.config import chroma_config
+from app.utils.config import rag_config
 from app.utils.path_tool import get_abstract_path
 from app.core.logger_handler import logger
 
@@ -14,7 +14,7 @@ class MD5Store:
     """MD5存储管理器"""
 
     def __init__(self):
-        self.base_dir = os.path.dirname(get_abstract_path(chroma_config['md5_hex_store']))
+        self.base_dir = os.path.dirname(get_abstract_path(rag_config['md5_hex_store']))
 
     def _get_md5_store_dir(self, user_id: str = None) -> str:
         """

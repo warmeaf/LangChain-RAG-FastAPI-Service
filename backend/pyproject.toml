@@ -42,7 +42,6 @@ dependencies = [
     "imagehash>=4.3.0",
     "openai>=2.0.0",
     "langgraph>=1.2.0",
-    "chromadb>=1.5.9",
     "pymilvus>=2.4.0",
     "huggingface_hub>=0.20.0",
     "paddleocr>=2.7.0",
