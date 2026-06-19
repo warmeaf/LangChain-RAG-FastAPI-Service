@@ -158,6 +158,7 @@ async def get_agent_stream_response(
         async for chunk in graph.astream(
             {"messages": chat_messages},
             stream_mode=["updates", "custom"],
+            version="v2",
         ):
             if chunk["type"] == "custom":
                 # thinking 事件
