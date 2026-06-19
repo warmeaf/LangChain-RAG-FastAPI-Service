@@ -5,6 +5,7 @@
       left-arrow
       @click-left="$router.back()"
       fixed
+      placeholder
     />
     
     <div class="profile-container">
@@ -448,7 +449,7 @@ const showAvatarDialog = () => {
     showCancelButton: true,
     confirmButtonText: '确认上传',
     message: h('div', { style: 'text-align: center; padding: var(--van-padding-sm) 0;' }, [
-      h(Image, { round: true, width: 100, height: 100, src: previewUrl.value, style: { marginBottom: '10px' } }),
+      h(Image, { round: true, width: 100, height: 100, src: previewUrl.value, style: { marginBottom: 'var(--van-padding-sm)' } }),
       h(Uploader, {
         accept: 'image/*',
         maxCount: 1,
@@ -515,23 +516,13 @@ const showAvatarDialog = () => {
 }
 
 .profile-container {
-  padding-top: 56px;
-  padding-bottom: 20px;
+  padding-bottom: var(--van-padding-lg);
 }
 
 .avatar-group,
 .info-group,
 .security-group {
-  margin-top: 12px;
-}
-
-.avatar-group :deep(.van-cell),
-.info-group :deep(.van-cell),
-.security-group :deep(.van-cell) {
-  background: var(--van-background-2);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  margin-top: var(--van-padding-sm);
 }
 
 .profile-avatar-letter {
@@ -544,17 +535,7 @@ const showAvatarDialog = () => {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  
   font-weight: var(--van-font-bold);
-  border: 2px solid var(--van-border-color);
-}
-
-.avatar-group :deep(.van-cell-group),
-.security-group :deep(.van-cell-group) {
-  border-radius: 8px;
-}
-
-.password-dialog .van-dialog__content {
-  padding: var(--van-padding-lg);
+  border: calc(var(--van-border-width) * 2) solid var(--van-border-color);
 }
 </style>

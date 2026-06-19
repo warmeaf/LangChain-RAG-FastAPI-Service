@@ -1,6 +1,6 @@
 <template>
   <div class="sessions-container">
-    <van-nav-bar title="会话管理" fixed />
+    <van-nav-bar title="会话管理" fixed placeholder />
     
     <div class="sessions-content">
       <div class="sessions-header">
@@ -34,7 +34,7 @@
       </div>
       
       <div v-else class="sessions-list">
-        <van-cell-group>
+        <van-cell-group inset>
           <van-cell
             v-for="session in sessionStore.sessions"
             :key="session.session_id"
@@ -236,8 +236,7 @@ const confirmNewSession = async () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding-top: 46px;
-  padding-bottom: 50px;
+  padding-bottom: var(--van-tabbar-height);
   box-sizing: border-box;
   background-color: var(--van-background);
 }
@@ -252,7 +251,7 @@ const confirmNewSession = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--van-padding-lg);
 }
 
 .header-title {
@@ -263,9 +262,8 @@ const confirmNewSession = async () => {
 }
 
 .sessions-header h2 {
-  font-size: 18px;
+  font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
-  
   color: var(--van-text-color);
   margin: 0;
 }
@@ -279,7 +277,7 @@ const confirmNewSession = async () => {
 }
 
 .loading p {
-  margin-top: 16px;
+  margin-top: var(--van-padding-md);
   color: var(--van-text-color-2);
 }
 
@@ -298,7 +296,7 @@ const confirmNewSession = async () => {
 }
 
 .empty-sessions p {
-  margin: var(--van-padding-xs) 0 4px;
+  margin: var(--van-padding-xs) 0 var(--van-padding-base);
   color: var(--van-text-color-3);
   font-size: var(--van-font-size-lg);
 }
@@ -306,23 +304,12 @@ const confirmNewSession = async () => {
 .empty-sub {
   font-size: var(--van-font-size-md);
   color: var(--van-text-color-3);
-  margin-bottom: 20px !important;
-}
-
-.sessions-list {
-  margin-top: 10px;
-}
-
-.sessions-list :deep(.van-cell) {
-  border-radius: 8px;
-  margin-bottom: 6px;
-  background: var(--van-background-2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--van-padding-lg);
 }
 
 .active {
-  background-color: rgba(212, 145, 74, 0.10) !important;
-  border-left: 3px solid var(--van-primary-color);
+  background-color: var(--van-active-color);
+  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
 }
 
 .delete-btn {
@@ -331,8 +318,8 @@ const confirmNewSession = async () => {
   padding: var(--van-padding-base);
   cursor: pointer;
   color: var(--van-text-color-3);
-  border-radius: 4px;
-  transition: color 0.2s, background 0.2s;
+  border-radius: var(--van-radius-md);
+  transition: color var(--van-duration-fast), background var(--van-duration-fast);
 }
 
 .delete-btn:hover {
@@ -350,9 +337,8 @@ const confirmNewSession = async () => {
 }
 
 .new-session-dialog h3 {
-  font-size: 18px;
+  font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
-  
   color: var(--van-text-color);
   margin: 0 0 var(--van-padding-lg);
   text-align: center;
@@ -361,11 +347,11 @@ const confirmNewSession = async () => {
 .dialog-buttons {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
   gap: var(--van-padding-xs);
 }
 
-.dialog-buttons van-button {
+.dialog-buttons :deep(.van-button) {
   flex: 1;
 }
 

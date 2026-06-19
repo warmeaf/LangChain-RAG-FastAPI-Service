@@ -35,13 +35,13 @@ onMounted(async () => {
 }
 .analytics-card {
   background: var(--van-background-2);
-  border-radius: 8px;
+  border-radius: var(--van-radius-lg);
   padding: var(--van-padding-md);
 }
 .analytics-card h3 {
   font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
-  margin: 0 0 16px;
+  margin: 0 0 var(--van-padding-md);
   color: var(--van-text-color);
 }
 .stats-grid {
@@ -56,5 +56,5 @@ onMounted(async () => {
   border-radius: 6px;
 }
 .stat-label { font-size: var(--van-font-size-md); color: var(--van-text-color-3); display: block; }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--van-primary-color); margin-top: var(--van-padding-base); }
+.stat-value { font-size: 24px; font-weight: var(--van-font-bold); color: var(--van-primary-color); margin-top: var(--van-padding-base); }
 </style>

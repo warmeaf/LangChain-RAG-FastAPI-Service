@@ -5,6 +5,7 @@
       left-arrow
       @click-left="onClickLeft"
       fixed
+      placeholder
     />
     
     <div class="register-container">
@@ -87,7 +88,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { showToast, showDialog } from 'vant';
+import { showToast } from 'vant';
 import { useUserStore } from '../store/user';
 
 const router = useRouter();
@@ -194,7 +195,6 @@ const handleRegister = async () => {
         position: 'top'
       });
       
-      // 注册成功后跳转到对话页面
       setTimeout(() => {
         router.push('/aichat');
       }, 1500);
@@ -233,12 +233,11 @@ const goToLogin = () => {
 }
 
 .register-container {
-  padding-top: 56px;
-  padding-bottom: 20px;
+  padding-bottom: var(--van-padding-lg);
 }
 
 .register-logo {
-  margin: 40px 0;
+  margin: var(--van-padding-xl) 0;
   text-align: center;
 }
 
@@ -250,13 +249,12 @@ const goToLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto var(--van-padding-md);
   color: var(--van-primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 calc(var(--van-border-width) * 2) var(--van-padding-xs) rgba(0, 0, 0, 0.08);
 }
 
 .register-logo h2 {
-  
   font-size: 22px;
   color: var(--van-text-color);
   font-weight: var(--van-font-bold);
@@ -266,20 +264,14 @@ const goToLogin = () => {
   padding: 0 var(--van-padding-md);
 }
 
-.register-form :deep(.van-cell-group) {
-  background: var(--van-background-2);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
 .register-btn-container {
-  margin-top: 24px;
+  margin-top: var(--van-padding-lg);
   padding: 0 var(--van-padding-md);
 }
 
 .login-link {
   text-align: center;
-  margin-top: 24px;
+  margin-top: var(--van-padding-lg);
   color: var(--van-text-color-3);
   font-size: var(--van-font-size-md);
 }

@@ -114,7 +114,7 @@ const createNewSession = () => {
   justify-content: space-between;
   align-items: center;
   padding: var(--van-padding-md);
-  border-bottom: 1px solid var(--van-border-color);
+  border-bottom: var(--van-border-width) solid var(--van-border-color);
 }
 .header-title {
   display: flex;
@@ -134,6 +134,6 @@ const createNewSession = () => {
   color: var(--van-text-color-2);
 }
 .active {
-  border-left: 3px solid var(--van-primary-color);
+  border-left: calc(var(--van-border-width) * 3) solid var(--van-primary-color);
 }
 </style>

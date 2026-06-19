@@ -3,6 +3,7 @@
     <van-nav-bar
       :title="$t('knowledgebase.title')"
       fixed
+      placeholder
     />
 
     <div class="knowledgebase-content">
@@ -699,8 +700,7 @@ onMounted(() => {
   min-height: 100vh;
   background-color: var(--van-background);
   color: var(--van-text-color);
-  padding-top: 46px;
-  padding-bottom: 20px;
+  padding-bottom: var(--van-padding-lg);
 }
 
 .knowledgebase-content {
@@ -708,14 +708,14 @@ onMounted(() => {
 }
 
 .upload-area {
-  border: 2px dashed var(--van-border-color);
+  border: calc(var(--van-border-width) * 2) dashed var(--van-border-color);
   border-radius: 12px;
-  padding: var(--van-padding-lg) var(--van-padding-lg);
+  padding: var(--van-padding-lg);
   text-align: center;
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: var(--van-padding-lg);
   background: var(--van-background);
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--van-duration-fast), background var(--van-duration-fast);
 }
 
 .upload-area:active {
@@ -725,13 +725,13 @@ onMounted(() => {
 
 .upload-icon {
   color: var(--van-text-color-3);
-  margin-bottom: 12px;
+  margin-bottom: var(--van-padding-sm);
 }
 
 .upload-text {
   font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
-  margin: 0 0 6px;
+  margin: 0 0 calc(var(--van-padding-base) + var(--van-border-width) * 2);
   color: var(--van-text-color);
 }
 
@@ -746,22 +746,21 @@ onMounted(() => {
 }
 
 .file-list {
-  margin-bottom: 20px;
+  margin-bottom: var(--van-padding-lg);
 }
 
 .section-title {
   font-size: var(--van-font-size-md);
   font-weight: var(--van-font-bold);
-  margin: 0 0 10px;
+  margin: 0 0 var(--van-padding-sm);
   color: var(--van-text-color-2);
-  
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--van-padding-sm);
 }
 
 .list-actions {
@@ -776,7 +775,7 @@ onMounted(() => {
 }
 
 .document-list {
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
 }
 
 .doc-meta {
@@ -790,62 +789,31 @@ onMounted(() => {
 }
 
 .chunk-count {
-  margin-right: 16px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: var(--van-padding-lg) var(--van-padding-lg);
-  color: var(--van-text-color-3);
-}
-
-.empty-state p {
-  margin: 12px 0 0;
+  margin-right: var(--van-padding-md);
 }
 
 .upload-progress {
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
 }
 
 .progress-item {
-  margin-bottom: 16px;
+  margin-bottom: var(--van-padding-md);
   background: var(--van-background-2);
   padding: var(--van-padding-sm);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  border-radius: var(--van-radius-lg);
+  box-shadow: 0 var(--van-border-width) calc(var(--van-border-width) * 2) rgba(0, 0, 0, 0.08);
 }
 
 .progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--van-padding-xs);
 }
 
 .progress-filename {
   font-size: var(--van-font-size-md);
   color: var(--van-text-color);
-}
-
-.progress-status {
-  font-size: var(--van-font-size-sm);
-  padding: var(--van-padding-base) var(--van-padding-sm);
-  border-radius: 10px;
-}
-
-.status-processing {
-  background-color: #FFF5E6;
-  color: #C28238;
-}
-
-.status-success {
-  background-color: #F0F7ED;
-  color: #5A8F5E;
-}
-
-.status-failed {
-  background-color: #FDF0EE;
-  color: #C2705A;
 }
 
 .progress-message {
@@ -857,7 +825,7 @@ onMounted(() => {
 .upload-result {
   text-align: center;
   padding: var(--van-padding-lg);
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
 }
 
 .upload-result p {
@@ -870,13 +838,12 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: var(--van-padding-md);
-  border-bottom: 1px solid var(--van-border-color);
+  border-bottom: var(--van-border-width) solid var(--van-border-color);
 }
 
 .detail-header h4 {
   margin: 0;
   font-size: var(--van-font-size-lg);
-  
 }
 
 .header-actions {
@@ -894,14 +861,7 @@ onMounted(() => {
 .detail-meta {
   font-size: var(--van-font-size-sm);
   color: var(--van-text-color-3);
-  margin-bottom: 16px;
-}
-
-.detail-preview {
-  font-size: var(--van-font-size-md);
-  line-height: 1.6;
-  color: var(--van-text-color-2);
-  white-space: pre-wrap;
+  margin-bottom: var(--van-padding-md);
 }
 
 .detail-content-full {
@@ -923,9 +883,9 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--van-border-color);
+  margin-bottom: var(--van-padding-md);
+  padding-bottom: var(--van-padding-sm);
+  border-bottom: var(--van-border-width) solid var(--van-border-color);
 }
 
 .chunks-total {
@@ -937,7 +897,7 @@ onMounted(() => {
   display: flex;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px dashed var(--van-border-color);
+  border-bottom: var(--van-border-width) dashed var(--van-border-color);
 }
 
 .chunk-item:last-child {
@@ -948,13 +908,13 @@ onMounted(() => {
   min-width: 26px;
   height: 26px;
   background-color: var(--van-primary-color);
-  color: #fff;
+  color: var(--van-white);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--van-font-size-sm);
-  margin-right: 12px;
+  margin-right: var(--van-padding-sm);
   flex-shrink: 0;
 }
 
@@ -962,33 +922,21 @@ onMounted(() => {
   flex: 1;
 }
 
-.detail-chunk {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px dashed var(--van-border-color);
-}
-
-.detail-chunk:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
 .detail-page-group {
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
 }
 
 .detail-page-group + .detail-page-group {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--van-border-color);
+  margin-top: var(--van-padding-lg);
+  padding-top: var(--van-padding-md);
+  border-top: var(--van-border-width) solid var(--van-border-color);
 }
 
 .detail-page-label {
   font-size: var(--van-font-size-sm);
   font-weight: var(--van-font-bold);
   color: var(--van-primary-color);
-  margin-bottom: 8px;
+  margin-bottom: var(--van-padding-xs);
 }
 
 .detail-text {
@@ -1000,24 +948,24 @@ onMounted(() => {
 }
 
 .detail-images {
-  margin-top: 16px;
+  margin-top: var(--van-padding-md);
 }
 
 .detail-image-item {
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: var(--van-padding-sm);
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 var(--van-border-width) calc(var(--van-border-width) * 3) rgba(0, 0, 0, 0.08);
 }
 
 .chunk-images {
-  margin-top: 8px;
+  margin-top: var(--van-padding-xs);
 }
 
 .chunk-image-item {
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: var(--van-padding-xs);
   border-radius: 6px;
   overflow: hidden;
 }

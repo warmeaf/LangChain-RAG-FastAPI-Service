@@ -129,12 +129,11 @@ const changeLanguage = () => {
   min-height: 100vh;
   background-color: var(--van-background);
   color: var(--van-text-color);
-  padding-top: 46px;
-  padding-bottom: 20px;
+  padding-bottom: var(--van-padding-lg);
 }
 
 .settings-list {
-  margin-top: 20px;
+  margin-top: var(--van-padding-lg);
 }
 
 .popup-title {
@@ -142,15 +141,14 @@ const changeLanguage = () => {
   padding: var(--van-padding-md);
   font-size: var(--van-font-size-lg);
   font-weight: var(--van-font-bold);
-  
-  border-bottom: 1px solid var(--van-border-color);
+  border-bottom: var(--van-border-width) solid var(--van-border-color);
   color: var(--van-text-color);
 }
 
 .theme-list {
   display: flex;
   flex-wrap: wrap;
-  padding: var(--van-padding-lg) 16px;
+  padding: var(--van-padding-lg) var(--van-padding-md);
   gap: var(--van-padding-sm);
   justify-content: center;
 }
@@ -162,9 +160,9 @@ const changeLanguage = () => {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  padding: var(--van-padding-sm) 8px;
+  padding: var(--van-padding-sm) var(--van-padding-xs);
   border-radius: 10px;
-  transition: background 0.2s;
+  transition: background var(--van-duration-fast);
 }
 
 .theme-item:active {
@@ -173,42 +171,37 @@ const changeLanguage = () => {
 
 .theme-item.active {
   background: var(--van-background);
-  box-shadow: 0 0 0 2px var(--van-primary-color);
+  box-shadow: 0 0 0 calc(var(--van-border-width) * 2) var(--van-primary-color);
 }
 
 .theme-preview {
   width: 72px;
   height: 48px;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  border-radius: var(--van-radius-lg);
+  margin-bottom: var(--van-padding-xs);
   padding: var(--van-padding-xs);
   display: flex;
   flex-direction: column;
   gap: var(--van-padding-base);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 calc(var(--van-border-width)) calc(var(--van-border-width) * 3) rgba(0, 0, 0, 0.1);
 }
 
-.theme-preview-light { background: #f7f8fa; }
-.theme-preview-dark  { background: #1c1c1e; }
+.theme-preview-light { background: var(--van-background); }
+.theme-preview-dark  { background: var(--van-background-2); }
 
 .theme-preview-bar {
   width: 100%;
   height: 6px;
-  border-radius: 2px;
+  border-radius: var(--van-radius-sm);
   background: var(--van-primary-color);
 }
 
 .theme-preview-card {
   width: 70%;
   height: 10px;
-  border-radius: 2px;
-  background: rgba(127,127,127,0.3);
-}
-
-.theme-name {
-  font-size: var(--van-font-size-md);
-  color: var(--van-text-color-2);
+  border-radius: var(--van-radius-sm);
+  background: var(--van-text-color-3);
 }
 
 .theme-name {
@@ -222,10 +215,5 @@ const changeLanguage = () => {
   bottom: 0;
   left: 0;
   right: 0;
-}
-
-.language-active {
-  background-color: var(--van-background);
-  color: var(--van-text-color);
 }
 </style>

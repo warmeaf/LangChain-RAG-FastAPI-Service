@@ -5,6 +5,7 @@
       left-arrow
       @click-left="onClickLeft"
       fixed
+      placeholder
     />
     
     <div class="login-container">
@@ -67,7 +68,6 @@ const username = ref('');
 const password = ref('');
 
 const onSubmit = async (values) => {
-  // 显示加载提示
   showToast({
     type: 'loading',
     message: '登录中...',
@@ -76,7 +76,6 @@ const onSubmit = async (values) => {
   });
   
   try {
-    // 调用API登录
     const result = await userStore.login({
       username: username.value,
       password: password.value
@@ -124,14 +123,13 @@ const loginTestUser = () => {
 }
 
 .login-container {
-  padding-top: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .login-logo {
-  margin: 40px 0;
+  margin: var(--van-padding-xl) 0;
   text-align: center;
 }
 
@@ -143,13 +141,12 @@ const loginTestUser = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto var(--van-padding-md);
   color: var(--van-primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 calc(var(--van-border-width) * 2) var(--van-padding-xs) rgba(0, 0, 0, 0.08);
 }
 
 .login-logo h2 {
-  
   font-size: 22px;
   color: var(--van-text-color);
   font-weight: var(--van-font-bold);
@@ -158,12 +155,6 @@ const loginTestUser = () => {
 .login-form {
   width: 100%;
   padding: 0 var(--van-padding-md);
-}
-
-.login-form :deep(.van-cell-group) {
-  background: var(--van-background-2);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .submit-btn {
@@ -176,7 +167,7 @@ const loginTestUser = () => {
 
 .register-link {
   text-align: center;
-  margin-top: 24px;
+  margin-top: var(--van-padding-lg);
   color: var(--van-text-color-3);
   font-size: var(--van-font-size-md);
 }
