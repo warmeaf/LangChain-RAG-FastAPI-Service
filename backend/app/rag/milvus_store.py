@@ -187,6 +187,7 @@ class MilvusService:
             collection_name=self.collection_name,
             filter=f'user_id == "{user_id}"',
         )
+        self.client.flush(collection_name=self.collection_name)
         await self.md5_store.delete_user_md5(user_id)
 
     # MD5 代理方法
@@ -208,6 +209,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=f'user_id == "{user_id}"',
             )
+            self.client.flush(collection_name=self.collection_name)
             logger.info(f"【Milvus数据库】已删除用户 {user_id} 的所有文档")
 
     async def delete_single_md5(self, user_id: str, md5_value: str, delete_documents: bool = True):
@@ -225,6 +227,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=filter_expr,
             )
+            self.client.flush(collection_name=self.collection_name)
             logger.info(f"【Milvus数据库】已删除用户 {user_id} 中MD5为 {md5_value} 的文档")
 
         # 清理磁盘上该用户的 PDF 提取图片
@@ -248,6 +251,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=filter_expr,
             )
+            self.client.flush(collection_name=self.collection_name)
             logger.info(f"【Milvus数据库】已删除用户 {user_id} 中文件 {filename} 对应的文档")
 
         # 清理磁盘上该用户的 PDF 提取图片
