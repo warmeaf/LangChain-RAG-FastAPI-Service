@@ -1,34 +1,58 @@
 <template>
   <div class="my-container">
     <van-nav-bar :title="$t('my.title')" />
-    <div class="user-info" @click="goToProfile" v-if="isLogin">
-      <div class="avatar">
-        <div v-if="userInfo && userInfo.avatar" class="avatar-img">
-          <van-image round width="72" height="72" :src="`http://localhost:8001${userInfo.avatar}`" />
-        </div>
-        <div v-else class="avatar-letter">
-          {{ (userInfo?.username || '?')[0].toUpperCase() }}
-        </div>
-      </div>
-      <div class="info">
-        <div class="username">{{ userInfo?.username || $t('my.notLoggedIn') }}</div>
-        <div class="desc">{{ userBio || $t('profile.bio') }}</div>
-      </div>
-      <van-icon name="arrow" class="arrow-icon" />
-    </div>
-    <div class="user-info" v-else>
-      <div class="avatar">
-        <div class="avatar-letter">?</div>
-      </div>
-      <div class="info">
-        <div class="username">{{ $t('my.notLoggedIn') }}</div>
-        <div class="desc">
-          <van-button type="primary" size="small" @click="goToLogin" style="margin-right: 10px">{{ $t('my.goToLogin') }}</van-button>
-          <van-button size="small" plain @click="goToRegister">{{ $t('my.goToRegister') }}</van-button>
-        </div>
-      </div>
-    </div>
 
+    <!-- 已登录：用户信息卡片 -->
+    <van-cell-group v-if="isLogin" inset class="user-info-group">
+      <van-cell center is-link @click="goToProfile">
+        <template #icon>
+          <van-image
+            v-if="userInfo && userInfo.avatar"
+            round
+            width="72"
+            height="72"
+            :src="`http://localhost:8001${userInfo.avatar}`"
+          >
+            <template #error>
+              <div class="avatar-letter">
+                {{ (userInfo?.username || '?')[0].toUpperCase() }}
+              </div>
+            </template>
+          </van-image>
+          <div v-else class="avatar-letter">
+            {{ (userInfo?.username || '?')[0].toUpperCase() }}
+          </div>
+        </template>
+        <template #title>
+          <span class="cell-username">{{ userInfo?.username || $t('my.notLoggedIn') }}</span>
+        </template>
+        <template #label>
+          <span class="cell-bio">{{ userBio || $t('profile.bio') }}</span>
+        </template>
+      </van-cell>
+    </van-cell-group>
+
+    <!-- 未登录：提示卡片 -->
+    <van-cell-group v-else inset class="user-info-group">
+      <van-cell center>
+        <template #icon>
+          <div class="avatar-letter">?</div>
+        </template>
+        <template #title>
+          <span class="cell-username">{{ $t('my.notLoggedIn') }}</span>
+        </template>
+        <template #label>
+          <van-button type="primary" size="small" @click="goToLogin" style="margin-right: 10px">
+            {{ $t('my.goToLogin') }}
+          </van-button>
+          <van-button size="small" plain @click="goToRegister">
+            {{ $t('my.goToRegister') }}
+          </van-button>
+        </template>
+      </van-cell>
+    </van-cell-group>
+
+    <!-- 菜单列表 -->
     <div class="menu-list">
       <van-cell-group inset>
         <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
@@ -123,29 +147,24 @@ onMounted(async () => {
   z-index: 999;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  padding: var(--van-padding-lg) 16px;
-  background: linear-gradient(135deg, var(--van-background-2) 0%, var(--van-background) 100%);
-  color: var(--van-text-color);
-  border-radius: 12px;
+/* 用户信息卡片区域 */
+.user-info-group {
   margin: var(--van-padding-md);
-  position: relative;
+}
+
+.user-info-group :deep(.van-cell) {
+  background: linear-gradient(135deg, var(--van-background-2) 0%, var(--van-background) 100%);
+  border-radius: 12px;
+  padding: var(--van-padding-lg) 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.arrow-icon {
-  position: absolute;
-  right: 16px;
-  color: var(--van-text-color-3);
-}
-
-.avatar {
+.user-info-group :deep(.van-cell__icon) {
   margin-right: 16px;
-  flex-shrink: 0;
+  font-size: 0;
 }
 
+/* 头像字母兜底 */
 .avatar-letter {
   width: 72px;
   height: 72px;
@@ -156,28 +175,24 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  
   font-weight: var(--van-font-bold);
   border: 2px solid var(--van-border-color);
 }
 
-.info {
-  flex: 1;
-}
-
-.username {
+/* 用户名 */
+.cell-username {
   font-size: 18px;
   font-weight: var(--van-font-bold);
-  
-  margin-bottom: var(--van-padding-base);
   color: var(--van-text-color);
 }
 
-.desc {
+/* 个人简介 */
+.cell-bio {
   font-size: var(--van-font-size-md);
   color: var(--van-text-color-3);
 }
 
+/* 菜单列表 */
 .menu-list {
   margin: 0 var(--van-padding-md);
 }
