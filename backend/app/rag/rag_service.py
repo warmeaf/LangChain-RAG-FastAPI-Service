@@ -3,327 +3,185 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
 
-from app.rag.vector_store import VectorStoreService
+from app.rag.milvus_store import MilvusService
 from app.rag.reorder_service import reorder_service
-from app.utils.config import chroma_config
+from app.rag.query_processor import QueryProcessor
+from app.rag.multi_factor_ranker import MultiFactorRanker
+from app.utils.config import rag_config
 from app.utils.factory import chat_model
 from app.utils.prompt_loader import load_prompt
 from app.core.logger_handler import logger
 
 
 class RagService:
+    """企业级 RAG 服务：查询预处理 → 粗排 → 精排 → 多因素排序 → 总结"""
+
     def __init__(self, user_id: str = None, thinking_callback=None):
-        self.vector_store = VectorStoreService()
+        self.milvus = MilvusService()
         self.retriever = None
         self.user_id = user_id
         self.prompt_text = load_prompt(prompt_type="rag_summary_prompt")
         self.prompt_template = PromptTemplate.from_template(self.prompt_text)
         self.chat_model = chat_model
-        self.chain = self._init_chain()
-        self.hyde_prompt_template = PromptTemplate.from_template("基于以下问题，生成一个详细的假设性回答，我会根据你的这个假设性回答在向量数据库里检索文档：\n\n问题：{query}\n\n假设性回答：")
+        self.chain = self.prompt_template | self.chat_model | StrOutputParser()
+        self.query_processor = QueryProcessor()
+        self.ranker = MultiFactorRanker()
         self.thinking_callback = thinking_callback
 
     async def initialize_retriever(self, query: str = None):
-        """
-        初始化检索器
-        :param query: 查询语句，用于动态调整权重
-        """
         if self.retriever is None:
-            # 获取动态权重信息
-            weights = await self.vector_store.get_dynamic_weights(query)
-            
             if self.thinking_callback:
                 await self.thinking_callback({
                     "type": "thinking",
                     "stage": "retrieval",
-                    "content": f"初始化检索器（向量权重: {weights[0]:.1f}, BM25权重: {weights[1]:.1f}）",
-                    "details": {
-                        "vector_weight": weights[0],
-                        "bm25_weight": weights[1]
-                    }
+                    "content": "初始化 Milvus 混合检索器...",
                 })
-            
-            self.retriever = await self.vector_store.get_retriever(query, self.user_id)
-
-
-    def _init_chain(self):
-        """初始化链"""
-        chain = (
-                self.prompt_template
-                | self.chat_model
-                | StrOutputParser()
-        )
-        return chain
+            self.retriever = await self.milvus.get_retriever(query, self.user_id)
 
     @traceable
-    async def generate_hypothetical_document(self, query: str) -> str:
-        """
-        使用HyDE技术生成假设性文档
-        :param query: 用户查询
-        :return: 假设性文档内容
-        """
-        try:
-            hyde_chain = (
-                self.hyde_prompt_template
-                | self.chat_model
-                | StrOutputParser()
-            )
-            hypothetical_doc = await hyde_chain.ainvoke({"query": query})
-            logger.info(f"【HyDE】生成的假设性文档:\n{hypothetical_doc}")
-            return hypothetical_doc
-        except Exception as e:
-            logger.error(f"【HyDE】生成假设性文档失败: {e}")
-            return query
+    async def retrieve_documents_batch(self, queries: list) -> list:
+        """并行检索多个查询变体，合并去重结果"""
+        await self.initialize_retriever(queries[0] if queries else "")
 
-    @traceable
-    async def retrieve_document(self, query: str) -> list:
-        """使用HyDE技术 从向量数据库里检索文档"""
-        if not self.user_id:
-            logger.warning(f"【HyDE】user_id为空，不进行任何检索")
-            return []
-        
-        try:
-            # 确保检索器已初始化，传递query参数
-            if self.retriever is None:
-                await self.initialize_retriever(query)
-            
-            # 使用HyDE技术生成假设性文档
-            logger.info(f"【HyDE】开始处理查询: {query}")
-            
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "hyde",
-                    "content": f"正在基于查询「{query}」生成假设性文档..."
-                })
-            
-            hypothetical_doc = await self.generate_hypothetical_document(query)
-            
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "hyde",
-                    "content": f"假设性文档生成完成",
-                    "details": {
-                        "hypothetical_doc_preview": hypothetical_doc[:200] + "..." if len(hypothetical_doc) > 200 else hypothetical_doc
-                    }
-                })
-            
-            # 使用假设性文档进行检索
-            logger.info(f"【HyDE】使用假设性文档进行检索")
-            
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "retrieval",
-                    "content": "正在向量数据库中检索相关文档..."
-                })
-            
-            documents = await self.retriever.ainvoke(hypothetical_doc)
-            logger.info(f"【HyDE】检索到 {len(documents)} 个相关文档")
-            
-            if self.thinking_callback:
-                doc_previews = []
-                for i, doc in enumerate(documents, 1):
-                    preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
-                    doc_previews.append({
-                        "index": i,
-                        "preview": preview,
-                        "source": doc.metadata.get("original_filename", doc.metadata.get("source", "unknown"))
-                    })
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "retrieval",
-                    "content": f"检索到 {len(documents)} 个相关文档",
-                    "details": {
-                        "documents": doc_previews
-                    }
-                })
-            
-            return documents
-        except Exception as e:
-            logger.error(f"【HyDE】检索文档失败: {e}")
-            return []
+        tasks = [self.retriever.ainvoke(q) for q in queries]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    @traceable
-    async def reorder_documents(self, query: str, documents: list) -> list:
-        """
-        对文档进行重排序
-        :param query: 查询语句
-        :param documents: 文档列表
-        :return: 重排序后的文档列表
-        """
-        if self.thinking_callback:
-            await self.thinking_callback({
-                "type": "thinking",
-                "stage": "reorder",
-                "content": f"正在对 {len(documents)} 个文档进行重排序..."
-            })
-        
-        result = await reorder_service.reorder_documents(query, documents, thinking_callback=self.thinking_callback)
-        if result["success"]:
-            # 提取重排序后的文档内容
-            reordered_documents = [doc.get("document", "") for doc in result["documents"]]
-            logger.info(f"【RAG】文档重排序成功，返回 {len(reordered_documents)} 个文档")
-            
-            if self.thinking_callback:
-                score_details = []
-                for i, doc in enumerate(result["documents"], 1):
-                    score_details.append({
-                        "rank": i,
-                        "score": round(doc.get("similarity", 0), 4),
-                        "preview": doc.get("document", "")[:100] + "..." if len(doc.get("document", "")) > 100 else doc.get("document", "")
-                    })
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "reorder",
-                    "content": f"重排序完成，返回 {len(reordered_documents)} 个文档",
-                    "details": {
-                        "scores": score_details
-                    }
-                })
-            
-            return reordered_documents
-        else:
-            logger.warning(f"【RAG】重排序失败: {result['error']}")
-            return documents
+        seen = set()
+        merged = []
+        for result in results:
+            if isinstance(result, list):
+                for doc in result:
+                    key = doc.page_content[:100]
+                    if key not in seen:
+                        seen.add(key)
+                        merged.append(doc)
+
+        logger.info(f"多路检索: {len(queries)}个变体 → {len(merged)}个去重文档")
+        return merged
 
     @traceable
     async def get_documents_and_summary(self, query: str) -> dict:
-        """
-        获取文档列表和摘要
-        :param query: 查询语句
-        :return: 包含文档列表和摘要的字典
-        """
         if not self.user_id:
-            logger.warning(f"【RAG】user_id为空，不返回任何文档")
-            return {
-                "documents": [],
-                "summary": "抱歉，我没有找到相关的信息。"
-            }
-        
+            return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
+
         try:
-            documents = await self.retrieve_document(query)
+            # ① 查询预处理
+            query_variants = await self.query_processor.process(query)
+            hyde_variant = await self._generate_hyde(query)
+            all_variants = query_variants + [hyde_variant]
 
-            # 提取文档内容列表
-            document_contents = [doc.page_content for doc in documents]
+            if self.thinking_callback:
+                await self.thinking_callback({
+                    "type": "thinking",
+                    "stage": "query_processing",
+                    "content": f"查询预处理完成: {len(all_variants)} 个检索变体",
+                })
 
-            # 对文档进行重排序
-            reordered_documents = await self.reorder_documents(query, document_contents)
+            # ② 粗排: 多路并行检索 → 合并
+            documents = await self.retrieve_documents_batch(all_variants)
 
-            # 如果没有检索到文档
-            if not reordered_documents:
-                return {
-                    "documents": [],
-                    "summary": "抱歉，我没有找到相关的信息。"
-                }
+            if self.thinking_callback:
+                await self.thinking_callback({
+                    "type": "thinking",
+                    "stage": "retrieval",
+                    "content": f"粗排检索完成: {len(documents)} 个候选文档",
+                })
 
-            # 使用分批总结策略
-            try:
-                # 对每个文档单独总结（使用线程池并发处理）
-                individual_summaries = []
-                max_documents = chroma_config.get('max_documents', 3)  # 可配置的总结文档数
-                
-                if self.thinking_callback:
-                    await self.thinking_callback({
-                        "type": "thinking",
-                        "stage": "summarize",
-                        "content": f"正在对前 {min(max_documents, len(reordered_documents))} 个最相关文档进行总结..."
-                    })
-                
-                # 定义单个文档总结函数
-                async def summarize_document(i, doc):
-                    logger.info(f"【RAG】正在总结第{i}个文档")
-                    if self.thinking_callback:
-                        await self.thinking_callback({
-                            "type": "thinking",
-                            "stage": "summarize",
-                            "content": f"正在总结第 {i} 个文档..."
-                        })
-                    # 为单个文档构建上下文
-                    single_context = f"【参考资料{i}】:{doc}\n"
-                    # 生成单个文档的摘要
-                    import time
-                    start_time = time.time()
-                    single_summary = await asyncio.wait_for(
-                        self.chain.ainvoke({"input": query, "context": single_context}),
-                        timeout=30.0  # 单个文档总结超时时间
-                    )
-                    end_time = time.time()
-                    logger.info(f"【RAG】第{i}个文档总结耗时: {end_time - start_time:.2f}秒")
-                    return single_summary
-                
-                # 使用线程池并发处理文档总结
-                tasks = []
-                for i, doc in enumerate(reordered_documents[:max_documents], 1):
-                    tasks.append(summarize_document(i, doc))
-                
-                # 并发执行所有总结任务，最多5个线程
-                import time
-                start_time = time.time()
-                individual_summaries = await asyncio.gather(*tasks)
-                end_time = time.time()
-                logger.info(f"【RAG】所有文档总结完成，总耗时: {end_time - start_time:.2f}秒")
+            if not documents:
+                return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
 
-                # 如果只有一个文档，直接返回其摘要
-                if len(individual_summaries) == 1:
-                    logger.info(f"【RAG】生成摘要成功")
-                    return {
-                        "documents": reordered_documents,
-                        "summary": individual_summaries[0]
-                    }
+            # ③ 精排: Reranker
+            doc_contents = [doc.page_content for doc in documents]
+            rerank_result = await reorder_service.reorder_documents(
+                query, doc_contents, thinking_callback=self.thinking_callback
+            )
+            if rerank_result["success"]:
+                reranked = rerank_result["documents"]
+                relevance_scores = [d["similarity"] for d in reranked]
+                # 重建 Document 列表 (保留 metadata)
+                content_to_doc = {doc.page_content: doc for doc in documents}
+                ordered_docs = []
+                ordered_scores = []
+                for rd in reranked:
+                    content = rd["document"]
+                    if content in content_to_doc:
+                        ordered_docs.append(content_to_doc[content])
+                        ordered_scores.append(rd["similarity"])
+            else:
+                ordered_docs = documents
+                ordered_scores = [0.5] * len(documents)
 
-                # 合并多个文档的摘要，生成最终总结
-                combined_context = "以下是多个文档的摘要，请综合这些信息生成最终的回答：\n\n"
-                for i, summary in enumerate(individual_summaries, 1):
-                    combined_context += f"【文档{i}摘要】:{summary}\n\n"
+            # ④ 多因素排序
+            final_docs = await self.ranker.rank(query, ordered_docs, ordered_scores)
 
-                logger.info(f"【RAG】合并摘要完成，开始生成最终总结")
-                
-                if self.thinking_callback:
-                    await self.thinking_callback({
-                        "type": "thinking",
-                        "stage": "summarize",
-                        "content": "正在综合多个文档生成最终回答..."
-                    })
-                
-                # 生成最终总结
-                final_summary = await asyncio.wait_for(
-                    self.chain.ainvoke({"input": query, "context": combined_context}),
-                    timeout=30.0  # 最终总结超时时间
-                )
-                
-                logger.info(f"【RAG】生成摘要成功")
-                return {
-                    "documents": reordered_documents,
-                    "summary": final_summary
-                }
-            except asyncio.TimeoutError:
-                logger.error(f"【RAG】生成摘要超时")
-                return {
-                    "documents": reordered_documents,
-                    "summary": "抱歉，生成摘要超时，请稍后再试。"
-                }
-        except Exception as e:
-            logger.error(f"【RAG】生成摘要失败: {e}", exc_info=True)
+            if self.thinking_callback:
+                await self.thinking_callback({
+                    "type": "thinking",
+                    "stage": "ranking",
+                    "content": f"多因素排序完成: {len(final_docs)} 篇文档",
+                })
+
+            # ⑤ 分批总结
+            summary = await self._batch_summarize(query, final_docs)
+
             return {
-                "documents": [],
-                "summary": "抱歉，处理您的请求时出现了错误。"
+                "documents": [doc.page_content for doc in final_docs],
+                "summary": summary,
             }
+        except Exception as e:
+            logger.error(f"RAG 流水线失败: {e}", exc_info=True)
+            return {"documents": [], "summary": "抱歉，处理您的请求时出现了错误。"}
+
+    async def _generate_hyde(self, query: str) -> str:
+        """生成 HyDE 假设文档（作为检索变体之一）"""
+        try:
+            hyde_prompt = PromptTemplate.from_template(
+                "基于以下问题，生成一个详细的假设性回答：\n\n{query}\n\n假设性回答："
+            )
+            chain = hyde_prompt | self.chat_model | StrOutputParser()
+            result = await chain.ainvoke({"query": query})
+            return result.strip() if result else query
+        except Exception:
+            return query
+
+    async def _batch_summarize(self, query: str, documents: list) -> str:
+        """分批总结"""
+        if not documents:
+            return "抱歉，我没有找到相关的信息。"
+
+        max_docs = rag_config["retrieval"]["max_documents"]
+        docs = documents[:max_docs]
+
+        async def summarize_one(i, doc):
+            context = f"【参考资料{i}】：{doc.page_content}\n"
+            try:
+                return await asyncio.wait_for(
+                    self.chain.ainvoke({"input": query, "context": context}),
+                    timeout=30.0,
+                )
+            except asyncio.TimeoutError:
+                return "(总结超时)"
+
+        tasks = [summarize_one(i + 1, doc) for i, doc in enumerate(docs)]
+        summaries = await asyncio.gather(*tasks)
+
+        if len(summaries) == 1:
+            return summaries[0]
+
+        combined = "以下是多个文档的摘要：\n\n"
+        for i, s in enumerate(summaries, 1):
+            combined += f"【文档{i}摘要】：{s}\n\n"
+
+        try:
+            final = await asyncio.wait_for(
+                self.chain.ainvoke({"input": query, "context": combined}),
+                timeout=30.0,
+            )
+            return final
+        except asyncio.TimeoutError:
+            return summaries[0] if summaries else "生成摘要超时"
 
     @traceable
     async def rag_summary(self, query: str) -> str:
-        """RAG 摘要"""
         result = await self.get_documents_and_summary(query)
         return result.get("summary", "抱歉，处理您的请求时出现了错误。")
-
-if __name__ == '__main__':
-    import asyncio
-    
-    async def main():
-        service = RagService()
-        await service.initialize_retriever()
-        result = await service.rag_summary("小户型适合什么扫地机器人")
-        print(result)
-    
-    asyncio.run(main())
