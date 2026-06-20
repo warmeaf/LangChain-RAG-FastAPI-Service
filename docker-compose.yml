@@ -6,7 +6,7 @@ services:
     image: mysql:8.0
     container_name: rag-mysql
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-chat_history}
@@ -28,7 +28,7 @@ services:
     image: redis:7-alpine
     container_name: rag-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -70,6 +70,9 @@ services:
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
@@ -98,8 +101,8 @@ services:
     volumes:
       - milvus_data:/var/lib/milvus
     ports:
-      - "19530:19530"
-      - "9091:9091"
+      - "${MILVUS_GRPC_PORT:-19530}:19530"
+      - "${MILVUS_METRICS_PORT:-9091}:9091"
     depends_on:
       etcd:
         condition: service_healthy
@@ -122,7 +125,7 @@ services:
       dockerfile: Dockerfile
     container_name: rag-django
     ports:
-      - "8001:8001"
+      - "${DJANGO_PORT:-8001}:8001"
     env_file:
       - DjangoUserService/.env
     environment:
@@ -149,14 +152,14 @@ services:
 
   # =============================================
   # FastAPI 后端
-  # ============================================
+  # =============================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: rag-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     env_file:
       - backend/.env
     environment:
