@@ -138,6 +138,9 @@ class RagService:
             # ④ 多因素排序
             final_docs = await self.ranker.rank(query, ordered_docs, ordered_scores, self.user_id)
 
+            # ④.⑤ 相邻 chunk 扩展：为每个检索到的 chunk 补充前后邻居
+            final_docs = await self._expand_adjacent_chunks(final_docs)
+
             if self.thinking_callback:
                 await self.thinking_callback({
                     "type": "thinking",
@@ -158,6 +161,43 @@ class RagService:
         except Exception as e:
             logger.error(f"RAG 流水线失败: {e}", exc_info=True)
             return {"documents": [], "summary": "抱歉，处理您的请求时出现了错误。"}
+
+    async def _expand_adjacent_chunks(self, docs: list) -> list:
+        """为检索到的文档补充相邻 chunk（上下文扩展）"""
+        from langchain_core.documents import Document
+
+        if not docs or not self.user_id:
+            return docs
+
+        # 按 source 分组，收集需要扩展的 chunk_index
+        source_neighbors: dict[str, set] = {}
+        existing = set()
+        for doc in docs:
+            src = doc.metadata.get("source", "")
+            ci = doc.metadata.get("chunk_index")
+            if src and ci is not None:
+                existing.add((src, ci))
+                source_neighbors.setdefault(src, set())
+                source_neighbors[src].add(ci - 1)
+                source_neighbors[src].add(ci + 1)
+
+        # 并行查询所有需要的相邻 chunk
+        tasks = []
+        for src, indices in source_neighbors.items():
+            # 排除已存在的和负数索引
+            needed = {i for i in indices if i >= 0 and (src, i) not in existing}
+            if needed:
+                tasks.append(self.milvus.get_adjacent_chunks(src, needed, self.user_id))
+
+        if not tasks:
+            return docs
+
+        results = await asyncio.gather(*tasks)
+        for chunk_map in results:
+            for ci, chunk_doc in chunk_map.items():
+                docs.append(chunk_doc)
+
+        return docs
 
     async def _generate_hyde(self, query: str) -> str:
         """生成 HyDE 假设文档（作为检索变体之一）"""

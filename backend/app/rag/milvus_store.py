@@ -150,6 +150,34 @@ class MilvusService:
         self.client.flush(collection_name=self.collection_name)
         return ids
 
+    async def get_adjacent_chunks(
+        self, source: str, chunk_indices: set, user_id: str
+    ) -> dict:
+        """获取指定 source 和 chunk_index 的 chunk
+        返回 {chunk_index: Document} 映射
+        """
+        if not chunk_indices:
+            return {}
+
+        def _query():
+            results = self.client.query(
+                collection_name=self.collection_name,
+                filter=f'user_id == "{user_id}"',
+                output_fields=["text", "metadata"],
+                limit=10000,
+            )
+            result = {}
+            for r in results:
+                meta = r.get("metadata", {})
+                if meta.get("source") == source and meta.get("chunk_index") in chunk_indices:
+                    result[meta["chunk_index"]] = Document(
+                        page_content=r["text"],
+                        metadata=meta,
+                    )
+            return result
+
+        return await asyncio.to_thread(_query)
+
     async def get_retriever(self, query: str = None, user_id: str = None):
         """获取混合检索器"""
         if not user_id:
