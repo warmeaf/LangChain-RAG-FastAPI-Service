@@ -127,7 +127,9 @@ class MilvusService:
         # 给每个 chunk 拼接文档来源前缀，避免跨文档混淆
         texts = []
         for doc in documents:
-            source = doc.metadata.get("source", doc.metadata.get("filename", ""))
+            source = doc.metadata.get("original_filename") \
+                  or doc.metadata.get("source") \
+                  or doc.metadata.get("filename", "")
             prefix = f"[文档: {source}] " if source else ""
             texts.append(prefix + doc.page_content)
 
