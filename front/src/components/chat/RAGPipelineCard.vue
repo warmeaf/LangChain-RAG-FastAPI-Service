@@ -33,4 +33,3 @@ function addStage(data: any) {
 function reset() { stages.value = [] }
 defineExpose({ addStage, reset })
 </script>
-
