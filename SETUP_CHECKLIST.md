@@ -1,6 +1,6 @@
 # 本地环境搭建检查清单
 
-> 方案：Chat 用 DeepSeek API + Embedding 用本地 BGE 模型 + Reranker 用本地 Qwen3 模型
+> 方案：Chat 用 DeepSeek API + Embedding 用本地 BGE 模型
 
 ---
 
@@ -16,19 +16,16 @@
 
 - [ ] **DeepSeek API Key** — 去 [platform.deepseek.com](https://platform.deepseek.com) 申请（当前 `LLM_TYPE=DEEPSEEK`）
 
-## 模型下载（自动）
+## 模型下载
 
-以下模型首次使用时会自动从 HuggingFace 镜像下载，无需手动操作：
-
-| 模型 | 用途 | 大小 |
-|------|------|------|
-| `BAAI/bge-large-zh` | 文本嵌入 | ~1.3 GB |
-| `BAAI/bge-reranker-large` | 文档重排序 | ~1.1 GB |
-| `openai/clip-vit-base-patch32` | 图片嵌入 | ~600 MB |
+| 模型 | 用途 | 大小 | 来源 |
+|------|------|------|------|
+| `BAAI/bge-large-zh` | 文本嵌入 | ~1.3 GB | 首次自动下载 |
+| `openai/clip-vit-base-patch32` | 图片嵌入 | ~600 MB | 首次自动下载 |
 
 > 已设置 `HF_ENDPOINT=https://hf-mirror.com` 镜像加速。
 
-另外 `backend/.env` 中 `RERANKER_MODEL_PATH` 指向本机已下载的 `Qwen/Qwen3-Reranker-0.6B`，如需使用 bge-reranker 改为空值即可。
+**重排序模型**：`.env` 中 `RERANKER_MODEL_PATH` 已指向本机已下载的 `Qwen/Qwen3-Reranker-0.6B`，无需额外下载。
 
 ## 配置文件
 
