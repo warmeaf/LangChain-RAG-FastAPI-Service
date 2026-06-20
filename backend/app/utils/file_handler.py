@@ -157,13 +157,9 @@ async def word_loader(file_path: str) -> List[Document]:
     abs_file_path = get_abstract_path(file_path) if not os.path.isabs(file_path) else file_path
     try:
         from unstructured.partition.docx import partition_docx
+        from app.rag.document_handler.format_preserver import aggregate_by_length
         elements = partition_docx(filename=abs_file_path)
-        docs = []
-        for el in elements:
-            text = str(el) if hasattr(el, '__str__') else getattr(el, 'text', "")
-            if text.strip():
-                docs.append(Document(page_content=text, metadata={"source": abs_file_path}))
-        return docs
+        return aggregate_by_length(elements, abs_file_path)
     except Exception as e:
         logger.error(f"【WORD文件加载】失败: {e}")
         return []
@@ -266,13 +262,9 @@ def word_loader_sync(file_path: str) -> List[Document]:
     abs_file_path = get_abstract_path(file_path) if not os.path.isabs(file_path) else file_path
     try:
         from unstructured.partition.docx import partition_docx
+        from app.rag.document_handler.format_preserver import aggregate_by_length
         elements = partition_docx(filename=abs_file_path)
-        docs = []
-        for el in elements:
-            text = str(el) if hasattr(el, '__str__') else getattr(el, 'text', "")
-            if text.strip():
-                docs.append(Document(page_content=text, metadata={"source": abs_file_path}))
-        return docs
+        return aggregate_by_length(elements, abs_file_path)
     except Exception as e:
         logger.error(f"【WORD文件加载(同步)】失败: {e}")
         return []
