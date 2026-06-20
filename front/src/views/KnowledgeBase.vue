@@ -1,39 +1,25 @@
 <template>
   <div>
-    <van-nav-bar
-      :title="$t('knowledgebase.title')"
-      fixed
-      placeholder
-    />
+    <van-nav-bar :title="$t('knowledgebase.title')" fixed placeholder />
 
-    <div>
-      <div @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
-        <div>
-          <van-icon name="upgrade" size="40" />
-        </div>
-        <p>{{ $t('knowledgebase.uploadText') }}</p>
-        <p>{{ $t('knowledgebase.uploadHint') }}</p>
-        <input
-          ref="fileInput"
-          type="file"
-          multiple
-          accept=".md,.txt,.pdf,.docx,.pptx"
-         
-          @change="handleFileSelect"
-        />
+    <div class="flex flex-col gap-4 px-4 mt-4">
+      <!-- 文件上传区域 -->
+      <div
+        class="flex flex-col items-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer"
+        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
+        <van-icon name="upgrade" size="40" color="var(--van-gray-5)" />
+        <p class="m-0 text-sm text-gray-600">{{ $t('knowledgebase.uploadText') }}</p>
+        <p class="m-0 text-xs text-gray-400">{{ $t('knowledgebase.uploadHint') }}</p>
+        <input ref="fileInput" type="file" multiple accept=".md,.txt,.pdf,.docx,.pptx" class="hidden"
+          @change="handleFileSelect" />
       </div>
 
+      <!-- 已选文件列表 -->
       <div v-if="selectedFiles.length > 0">
-        <h3>{{ $t('knowledgebase.selectedFiles') }}</h3>
+        <h3 class="text-base font-semibold m-0 mb-2">{{ $t('knowledgebase.selectedFiles') }}</h3>
         <van-cell-group inset>
-          <van-cell
-            v-for="(file, index) in selectedFiles"
-            :key="index"
-            :title="file.name"
-            :value="formatFileSize(file.size)"
-            is-link
-            @click="removeFile(index)"
-          >
+          <van-cell v-for="(file, index) in selectedFiles" :key="index" :title="file.name"
+            :value="formatFileSize(file.size)" is-link @click="removeFile(index)">
             <template #right-icon>
               <van-icon name="delete" color="var(--van-danger-color)" />
             </template>
@@ -41,168 +27,123 @@
         </van-cell-group>
       </div>
 
-      <van-button
-        v-if="selectedFiles.length > 0 && !uploading"
-        type="primary"
-        block
-        @click="uploadFiles"
-      >
+      <!-- 上传按钮 -->
+      <van-button v-if="selectedFiles.length > 0 && !uploading" type="primary" block size="large" @click="uploadFiles">
         {{ $t('knowledgebase.uploadButton') }}
       </van-button>
 
-      <div v-if="uploading">
-        <h3>{{ $t('knowledgebase.uploadProgress') }}</h3>
-        <div v-for="(progress, index) in uploadProgressList" :key="index">
-          <div>
-            <span>{{ progress.filename }}</span>
+      <!-- 上传进度 -->
+      <div v-if="uploading" class="flex flex-col gap-3">
+        <h3 class="text-base font-semibold m-0">{{ $t('knowledgebase.uploadProgress') }}</h3>
+        <div v-for="(progress, index) in uploadProgressList" :key="index" class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-sm truncate">{{ progress.filename }}</span>
             <van-tag :type="getStatusType(progress.status)" size="medium">
               {{ getStatusText(progress.status) }}
             </van-tag>
           </div>
           <van-progress :percentage="progress.percentage" v-if="progress.percentage !== null" />
-          <p>{{ progress.message }}</p>
+          <p class="m-0 text-xs text-gray-500">{{ progress.message }}</p>
         </div>
-        <div v-if="uploadComplete">
+        <div v-if="uploadComplete" class="flex flex-col items-center gap-2 py-4">
           <van-icon name="success" size="32" color="var(--van-success-color)" />
-          <p>{{ $t('knowledgebase.uploadComplete') }}</p>
-          <p>{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }} {{ $t('knowledgebase.failed') }}</p>
+          <p class="m-0 font-medium">{{ $t('knowledgebase.uploadComplete') }}</p>
+          <p class="m-0 text-sm text-gray-500">{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }}
+            {{
+              $t('knowledgebase.failed') }}</p>
         </div>
       </div>
 
-      <div v-if="!uploading">
-        <div>
-          <h3>{{ $t('knowledgebase.documentList') }}</h3>
-          <div>
-            <span>{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
-            <van-button
-              v-if="documents.length > 0"
-              size="small"
-              type="danger"
-              plain
-              @click="handleCleanAll"
-            >
+      <!-- 文档列表 -->
+      <div v-if="!uploading" class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-baseline gap-2">
+            <h3 class="text-base font-semibold m-0">{{ $t('knowledgebase.documentList') }}</h3>
+            <span class="text-sm text-gray-500">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <van-button v-if="documents.length > 0" size="small" type="danger" plain @click="handleCleanAll">
               {{ $t('knowledgebase.cleanAll') }}
             </van-button>
           </div>
         </div>
-        
+
         <van-cell-group inset v-if="documents.length > 0">
-          <van-cell
-            v-for="doc in documents"
-            :key="doc.id"
-            :title="doc.original_filename || doc.filename"
-            is-link
-            @click="viewDocumentDetail(doc)"
-          >
+          <van-cell v-for="doc in documents" :key="doc.id" :title="doc.original_filename || doc.filename" center is-link
+            @click="showDocumentActions(doc)">
             <template #icon>
-              <van-icon name="file-text-o" size="18" />
+              <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="18" class="mr-2" />
             </template>
             <template #label>
-              <div>
-                <span>{{ doc.chunk_count }} {{ $t('knowledgebase.chunks') }}</span>
-              </div>
-            </template>
-            <template #right-icon>
-              <van-icon 
-                name="delete" 
-                color="var(--van-danger-color)" 
-                size="18" 
-               
-                @click.stop="handleDeleteDocument(doc)"
-              />
+              <span>{{ doc.chunk_count }} {{ $t('knowledgebase.chunks') }}</span>
             </template>
           </van-cell>
         </van-cell-group>
 
         <van-empty v-else-if="!loadingDocuments" :description="$t('knowledgebase.empty')" />
 
-        <van-loading v-if="loadingDocuments" />
+        <van-loading v-if="loadingDocuments" class="flex justify-center py-8" />
       </div>
     </div>
 
-    <van-action-sheet
-      v-model:show="showActions"
-      :actions="documentActions"
-      :title="currentDocument?.original_filename || currentDocument?.filename"
-      @select="onActionSelect"
-      cancel-text="取消"
-    />
+    <!-- 文档操作菜单 -->
+    <van-action-sheet v-model:show="showActions" :actions="documentActions"
+      :title="currentDocument?.original_filename || currentDocument?.filename" @select="onActionSelect"
+      cancel-text="取消" />
 
-    <van-popup v-model:show="showDetail" position="bottom" :style="{ height: '70%' }" round>
-      <div>
-        <h4>{{ $t('knowledgebase.documentContent') }}</h4>
-        <div>
-          <van-button
-            size="small"
-            type="primary"
-            plain
-            @click="viewDocumentChunks"
-          >
-            {{ $t('knowledgebase.viewChunks') }}
-          </van-button>
-          <van-icon name="close" @click="showDetail = false" />
+    <!-- 文档详情弹窗 -->
+    <van-popup v-model:show="showDetail" position="bottom" :style="{ height: '70%' }" round closeable>
+      <div class="flex flex-col h-full">
+        <div class="flex items-center justify-between px-4 py-3">
+          <h4 class="m-0 text-base font-semibold">{{ $t('knowledgebase.documentContent') }}</h4>
         </div>
-      </div>
-      <div>
-        <van-loading v-if="loadingDetail" />
-        <template v-else>
-          <div>
-            <span>{{ currentDocument?.chunk_count }} {{ $t('knowledgebase.chunks') }}</span>
-          </div>
-          <div>
-            <!-- 文档完整文本内容 -->
-            <div>{{ currentDocument?.content || currentDocument?.preview }}</div>
-            <!-- 按页分组展示 PDF 提取的图片，帮助用户对照文本查看原始图片内容 -->
-            <div v-for="group in detailPageImages" :key="group.page">
-              <div>第 {{ group.page + 1 }} 页</div>
-              <div>
-                <van-image
-                  v-for="(url, i) in group.urls"
-                  :key="i"
-                  :src="url"
-                  fit="contain"
-                 
-                />
+        <div class="flex-1 overflow-y-auto px-4 py-3">
+          <van-loading v-if="loadingDetail" class="flex justify-center py-8" />
+          <template v-else>
+            <div class="text-sm text-gray-500 mb-3">
+              <span>{{ currentDocument?.chunk_count }} {{ $t('knowledgebase.chunks') }}</span>
+            </div>
+            <div class="flex flex-col gap-4">
+              <div class="whitespace-pre-wrap text-sm leading-relaxed">{{ currentDocument?.content ||
+                currentDocument?.preview }}</div>
+              <div v-for="group in detailPageImages" :key="group.page" class="flex flex-col gap-2">
+                <div class="text-xs text-gray-500">第 {{ group.page + 1 }} 页</div>
+                <div class="flex flex-wrap gap-2">
+                  <van-image v-for="(url, i) in group.urls" :key="i" :src="url" fit="contain" class="max-w-full" />
+                </div>
               </div>
             </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </div>
     </van-popup>
 
-    <van-popup v-model:show="showChunks" position="bottom" :style="{ height: '70%' }" round>
-      <div>
-        <h4>{{ $t('knowledgebase.chunkList') }}</h4>
-        <van-icon name="close" @click="showChunks = false" />
-      </div>
-      <div>
-        <van-loading v-if="loadingChunks" />
-        <template v-else>
-          <div>
-            <span>{{ currentDocument?.filename }}</span>
-            <span>{{ totalChunks }} {{ $t('knowledgebase.chunks') }}</span>
-          </div>
-          <div
-            v-for="chunk in chunks"
-            :key="chunk.chunk_id"
-           
-          >
-            <div>{{ chunk.index + 1 }}</div>
-            <div>
-              <div>{{ chunk.content }}</div>
-              <!-- 每个切片对应的图片：通过 _imageUrls（经 base64 缓存处理后的图片URL）展示 -->
-              <div v-if="chunk._imageUrls && chunk._imageUrls.length > 0">
-                <van-image
-                  v-for="(url, idx) in chunk._imageUrls"
-                  :key="idx"
-                  :src="url"
-                  fit="contain"
-                 
-                />
+    <!-- 切片列表弹窗 -->
+    <van-popup v-model:show="showChunks" position="bottom" :style="{ height: '70%' }" round closeable>
+      <div class="flex flex-col h-full">
+        <div class="flex items-center justify-between px-4 py-3">
+          <h4 class="m-0 text-base font-semibold">{{ $t('knowledgebase.chunkList') }}</h4>
+        </div>
+        <div class="flex-1 overflow-y-auto px-4 py-3">
+          <van-loading v-if="loadingChunks" class="flex justify-center py-8" />
+          <template v-else>
+            <div class="flex items-center justify-between mb-3 text-sm text-gray-500">
+              <span>{{ currentDocument?.filename }}</span>
+              <span>{{ totalChunks }} {{ $t('knowledgebase.chunks') }}</span>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div v-for="chunk in chunks" :key="chunk.chunk_id"
+                class="border border-gray-100 rounded-lg p-3 flex flex-col gap-2">
+                <div class="text-xs text-gray-400">#{{ chunk.index + 1 }}</div>
+                <div class="text-sm leading-relaxed whitespace-pre-wrap">{{ chunk.content }}</div>
+                <div v-if="chunk._imageUrls && chunk._imageUrls.length > 0" class="flex flex-wrap gap-2">
+                  <van-image v-for="(url, idx) in chunk._imageUrls" :key="idx" :src="url" fit="contain"
+                    class="max-w-full" />
+                </div>
               </div>
             </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </div>
     </van-popup>
     <tab-bar />
@@ -297,6 +238,20 @@ const formatFileSize = (bytes) => {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
+
+const getFileIcon = (filename) => {
+  const ext = filename?.split('.').pop()?.toLowerCase();
+  const icons = {
+    pdf: 'bookmark-o',
+    doc: 'description',
+    docx: 'description',
+    txt: 'notes-o',
+    md: 'orders-o',
+    ppt: 'chart-trending-o',
+    pptx: 'chart-trending-o',
+  };
+  return icons[ext] || 'notes-o';
 };
 
 const uploadFiles = async () => {
@@ -395,7 +350,7 @@ const parseEvent = (event) => {
       const index = uploadProgressList.value.findIndex(p => p.filename === filename);
       if (index !== -1) {
         uploadProgressList.value[index].message = message;
-        
+
         if (event_type === 'completed') {
           uploadProgressList.value[index].status = 'completed';
           uploadProgressList.value[index].percentage = 100;
@@ -549,22 +504,27 @@ const deleteDocumentByFilename = async (filename) => {
   return false;
 };
 
-const handleDeleteDocument = async (doc) => {
-  showDialog({
-    title: t('common.confirm'),
-    message: t('knowledgebase.deleteConfirm', { filename: doc.original_filename || doc.filename }),
-    showCancelButton: true,
-  }).then(async (result) => {
-    if (result) {
-      const filename = doc.original_filename || doc.filename;
-      const success = await deleteDocumentByFilename(filename);
-      if (success) {
-        showToast(t('knowledgebase.deleteSuccess'));
-        await fetchDocuments();
-      } else {
-        showToast(t('knowledgebase.deleteFailed'));
+const handleDeleteDocument = (doc) => {
+  return new Promise((resolve) => {
+    showDialog({
+      title: t('common.confirm'),
+      message: t('knowledgebase.deleteConfirm', { filename: doc.original_filename || doc.filename }),
+      showCancelButton: true,
+    }).then(async (result) => {
+      if (result) {
+        const filename = doc.original_filename || doc.filename;
+        const success = await deleteDocumentByFilename(filename);
+        if (success) {
+          showToast(t('knowledgebase.deleteSuccess'));
+          await fetchDocuments();
+        } else {
+          showToast(t('knowledgebase.deleteFailed'));
+        }
       }
-    }
+      resolve();
+    }).catch(() => {
+      resolve();
+    });
   });
 };
 
@@ -635,13 +595,6 @@ const viewDocumentDetail = async (doc) => {
   showDetail.value = true;
 };
 
-const viewDocumentChunks = async () => {
-  showDetail.value = false;
-  showChunks.value = true;
-  await fetchDocumentChunks(currentDocument.value.filename);
-  await loadChunkImages(chunks.value, currentDocument.value.md5);
-};
-
 const showDocumentActions = (doc) => {
   currentDocument.value = doc;
   showActions.value = true;
@@ -649,7 +602,7 @@ const showDocumentActions = (doc) => {
 
 const onActionSelect = async (action) => {
   showActions.value = false;
-  
+
   switch (action.action) {
     case 'viewContent':
       detailPageImages.value = [];
@@ -669,7 +622,7 @@ const onActionSelect = async (action) => {
       await loadChunkImages(chunks.value, currentDocument.value.md5);
       break;
     case 'deleteDoc':
-      showToast('删除功能开发中');
+      await handleDeleteDocument(currentDocument.value);
       break;
   }
 };
@@ -694,4 +647,3 @@ onMounted(() => {
   fetchDocuments();
 });
 </script>
-

@@ -24,7 +24,7 @@ async def add_vector_single(
         file: UploadFile = File(...),
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=5, window=60))
+        _: None = Depends(rate_limit(limit=30, window=60))
 ):
     """上传文件，将文件保存到向量数据库，仅支持TXT和PDF"""
     filename = await knowledge_service.handle_add_vector_single(file, user_id)
@@ -36,7 +36,7 @@ async def add_vector_multiple(
         files: List[UploadFile] = File(..., description="要上传的文件列表，仅支持PDF和TXT格式"),
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=3, window=60))
+        _: None = Depends(rate_limit(limit=30, window=60))
 ):
     """上传多个文件，将文件保存到向量数据库，仅支持TXT和PDF"""
     filenames = await knowledge_service.handle_add_vector_multiple(files, user_id)
@@ -48,7 +48,7 @@ async def add_vector_multiple_stream(
         files: List[UploadFile] = File(..., description="要上传的文件列表，仅支持PDF、TXT、MD、PPTX、DOCX格式"),
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=3, window=60))
+        _: None = Depends(rate_limit(limit=30, window=60))
 ):
     """上传多个文件，流式返回处理进度，仅支持TXT、PDF、MD、PPTX、DOCX"""
     return StreamingResponse(
@@ -134,7 +134,7 @@ async def delete_by_filename(
 async def get_all_md5_records(
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """获取用户的所有MD5记录"""
     records = await knowledge_service.handle_get_all_md5_records(user_id)
@@ -149,7 +149,7 @@ async def get_md5_info(
         md5_value: str,
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """
     获取MD5对应的文档信息
@@ -166,7 +166,7 @@ async def get_md5_info(
 async def get_user_knowledge_list(
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """获取用户的知识库文档列表"""
     documents = await knowledge_service.handle_get_user_knowledge(user_id)
@@ -181,7 +181,7 @@ async def get_document_detail(
         filename: str,
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """获取文档详情内容"""
     document = await knowledge_service.handle_get_document_detail(user_id, filename)
@@ -193,7 +193,7 @@ async def get_document_chunks(
         filename: str,
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """获取文档切片信息"""
     chunks = await knowledge_service.handle_get_document_chunks(user_id, filename)
@@ -242,7 +242,7 @@ async def serve_batch_images(
         md5: str,
         user_id: str = Depends(get_current_user_id),
         knowledge_service: KnowledgeService = Depends(get_knowledge_service),
-        _: None = Depends(rate_limit(limit=10, window=60))
+        _: None = Depends(rate_limit(limit=60, window=60))
 ):
     """返回指定PDF的所有图片（单次请求，JSON + base64）"""
     result = await knowledge_service.handle_get_batch_images(user_id, md5)
