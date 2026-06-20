@@ -104,3 +104,55 @@ def aggregate_by_slide(elements, source_path: str) -> List[Document]:
         ))
 
     return result
+
+
+def aggregate_by_length(elements, source_path: str, chunk_size: int = 400) -> List[Document]:
+    """DOCX 元素聚合：将连续段落/标题合并到接近 chunk_size 的 Document
+
+    DOCX 被 unstructured 拆成逐段落/标题的元素，每个元素只有几十字。
+    此函数将连续元素合并，直到接近 chunk_size，避免碎片化。
+
+    Args:
+        elements: unstructured 提取的元素列表
+        source_path: 文件路径
+        chunk_size: 目标聚合大小（与 splitter 的 chunk_size 保持一致）
+
+    Returns:
+        按长度聚合后的 Document 列表
+    """
+    if not elements:
+        return []
+
+    items: list[str] = []
+    for el in elements:
+        text = str(el) if hasattr(el, "__str__") else getattr(el, "text", "")
+        if not text or not text.strip():
+            continue
+        category = getattr(el, "category", None)
+        items.append(_format_text(text, category))
+
+    if not items:
+        return []
+
+    result = []
+    buffer = []
+    current_len = 0
+
+    for item in items:
+        if current_len + len(item) > chunk_size and buffer:
+            result.append(Document(
+                page_content="\n".join(buffer),
+                metadata={"source": source_path},
+            ))
+            buffer = []
+            current_len = 0
+        buffer.append(item)
+        current_len += len(item)
+
+    if buffer:
+        result.append(Document(
+            page_content="\n".join(buffer),
+            metadata={"source": source_path},
+        ))
+
+    return result
