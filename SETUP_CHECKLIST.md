@@ -18,14 +18,15 @@
 
 ## 模型下载
 
-| 模型 | 用途 | 大小 | 来源 |
-|------|------|------|------|
-| `BAAI/bge-large-zh` | 文本嵌入 | ~1.3 GB | 首次自动下载 |
-| `openai/clip-vit-base-patch32` | 图片嵌入 | ~600 MB | 首次自动下载 |
+以下模型首次使用时自动从 HuggingFace 镜像下载，无需手动操作：
+
+| 模型 | 用途 | 大小 |
+|------|------|------|
+| `BAAI/bge-large-zh` | 文本嵌入 | ~1.3 GB |
+| `BAAI/bge-reranker-large` | 文档重排序 | ~1.1 GB |
+| `openai/clip-vit-base-patch32` | 图片嵌入 | ~600 MB |
 
 > 已设置 `HF_ENDPOINT=https://hf-mirror.com` 镜像加速。
-
-**重排序模型**：`.env` 中 `RERANKER_MODEL_PATH` 已指向本机已下载的 `Qwen/Qwen3-Reranker-0.6B`，无需额外下载。
 
 ## 配置文件
 
@@ -86,6 +87,6 @@ docker compose down -v # 同时删除数据卷
 
 ## 常见问题
 
-- **MySQL 端口冲突**：本机已有 MySQL → 修改根 `.env` 中 `MYSQL_PORT` 为其他端口（如 3307），同时更新 `backend/.env` 和 `DjangoUserService/.env` 中的端口
+- **MySQL 端口冲突**：本机已有 MySQL → 修改 `docker-compose.yml` 中 `mysql.ports` 为 `"3307:3306"`，同时更新 `backend/.env` 和 `DjangoUserService/.env` 中的端口
 - **Embedding 模型下载慢**：已配置 `HF_ENDPOINT` 镜像，首次需几分钟
 - **Milvus 启动失败**：Mac 上需确保 Docker Desktop 已授予足够内存（建议 > 4GB）
