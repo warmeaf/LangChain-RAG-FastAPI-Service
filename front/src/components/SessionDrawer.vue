@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { showConfirmDialog, showToast } from 'vant';
 import { watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
 
@@ -72,6 +72,7 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'new-session']);
 
 const router = useRouter();
+const route = useRoute();
 const sessionStore = useSessionStore();
 const userStore = useUserStore();
 
@@ -113,8 +114,15 @@ const deleteSession = async (sessionId: string) => {
   } catch {
     return;
   }
+  const currentSessionId = route.params.sessionId as string | undefined;
+  const isCurrent = currentSessionId === sessionId;
   const result = await sessionStore.deleteSession(sessionId);
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
+  if (isCurrent) {
+    emit('new-session');
+    emit('update:show', false);
+    router.push('/aichat');
+  }
 };
 
 const createNewSession = () => {
