@@ -60,7 +60,7 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2 mx-3 mb-3 px-3 py-2 bg-white rounded-2xl shadow-lg">
+      <div class="flex items-center gap-2 mx-3 mb-3 px-3 py-2 bg-white rounded-xl shadow-sm">
         <van-field
           v-model="userInput"
           rows="1"
