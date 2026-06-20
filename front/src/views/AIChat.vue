@@ -64,23 +64,28 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2 mx-3 px-3 py-2 bg-white">
+      <div class="flex items-center gap-2 mx-3 mb-3 px-3 py-2 bg-white rounded-2xl shadow-lg">
         <van-field
           v-model="userInput"
           rows="1"
           autosize
           type="textarea"
           placeholder="请输入问题..."
+          :border="false"
           class="flex-1!"
           @keypress.enter.prevent="sendMessage"
         />
         <van-button
           type="primary"
-          size="small"
+          size="mini"
           :disabled="isLoading || !userInput.trim()"
+          class="!w-9 !h-9 !p-0 !min-w-0 shrink-0"
           @click="sendMessage"
         >
-          发送
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
         </van-button>
       </div>
     </div>

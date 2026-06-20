@@ -16,18 +16,21 @@
 
       <!-- 已选文件列表 -->
       <div v-if="(selectedFiles as File[]).length > 0">
-        <van-cell-group inset>
-          <van-cell v-for="(file, index) in selectedFiles" :key="index" :title="file.name"
-            :value="formatFileSize(file.size)" is-link @click="removeFile(index)">
+        <van-cell-group inset class="m-0!">
+          <van-cell v-for="(file, index) in selectedFiles" center :key="index" :title="file.name">
+            <template #label>
+              <span>{{ formatFileSize(file.size) }}</span>
+            </template>
             <template #right-icon>
-              <van-icon name="delete" color="var(--van-danger-color)" />
+              <van-icon name="delete-o" color="var(--van-danger-color)" @click.stop="removeFile(index)" />
             </template>
           </van-cell>
         </van-cell-group>
       </div>
 
       <!-- 上传按钮 -->
-      <van-button v-if="(selectedFiles as File[]).length > 0 && !uploading" type="primary" block size="large" @click="uploadFiles">
+      <van-button v-if="(selectedFiles as File[]).length > 0 && !uploading" type="primary" block size="large"
+        @click="uploadFiles">
         {{ $t('knowledgebase.uploadButton') }}
       </van-button>
 
@@ -69,10 +72,10 @@
 
         <van-cell-group v-if="documents.length > 0" class="m-0!" inset>
           <van-cell v-for="doc in documents" :key="doc.id" :title="doc.original_filename || doc.filename" center is-link
-             @click="showDocumentActions(doc)">
+            @click="showDocumentActions(doc)">
             <template #icon>
               <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-                <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="16"/>
+                <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="16" />
               </div>
             </template>
             <template #label>
