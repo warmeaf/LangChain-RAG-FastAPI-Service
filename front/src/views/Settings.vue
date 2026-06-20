@@ -6,63 +6,29 @@
   />
 
   <van-cell-group inset :title="$t('settings.personalization')">
-    <van-cell :title="$t('settings.themeCustomization')" is-link @click="showThemePopup = true" />
-    <van-cell :title="$t('settings.languageSettings')" is-link @click="showLanguagePopup = true" />
+    <van-cell :title="$t('settings.themeCustomization')" is-link @click="showThemeSheet = true" />
+    <van-cell :title="$t('settings.languageSettings')" is-link @click="showLanguageSheet = true" />
   </van-cell-group>
 
-  <van-popup
-    v-model:show="showThemePopup"
-    position="bottom"
-    round
-  >
-    <div>{{ $t('settings.selectTheme') }}</div>
-    <div>
-      <div @click="changeTheme('light')">
-        <div>
-          <div></div>
-          <div></div>
-        </div>
-        <div>浅色</div>
-      </div>
-      <div @click="changeTheme('dark')">
-        <div>
-          <div></div>
-          <div></div>
-        </div>
-        <div>深色</div>
-      </div>
-    </div>
-  </van-popup>
+  <van-action-sheet
+    v-model:show="showThemeSheet"
+    :actions="themeActions"
+    cancel-text="取消"
+    close-on-click-action
+    @select="onThemeSelect"
+  />
 
-  <van-popup
-    v-model:show="showLanguagePopup"
-    position="bottom"
-    round
-  >
-    <div>{{ $t('settings.selectLanguage') }}</div>
-    <van-radio-group v-model="currentLanguage">
-      <van-cell-group inset>
-        <van-cell
-          v-for="lang in languageOptions"
-          :key="lang.value"
-          :title="lang.label"
-          clickable
-          @click="currentLanguage = lang.value"
-        >
-          <template #right-icon>
-            <van-radio :name="lang.value" />
-          </template>
-        </van-cell>
-      </van-cell-group>
-    </van-radio-group>
-    <div>
-      <van-button type="primary" block @click="changeLanguage">{{ $t('common.confirm') }}</van-button>
-    </div>
-  </van-popup>
+  <van-action-sheet
+    v-model:show="showLanguageSheet"
+    :actions="languageActions"
+    cancel-text="取消"
+    close-on-click-action
+    @select="onLanguageSelect"
+  />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast } from 'vant';
 import { useThemeStore } from '../store/theme';
@@ -79,30 +45,29 @@ const onClickLeft = () => {
   router.back();
 };
 
-// 主题相关
-const showThemePopup = ref(false);
-
-// 切换主题
-const changeTheme = (themeId) => {
-  themeStore.setTheme(themeId);
-  showThemePopup.value = false;
-};
-
-// 语言相关
-const showLanguagePopup = ref(false);
-const currentLanguage = ref(languageStore.getCurrentLanguage);
-const languageOptions = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' }
+	// 主题相关
+const showThemeSheet = ref(false);
+const themeActions = [
+  { name: '浅色', value: 'light' },
+  { name: '深色', value: 'dark' }
 ];
 
-// 切换语言
-const changeLanguage = () => {
-  languageStore.setLanguage(currentLanguage.value);
-  locale.value = currentLanguage.value;
-  showLanguagePopup.value = false;
+const onThemeSelect = (action) => {
+  themeStore.setTheme(action.value);
+};
+
+	// 语言相关
+const showLanguageSheet = ref(false);
+const languageActions = [
+  { name: '简体中文', value: 'zh-CN' },
+  { name: 'English', value: 'en-US' }
+];
+
+// 选择语言
+const onLanguageSelect = (action) => {
+  languageStore.setLanguage(action.value);
+  locale.value = action.value;
   showToast(t('settings.languageChanged'));
-  // 强制刷新页面以应用语言更改
   window.location.reload();
 };
 </script>
