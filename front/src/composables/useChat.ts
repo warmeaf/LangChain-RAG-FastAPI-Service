@@ -42,16 +42,14 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
   const userStore = useUserStore();
   const sessionStore = useSessionStore();
 
-  const messages = ref<ChatMessage[]>([
-    { role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' },
-  ]);
+  const messages = ref<ChatMessage[]>([]);
   const userInput = ref('');
   const isLoading = ref(false);
   const sessionId = ref('');
   const autoCollapseTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
   const showWelcome = computed(
-    () => messages.value.length === 1 && messages.value[0].role === 'assistant',
+    () => messages.value.length === 0,
   );
 
   const formatMessage = (content: string): string => {
@@ -267,7 +265,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
   };
 
   const resetToWelcome = (): void => {
-    messages.value = [{ role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' }];
+    messages.value = [];
     sessionId.value = '';
     sessionStore.currentSession = null;
   };
