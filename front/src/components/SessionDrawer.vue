@@ -120,8 +120,6 @@ const deleteSession = async (sessionId: string) => {
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
   if (isCurrent) {
     emit('new-session');
-    emit('update:show', false);
-    router.push('/aichat');
   }
 };
 
