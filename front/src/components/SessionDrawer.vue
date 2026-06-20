@@ -29,17 +29,18 @@
             <van-icon name="chat-o" size="24" color="var(--van-gray-4)" />
           </div>
           <p class="text-sm text-gray-500 m-0">暂无会话记录</p>
-          <van-button type="primary" round size="small" @click="createNewSession">创建新会话</van-button>
+          <van-button type="primary" size="small" @click="createNewSession">创建新会话</van-button>
         </div>
 
         <!-- 会话列表 -->
         <div v-else class="py-3">
-          <van-cell-group inset>
+          <van-cell-group inset class="m-0!">
             <van-swipe-cell v-for="session in sessionStore.sessions" :key="session.session_id">
               <van-cell
                 :title="session.title || '新会话'"
                 :label="formatSessionTime(session.created_at || '')"
                 is-link
+                center
                 @click="selectSession(session)"
               >
                 <template #icon>

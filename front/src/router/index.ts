@@ -59,9 +59,8 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, _from) => {
   document.title = (to.meta.title as string) || '新闻资讯';
-  next();
 });
 
 export default router;
