@@ -123,7 +123,14 @@ class MilvusService:
             return []
 
         ids = [str(uuid.uuid4()) for _ in documents]
-        texts = [doc.page_content for doc in documents]
+
+        # 给每个 chunk 拼接文档来源前缀，避免跨文档混淆
+        texts = []
+        for doc in documents:
+            source = doc.metadata.get("source", doc.metadata.get("filename", ""))
+            prefix = f"[文档: {source}] " if source else ""
+            texts.append(prefix + doc.page_content)
+
         embeddings = self._embed_texts(texts)
         now = int(time.time())
 
@@ -131,7 +138,7 @@ class MilvusService:
         for i, doc in enumerate(documents):
             data.append({
                 "id": ids[i],
-                "text": doc.page_content,
+                "text": texts[i],
                 "embedding": embeddings[i],
                 "user_id": doc.metadata.get("user_id", ""),
                 "doc_weight": float(doc.metadata.get("doc_weight", 1.0)),
