@@ -7,69 +7,74 @@
     placeholder
   />
 
-  <div>
-    <van-icon name="service-o" size="36" />
-    <h2>用户注册</h2>
-  </div>
+  <div class="flex flex-col items-center gap-8 px-4 mt-8">
+    <div class="flex flex-col items-center gap-3">
+      <van-icon name="service-o" size="48" />
+      <h2 class="text-xl font-semibold m-0">用户注册</h2>
+    </div>
 
-  <div>
-    <van-cell-group inset>
-      <van-field
-        v-model="form.username"
-        placeholder="请输入用户名"
-        :rules="usernameRules"
-        required
-        left-icon="user-o"
-        @blur="validateUsername"
-      />
-      <van-field
-        v-model="form.email"
-        placeholder="请输入邮箱地址"
-        :rules="emailRules"
-        required
-        type="email"
-        left-icon="envelop-o"
-        @blur="validateEmail"
-      />
-      <van-field
-        v-model="form.telephone"
-        placeholder="请输入手机号码"
-        type="tel"
-        left-icon="phone"
-        maxlength="11"
-      />
-      <van-field
-        v-model="form.password"
-        placeholder="请输入密码（6-20位）"
-        :rules="passwordRules"
-        required
-        type="password"
-        left-icon="lock"
-        @blur="validatePassword"
-      />
-      <van-field
-        v-model="form.confirm_password"
-        placeholder="请确认密码"
-        :rules="confirmPasswordRules"
-        required
-        type="password"
-        left-icon="lock"
-        @blur="validateConfirmPassword"
-      />
-    </van-cell-group>
+    <div class="w-full flex flex-col gap-6">
+      <van-cell-group inset>
+        <van-field
+          v-model="form.username"
+          label="用户名"
+          placeholder="请输入用户名"
+          :rules="usernameRules"
+          required
+          @blur="validateUsername"
+        />
+        <van-field
+          v-model="form.email"
+          label="邮箱"
+          placeholder="请输入邮箱地址"
+          :rules="emailRules"
+          required
+          type="email"
+          @blur="validateEmail"
+        />
+        <van-field
+          v-model="form.telephone"
+          label="手机号"
+          placeholder="请输入手机号码"
+          type="tel"
+          maxlength="11"
+        />
+        <van-field
+          v-model="form.password"
+          label="密码"
+          placeholder="请输入密码（6-20位）"
+          :rules="passwordRules"
+          required
+          type="password"
+          @blur="validatePassword"
+        />
+        <van-field
+          v-model="form.confirm_password"
+          label="确认密码"
+          placeholder="请确认密码"
+          :rules="confirmPasswordRules"
+          required
+          type="password"
+          @blur="validateConfirmPassword"
+        />
+      </van-cell-group>
 
-    <van-button
-      type="primary"
-      block
-      :loading="loading"
-      @click="handleRegister"
-    >
-      {{ loading ? '注册中...' : '注册' }}
-    </van-button>
-  </div>
+      <div class="flex flex-col gap-3 px-4">
+        <van-button
+          type="primary"
+          block
+          size="large"
+          :loading="loading"
+          @click="handleRegister"
+        >
+          {{ loading ? '注册中...' : '注册' }}
+        </van-button>
+      </div>
 
-  <div>
-    已有账号？<span @click="goToLogin">去登录</span>
+      <div class="text-center text-sm text-gray-500">
+        已有账号？<span class="text-blue-500" @click="goToLogin">去登录</span>
+      </div>
+    </div>
   </div>
 </template>
 
