@@ -114,7 +114,8 @@ const deleteSession = async (sessionId: string) => {
   } catch {
     return;
   }
-  const currentSessionId = route.params.sessionId as string | undefined;
+  const currentSessionId = (route.params.sessionId as string | undefined)
+    || sessionStore.currentSession?.session_id;
   const isCurrent = currentSessionId === sessionId;
   const result = await sessionStore.deleteSession(sessionId);
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
