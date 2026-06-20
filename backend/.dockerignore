@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+
+# Environment
+.env
+
+# Git
+.git/
+
+# Tests
+tests/
+
+# IDE
+.vscode/
+.idea/
+
+# Milvus volumes (large, not needed in image)
+volumes/
+
+# Frontend (not needed for backend build)
+front/

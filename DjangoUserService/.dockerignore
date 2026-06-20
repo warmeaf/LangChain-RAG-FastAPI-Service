@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+
+# Environment
+.env
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Media (large/user uploads, handled by volume)
+media/

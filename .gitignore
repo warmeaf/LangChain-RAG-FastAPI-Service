@@ -93,7 +93,4 @@ ehthumbs_vista.db
 *.tmp
 *.temp
 
-# Docker
-Dockerfile
-.dockerignore
 volumes/
