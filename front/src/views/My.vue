@@ -1,50 +1,51 @@
 <template>
   <van-nav-bar :title="$t('my.title')" fixed placeholder />
 
-  <van-cell-group v-if="isLogin" inset>
-    <van-cell center is-link @click="goToProfile">
-      <template #icon>
-        <van-image
-          round
-          width="72"
-          height="72"
-          :src="userInfo?.avatar ? `http://localhost:8001${userInfo.avatar}` : ''"
-        />
-      </template>
-      <template #title>
-        <span>{{ userInfo?.username || $t('my.notLoggedIn') }}</span>
-      </template>
-      <template #label>
-        <span>{{ userBio || $t('profile.bio') }}</span>
-      </template>
-    </van-cell>
-  </van-cell-group>
+  <div class="flex flex-col gap-6 mt-4">
+    <div>
+      <van-cell-group v-if="isLogin" inset>
+        <van-cell center is-link @click="goToProfile">
+          <template #icon>
+            <van-image round class="w-12 h-12 object-cover mr-2"
+              :src="userInfo?.avatar ? `http://localhost:8001${userInfo.avatar}` : ''" />
+          </template>
+          <template #title>
+            <span>{{ userInfo?.username || $t('my.notLoggedIn') }}</span>
+          </template>
+          <template #label>
+            <span>{{ userBio || $t('profile.bio') }}</span>
+          </template>
+        </van-cell>
+      </van-cell-group>
 
-  <van-cell-group v-else inset>
-    <van-cell center>
-      <template #icon>
-        <van-image round width="72" height="72" src="" />
-      </template>
-      <template #title>
-        <span>{{ $t('my.notLoggedIn') }}</span>
-      </template>
-      <template #label>
-        <van-space>
-          <van-button type="primary" size="small" @click="goToLogin">
-            {{ $t('my.goToLogin') }}
-          </van-button>
-          <van-button size="small" plain @click="goToRegister">
-            {{ $t('my.goToRegister') }}
-          </van-button>
-        </van-space>
-      </template>
-    </van-cell>
-  </van-cell-group>
+      <van-cell-group v-else inset>
+        <van-cell center>
+          <template #icon>
+            <van-image round width="72" height="72" src="" />
+          </template>
+          <template #title>
+            <span>{{ $t('my.notLoggedIn') }}</span>
+          </template>
+          <template #label>
+            <van-space>
+              <van-button type="primary" size="small" @click="goToLogin">
+                {{ $t('my.goToLogin') }}
+              </van-button>
+              <van-button size="small" plain @click="goToRegister">
+                {{ $t('my.goToRegister') }}
+              </van-button>
+            </van-space>
+          </template>
+        </van-cell>
+      </van-cell-group>
+    </div>
 
-  <van-cell-group inset>
-    <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
-    <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
-  </van-cell-group>
+
+    <van-cell-group inset>
+      <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
+      <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
+    </van-cell-group>
+  </div>
 
   <tab-bar />
 </template>

@@ -7,12 +7,12 @@
     placeholder
   />
 
-  <div>
+  <div class="flex flex-col gap-6 mt-4">
     <van-cell-group inset>
       <van-cell title="头像" center is-link @click="showAvatarDialog">
         <template #right-icon>
-          <van-image v-if="userInfo?.avatar" round width="60" height="60" :src="`http://localhost:8001${userInfo.avatar}`" />
-          <div v-else>
+          <van-image v-if="userInfo?.avatar" round class="w-12 object-cover" :src="`http://localhost:8001${userInfo.avatar}`" />
+          <div v-else class="flex w-12 h-12 items-center justify-center">
             {{ (userInfo?.username || '?')[0].toUpperCase() }}
           </div>
         </template>
@@ -138,7 +138,7 @@ const showPasswordConfirm = () => {
   showDialog({
     title: '修改密码',
     showCancelButton: true,
-    message: h('div', { style: 'padding: var(--van-padding-sm) 0;' }, [
+    message: () => h('div', { style: 'padding: var(--van-padding-sm) 0;' }, [
       h(Field, { modelValue: oldPassword.value, 'onUpdate:modelValue': (v) => oldPassword.value = v, type: 'password', label: '当前密码', placeholder: '请输入当前密码' }),
       h(Field, { modelValue: newPassword.value, 'onUpdate:modelValue': (v) => newPassword.value = v, type: 'password', label: '新密码', placeholder: '请输入新密码' }),
       h(Field, { modelValue: confirmPassword.value, 'onUpdate:modelValue': (v) => confirmPassword.value = v, type: 'password', label: '确认密码', placeholder: '请确认新密码' }),
@@ -196,7 +196,7 @@ const showBioDialog = () => {
     title: '修改个人简介',
     showCancelButton: true,
     confirmButtonText: '确认',
-    message: h(Field, {
+    message: () => h(Field, {
       modelValue: newBioValue.value,
       'onUpdate:modelValue': (v) => newBioValue.value = v,
       type: 'textarea',
@@ -247,10 +247,11 @@ const showGenderDialog = () => {
   
   showDialog({
     title: '选择性别',
-    message: h(RadioGroup, {
+    message: () => h(RadioGroup, {
       modelValue: selectedGender.value,
       'onUpdate:modelValue': (v) => { selectedGender.value = v },
-      direction: 'horizontal'
+      class: 'flex flex-col gap-3',
+      direction: 'vertical'
     }, {
       default: () => [
         h(Radio, { name: 1 }, { default: () => '男' }),
@@ -307,7 +308,7 @@ const showUsernameDialog = () => {
     title: '修改用户名',
     showCancelButton: true,
     confirmButtonText: '确认',
-    message: h(Field, { modelValue: newUsernameValue.value, 'onUpdate:modelValue': (v) => newUsernameValue.value = v, label: '用户名', placeholder: '请输入用户名' })
+    message: () => h(Field, { modelValue: newUsernameValue.value, 'onUpdate:modelValue': (v) => newUsernameValue.value = v, label: '用户名', placeholder: '请输入用户名' })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -353,7 +354,7 @@ const showEmailDialog = () => {
     title: '修改邮箱',
     showCancelButton: true,
     confirmButtonText: '确认',
-    message: h(Field, { modelValue: newEmailValue.value, 'onUpdate:modelValue': (v) => newEmailValue.value = v, type: 'email', label: '邮箱', placeholder: '请输入邮箱' })
+    message: () => h(Field, { modelValue: newEmailValue.value, 'onUpdate:modelValue': (v) => newEmailValue.value = v, type: 'email', label: '邮箱', placeholder: '请输入邮箱' })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -398,7 +399,7 @@ const showPhoneDialog = () => {
     title: '修改手机号',
     showCancelButton: true,
     confirmButtonText: '确认',
-    message: h(Field, { modelValue: newPhoneValue.value, 'onUpdate:modelValue': (v) => newPhoneValue.value = v, type: 'tel', label: '手机号', placeholder: '请输入手机号', maxlength: 11 })
+    message: () => h(Field, { modelValue: newPhoneValue.value, 'onUpdate:modelValue': (v) => newPhoneValue.value = v, type: 'tel', label: '手机号', placeholder: '请输入手机号', maxlength: 11 })
   }).then(async () => {
     // 点击确认按钮
     try {
@@ -437,58 +438,52 @@ const showPhoneDialog = () => {
 };
 
 const showAvatarDialog = () => {
-  const selectedFile = ref(null);
-  const previewUrl = ref(userInfo.value?.avatar ? `http://localhost:8001${userInfo.value.avatar}` : '');
-  
+  const fileList = ref(userInfo.value?.avatar
+    ? [{ url: `http://localhost:8001${userInfo.value.avatar}`, status: 'done' }]
+    : []);
+
   showDialog({
     title: '修改头像',
     showCancelButton: true,
     confirmButtonText: '确认上传',
-    message: h('div', { style: 'text-align: center; padding: var(--van-padding-sm) 0;' }, [
-      h(Image, { round: true, width: 100, height: 100, src: previewUrl.value, style: { marginBottom: 'var(--van-padding-sm)' } }),
-      h(Uploader, {
-        accept: 'image/*',
-        maxCount: 1,
-        onUpdateModelValue: (files) => {
-          if (files.length > 0) {
-            selectedFile.value = files[0].file || files[0];
-            previewUrl.value = files[0].url || (files[0].file ? URL.createObjectURL(files[0].file) : '');
-          }
-        },
-      }),
-    ])
+    message: () => h(Uploader, {
+      modelValue: fileList.value,
+      'onUpdate:modelValue': (files) => { fileList.value = files; },
+      accept: 'image/*',
+      maxCount: 1,
+    })
   }).then(async () => {
-    // 点击确认按钮
-    if (!selectedFile.value) {
+    if (fileList.value.length === 0) {
       showToast('请选择要上传的图片');
       return;
     }
-    
+
+    const fileItem = fileList.value[0];
+    // 未选择新文件（仍为原头像），无需上传
+    if (!fileItem.file) {
+      return;
+    }
+
     try {
-      // 显示加载提示
       const loadingInstance = showLoadingToast({
         message: '上传中...',
         forbidClick: true,
         duration: 0
       });
-      
-      // 创建FormData对象
+
       const formData = new FormData();
-      formData.append('img', selectedFile.value);
-      
-      // 发送上传请求
+      formData.append('img', fileItem.file);
+
       const response = await axios.post(`${apiConfig.userBaseURL}${apiConfig.endpoints.uploadFile}`, formData, {
         headers: {
           'Authorization': `Bearer ${userStore.token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
-      
-      // 关闭加载提示
+
       loadingInstance.close();
-      
+
       if (response.data && response.data.success) {
-        // 更新用户信息
         await userStore.getUserInfoDetail();
         showSuccessToast('头像上传成功');
       } else {
