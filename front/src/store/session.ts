@@ -196,11 +196,11 @@ export const useSessionStore = defineStore('session', {
     async getThinking(sessionId: string): Promise<unknown[]> {
       try {
         const token = localStorage.getItem('jwt_token');
-        const response = await axios.get<{ data?: { data?: { thinking?: unknown[] } } }>(
+        const response = await axios.get<{ data?: { thinking?: unknown[] } }>(
           `/chat/session/${sessionId}/thinking`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
-        return response.data.data?.data?.thinking || [];
+        return response.data.data?.thinking || [];
       } catch {
         return [];
       }
