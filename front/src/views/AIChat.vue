@@ -64,7 +64,7 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2 px-3 py-2 border-t border-gray-100 bg-white">
+      <div class="flex items-center gap-2 mx-3 px-3 py-2 bg-white">
         <van-field
           v-model="userInput"
           rows="1"
@@ -103,7 +103,7 @@ import { useSessionStore } from '../store/session';
 const route = useRoute();
 const sessionStore = useSessionStore();
 
-const messagesContainer = ref(null);
+const messagesContainer = ref<HTMLElement | null>(null);
 const showDrawer = ref(false);
 
 const {

@@ -2,7 +2,7 @@
   <van-popup
     :show="show"
     position="left"
-    :style="{ width: '85%', height: '100%' }"
+    :style="{ width: '68%', height: '100%' }"
     @update:show="$emit('update:show', $event)"
   >
     <div class="flex flex-col h-full bg-white">
@@ -12,7 +12,7 @@
           <van-icon name="chat-o" size="18" color="var(--van-primary-color)" />
           <span class="text-base font-semibold">历史会话</span>
         </div>
-        <van-button size="small" type="primary" @click="createNewSession">新会话</van-button>
+        <van-button size="small" type="primary" plain @click="createNewSession">新会话</van-button>
       </div>
 
       <!-- 内容区（可滚动） -->
