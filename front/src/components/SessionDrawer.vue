@@ -5,40 +5,57 @@
     :style="{ width: '85%', height: '100%' }"
     @update:show="$emit('update:show', $event)"
   >
-    <div>
-      <div>
-        <div>
-          <van-icon name="chat-o" size="20" />
-          <span>历史会话</span>
+    <div class="flex flex-col h-full bg-white">
+      <!-- 头部 -->
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div class="flex items-center gap-2">
+          <van-icon name="chat-o" size="18" color="var(--van-primary-color)" />
+          <span class="text-base font-semibold">历史会话</span>
         </div>
         <van-button size="small" type="primary" @click="createNewSession">新会话</van-button>
       </div>
 
-      <div>
-        <div v-if="sessionStore.isLoading">
+      <!-- 内容区（可滚动） -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- 加载中 -->
+        <div v-if="sessionStore.isLoading" class="flex flex-col items-center justify-center gap-2 py-16">
           <van-loading type="spinner" />
-          <p>加载中...</p>
+          <p class="text-sm text-gray-400 m-0">加载中...</p>
         </div>
 
-        <van-empty v-else-if="sessionStore.sessions.length === 0" description="暂无会话记录">
+        <!-- 空状态 -->
+        <div v-else-if="sessionStore.sessions.length === 0" class="flex flex-col items-center justify-center gap-4 py-16 px-4">
+          <div class="flex items-center justify-center w-14 h-14 bg-gray-50 rounded-full">
+            <van-icon name="chat-o" size="24" color="var(--van-gray-4)" />
+          </div>
+          <p class="text-sm text-gray-500 m-0">暂无会话记录</p>
           <van-button type="primary" round size="small" @click="createNewSession">创建新会话</van-button>
-        </van-empty>
+        </div>
 
-        <van-cell-group v-else inset>
-          <van-swipe-cell v-for="session in sessionStore.sessions" :key="session.session_id">
-            <van-cell
-              :title="session.title || '新会话'"
-              :label="formatSessionTime(session.created_at)"
-             
-              @click="selectSession(session)"
-            />
-            <template #right>
-              <van-button square type="danger" @click="deleteSession(session.session_id)">
-                <van-icon name="delete-o" size="16" />
-              </van-button>
-            </template>
-          </van-swipe-cell>
-        </van-cell-group>
+        <!-- 会话列表 -->
+        <div v-else class="py-3">
+          <van-cell-group inset>
+            <van-swipe-cell v-for="session in sessionStore.sessions" :key="session.session_id">
+              <van-cell
+                :title="session.title || '新会话'"
+                :label="formatSessionTime(session.created_at)"
+                is-link
+                @click="selectSession(session)"
+              >
+                <template #icon>
+                  <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
+                    <van-icon name="chat-o" size="14" color="var(--van-gray-5)" />
+                  </div>
+                </template>
+              </van-cell>
+              <template #right>
+                <van-button square type="danger" @click="deleteSession(session.session_id)">
+                  <van-icon name="delete-o" size="16" />
+                </van-button>
+              </template>
+            </van-swipe-cell>
+          </van-cell-group>
+        </div>
       </div>
     </div>
   </van-popup>

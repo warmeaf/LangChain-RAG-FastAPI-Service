@@ -16,69 +16,77 @@
       </template>
     </van-nav-bar>
     
-    <div>
-      <div ref="messagesContainer">
+    <div class="flex flex-col" style="height: calc(100dvh - 46px - 50px)">
+      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3">
         <!-- 欢迎状态（仅首次进入时显示） -->
-        <div v-if="showWelcome">
-          <div>
-            <van-icon name="service-o" size="36" />
+        <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-5 py-12">
+          <div class="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full">
+            <van-icon name="service-o" size="32" color="var(--van-blue)" />
           </div>
-          <h3>RAG 智能问答</h3>
-          <p>基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
-          <div>
-            <button
+          <h3 class="m-0 text-lg font-semibold">RAG 智能问答</h3>
+          <p class="m-0 text-sm text-gray-500 text-center px-4">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            <van-button
               v-for="(q, i) in quickQuestions"
               :key="i"
-             
+              size="small"
+              plain
+              hairline
               @click="sendQuickQuestion(q)"
             >
               {{ q }}
-            </button>
+            </van-button>
           </div>
         </div>
-        <div 
-          v-for="(message, index) in messages" 
+        <div
+          v-for="(message, index) in messages"
           v-show="!showWelcome || message.role === 'user' || index > 0"
           :key="index"
-         
+          :class="['flex mb-3', message.role === 'user' ? 'justify-end' : 'justify-start']"
         >
-          <div>
+          <div :class="['max-w-[85%] rounded-lg px-4 py-3', message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-50']">
             <!-- 思考过程区域 -->
-            <div v-if="message.thinking && message.thinking.length > 0">
-              <div @click="toggleThinking(message)">
-                <span>💬 思考过程</span>
-                <span>{{ message.thinkingCollapsed ? '展开' : '收起' }}</span>
+            <div v-if="message.thinking && message.thinking.length > 0" class="mb-2">
+              <div class="flex items-center justify-between py-1.5 px-2 bg-gray-100 rounded cursor-pointer select-none mb-2"
+                @click="toggleThinking(message)">
+                <span class="text-xs font-medium text-gray-600">💬 思考过程</span>
+                <span class="text-xs text-gray-400">{{ message.thinkingCollapsed ? '展开' : '收起' }}</span>
               </div>
-              <div v-show="!message.thinkingCollapsed">
-                <div v-for="(step, sIndex) in message.thinking" :key="sIndex">
-                  <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
-                    {{ getStageLabel(step.stage) }}
-                  </van-tag>
-                  <span>{{ step.content }}</span>
-                  <div v-if="step.details">
+              <div v-show="!message.thinkingCollapsed" class="flex flex-col gap-2">
+                <div v-for="(step, sIndex) in message.thinking" :key="sIndex"
+                  class="border border-gray-100 rounded-lg p-2.5">
+                  <div class="flex items-center gap-2 mb-1">
+                    <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
+                      {{ getStageLabel(step.stage) }}
+                    </van-tag>
+                    <span class="text-xs text-gray-700">{{ step.content }}</span>
+                  </div>
+                  <div v-if="step.details" class="mt-2 pl-1">
                     <template v-if="step.details.documents">
-                      <div v-for="(doc, dIndex) in step.details.documents.slice(0, 3)" :key="dIndex">
-                        <span>{{ doc.source }}</span>
-                        <span v-if="doc.score !== undefined && doc.score !== null">{{ (doc.score * 100).toFixed(0) }}%</span>
+                      <div v-for="(doc, dIndex) in step.details.documents.slice(0, 3)" :key="dIndex"
+                        class="flex items-center justify-between text-xs py-0.5">
+                        <span class="text-gray-600 truncate mr-2">{{ doc.source }}</span>
+                        <span v-if="doc.score !== undefined && doc.score !== null" class="text-gray-400 shrink-0">{{ (doc.score * 100).toFixed(0) }}%</span>
                       </div>
-                      <div v-if="step.details.documents.length > 3">
+                      <div v-if="step.details.documents.length > 3" class="text-xs text-gray-400 mt-1">
                         ... 还有 {{ step.details.documents.length - 3 }} 个文档
                       </div>
                     </template>
                     <template v-else-if="step.details.scores">
-                      <div v-for="(sc, cIndex) in step.details.scores.slice(0, 3)" :key="cIndex">
-                        <span>#{{ sc.rank || sc.index }}</span>
-                        <span>{{ (sc.score * 100).toFixed(0) }}%</span>
-                        <span>{{ truncateText(sc.preview, 40) }}</span>
+                      <div v-for="(sc, cIndex) in step.details.scores.slice(0, 3)" :key="cIndex"
+                        class="flex items-center gap-2 text-xs py-0.5">
+                        <span class="text-gray-400">#{{ sc.rank || sc.index }}</span>
+                        <span class="text-gray-600">{{ (sc.score * 100).toFixed(0) }}%</span>
+                        <span class="text-gray-500 truncate">{{ truncateText(sc.preview, 40) }}</span>
                       </div>
                     </template>
                     <template v-else-if="step.details.hypothetical_doc_preview">
-                      <div>{{ truncateText(step.details.hypothetical_doc_preview, 80) }}</div>
+                      <div class="text-xs text-gray-500">{{ truncateText(step.details.hypothetical_doc_preview, 80) }}</div>
                     </template>
                     <template v-else>
-                      <div v-for="(val, key) in step.details" :key="key">
-                        <span>{{ key }}:</span>
-                        <span>{{ typeof val === 'object' ? JSON.stringify(val) : val }}</span>
+                      <div v-for="(val, key) in step.details" :key="key" class="flex gap-1 text-xs py-0.5">
+                        <span class="text-gray-400">{{ key }}:</span>
+                        <span class="text-gray-600 break-all">{{ typeof val === 'object' ? JSON.stringify(val) : val }}</span>
                       </div>
                     </template>
                   </div>
@@ -86,9 +94,10 @@
               </div>
             </div>
             <!-- 回复正文 -->
-            <div v-if="message.content" v-html="formatMessage(message.content)"></div>
+            <div v-if="message.content" class="text-sm leading-relaxed" v-html="formatMessage(message.content)"></div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
-            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)">
+            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)"
+              class="typing-indicator">
               <span></span>
               <span></span>
               <span></span>
@@ -97,20 +106,20 @@
         </div>
       </div>
       
-      <div>
+      <div class="flex items-center gap-2 px-3 py-2 border-t border-gray-100 bg-white">
         <van-field
           v-model="userInput"
           rows="1"
           autosize
           type="textarea"
           placeholder="请输入问题..."
-         
+          class="flex-1!"
           @keypress.enter.prevent="sendMessage"
         />
-        <van-button 
-          type="primary" 
-          
-          :disabled="isLoading || !userInput.trim()" 
+        <van-button
+          type="primary"
+          size="small"
+          :disabled="isLoading || !userInput.trim()"
           @click="sendMessage"
         >
           发送
@@ -534,3 +543,36 @@ const loadSessionHistory = async (session) => {
   }
 };
 </script>
+
+<style scoped>
+/* 打字指示器波浪动画 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+}
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #c1c1c1;
+  animation: typing-wave 1.2s ease-in-out infinite;
+}
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes typing-wave {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+</style>
