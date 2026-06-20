@@ -372,8 +372,7 @@ def create_embedding_model() -> Embeddings:
     model_name = os.getenv("EMBED_MODEL_NAME", "BAAI/bge-large-zh")
     logger.info(f"📦 EmbedModel 加载 BGE 模型: {model_name}")
 
-    # 优先使用本地缓存，避免 HF 墙导致启动失败
-    model = SentenceTransformer(model_name, local_files_only=True)
+    model = SentenceTransformer(model_name)
     return model
 
 
