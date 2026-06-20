@@ -1,7 +1,7 @@
-import { ref } from 'vue';
 import { showToast } from 'vant';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
 
 /**
@@ -42,33 +42,44 @@ export function useKnowledgeUpload(onUploadComplete) {
 
   // 工具函数
   const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const getFileIcon = (filename) => {
     const ext = filename?.split('.').pop()?.toLowerCase();
     const icons = {
-      pdf: 'bookmark-o', doc: 'description', docx: 'description',
-      txt: 'notes-o', md: 'orders-o', ppt: 'chart-trending-o', pptx: 'chart-trending-o',
+      pdf: 'bookmark-o',
+      doc: 'description',
+      docx: 'description',
+      txt: 'notes-o',
+      md: 'orders-o',
+      ppt: 'chart-trending-o',
+      pptx: 'chart-trending-o',
     };
     return icons[ext] || 'notes-o';
   };
 
   const getStatusType = (status) => {
     switch (status) {
-      case 'completed': return 'success';
-      case 'failed': return 'danger';
-      default: return 'warning';
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'danger';
+      default:
+        return 'warning';
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'completed': return t('knowledgebase.completed');
-      case 'failed': return t('knowledgebase.failed');
-      default: return t('knowledgebase.processing');
+      case 'completed':
+        return t('knowledgebase.completed');
+      case 'failed':
+        return t('knowledgebase.failed');
+      default:
+        return t('knowledgebase.processing');
     }
   };
 
@@ -80,9 +91,10 @@ export function useKnowledgeUpload(onUploadComplete) {
       if (line.startsWith('data: ')) data = line.substring(6);
     }
     try {
-      const { event_type, filename, message, progress, success_count, failed_count } = JSON.parse(data);
+      const { event_type, filename, message, progress, success_count, failed_count } =
+        JSON.parse(data);
       if (filename) {
-        const index = uploadProgressList.value.findIndex(p => p.filename === filename);
+        const index = uploadProgressList.value.findIndex((p) => p.filename === filename);
         if (index !== -1) {
           uploadProgressList.value[index].message = message;
           if (event_type === 'completed') {
@@ -98,7 +110,9 @@ export function useKnowledgeUpload(onUploadComplete) {
         successCount.value = success_count;
         failedCount.value = failed_count;
       }
-    } catch { /* ignore parse errors */ }
+    } catch {
+      /* ignore parse errors */
+    }
   };
 
   // SSE 流式上传
@@ -124,14 +138,17 @@ export function useKnowledgeUpload(onUploadComplete) {
     selectedFiles.value.forEach((file) => {
       formData.append('files', file);
       uploadProgressList.value.push({
-        filename: file.name, percentage: 0, status: 'processing', message: t('knowledgebase.starting'),
+        filename: file.name,
+        percentage: 0,
+        status: 'processing',
+        message: t('knowledgebase.starting'),
       });
     });
 
     try {
       const response = await fetch('/knowledge/add/multiple/stream', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       if (!response.ok) throw new Error('Upload failed');
@@ -157,7 +174,7 @@ export function useKnowledgeUpload(onUploadComplete) {
           item.message = t('knowledgebase.uploadError');
         }
       });
-      failedCount.value = uploadProgressList.value.filter(p => p.status === 'failed').length;
+      failedCount.value = uploadProgressList.value.filter((p) => p.status === 'failed').length;
     } finally {
       uploading.value = false;
       uploadComplete.value = true;
@@ -167,10 +184,21 @@ export function useKnowledgeUpload(onUploadComplete) {
   };
 
   return {
-    fileInput, selectedFiles,
-    uploading, uploadProgressList, uploadComplete, successCount, failedCount,
-    openFilePicker, handleFileSelect, handleDrop, removeFile,
-    formatFileSize, getFileIcon, getStatusType, getStatusText,
+    fileInput,
+    selectedFiles,
+    uploading,
+    uploadProgressList,
+    uploadComplete,
+    successCount,
+    failedCount,
+    openFilePicker,
+    handleFileSelect,
+    handleDrop,
+    removeFile,
+    formatFileSize,
+    getFileIcon,
+    getStatusType,
+    getStatusText,
     uploadFiles,
   };
 }

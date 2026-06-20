@@ -10,7 +10,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps<{ value?: string, rating?: number, showRating?: boolean }>()
 defineEmits<{ feedback: [string], rate: [number] }>()
 </script>

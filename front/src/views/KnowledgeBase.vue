@@ -103,15 +103,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { showToast, showDialog } from 'vant';
+import { showDialog, showToast } from 'vant';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useUserStore } from '../store/user';
-import TabBar from '../components/TabBar.vue';
-import DocumentDetailPopup from '../components/knowledge/DocumentDetailPopup.vue';
+import { useRouter } from 'vue-router';
 import ChunkListPopup from '../components/knowledge/ChunkListPopup.vue';
+import DocumentDetailPopup from '../components/knowledge/DocumentDetailPopup.vue';
+import TabBar from '../components/TabBar.vue';
 import { useKnowledgeUpload } from '../composables/useKnowledgeUpload';
+import { useUserStore } from '../store/user';
 
 const router = useRouter();
 const { t } = useI18n();

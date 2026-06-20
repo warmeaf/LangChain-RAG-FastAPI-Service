@@ -12,14 +12,14 @@ export default {
     login: 'Login',
     register: 'Register',
     logout: 'Logout',
-    allCategories: 'All Categories'
+    allCategories: 'All Categories',
   },
   nav: {
     home: 'Home',
     aiChat: 'AI Chat',
     sessions: 'Sessions',
     knowledge: 'Knowledge',
-    my: 'My'
+    my: 'My',
   },
   home: {
     title: 'News',
@@ -37,14 +37,14 @@ export default {
       military: 'Military',
       technology: 'Technology',
       finance: 'Finance',
-      more: 'More'
-    }
+      more: 'More',
+    },
   },
   aiChat: {
     title: 'AI Chat',
     placeholder: 'Enter your question...',
     send: 'Send',
-    thinking: 'AI is thinking...'
+    thinking: 'AI is thinking...',
   },
   my: {
     title: 'My',
@@ -57,7 +57,7 @@ export default {
     aboutUs: 'About Us',
     settings: 'Settings',
     logout: 'Logout',
-    profile: 'Profile'
+    profile: 'Profile',
   },
   settings: {
     title: 'Settings',
@@ -71,13 +71,13 @@ export default {
     selectTheme: 'Select Theme',
     themeChanged: 'Theme changed',
     languageChanged: 'Language changed, some changes will take effect after restarting the app',
-    selectLanguage: 'Select Language'
+    selectLanguage: 'Select Language',
   },
   profile: {
     title: 'Profile',
     username: 'Username',
     bio: 'Bio',
-    save: 'Save Changes'
+    save: 'Save Changes',
   },
   knowledgebase: {
     title: 'Knowledge Base',
@@ -102,11 +102,13 @@ export default {
     chunks: 'chunks',
     empty: 'No documents',
     cleanAll: 'Clear All',
-    cleanConfirm: 'Are you sure you want to clear all knowledge base documents? This action cannot be undone.',
+    cleanConfirm:
+      'Are you sure you want to clear all knowledge base documents? This action cannot be undone.',
     cleanSuccess: 'Knowledge base cleared',
     cleanFailed: 'Failed to clear',
-    deleteConfirm: 'Are you sure you want to delete document "{filename}"? This action cannot be undone.',
+    deleteConfirm:
+      'Are you sure you want to delete document "{filename}"? This action cannot be undone.',
     deleteSuccess: 'Deleted successfully',
-    deleteFailed: 'Failed to delete'
-  }
+    deleteFailed: 'Failed to delete',
+  },
 };

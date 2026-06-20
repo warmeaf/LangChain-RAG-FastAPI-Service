@@ -76,9 +76,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { showToast, Toast } from 'vant';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import TabBar from '../components/TabBar.vue';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
@@ -127,7 +127,6 @@ const loadSessions = async () => {
     } else {
       // 显示详细的错误信息
       showToast('获取用户ID失败，请检查用户信息结构');
-      console.error('用户信息中没有找到ID字段:', userStore.userInfo);
     }
   } else {
     showToast('获取用户信息失败');
@@ -143,7 +142,7 @@ onMounted(async () => {
 const getSessionTitle = (session) => {
   if (session.history && session.history.length > 0) {
     const firstMessage = session.history[0][0]; // 第一条用户消息
-    return firstMessage.length > 20 ? firstMessage.substring(0, 20) + '...' : firstMessage;
+    return firstMessage.length > 20 ? `${firstMessage.substring(0, 20)}...` : firstMessage;
   }
   return '新会话';
 };
@@ -213,10 +212,9 @@ const confirmNewSession = async () => {
     }
   } catch (error) {
     showToast('创建会话失败');
-    console.error('创建会话失败:', error);
   } finally {
     // 使用toast实例的关闭方法
-    if (toastInstance && toastInstance.close) {
+    if (toastInstance?.close) {
       toastInstance.close();
     }
   }

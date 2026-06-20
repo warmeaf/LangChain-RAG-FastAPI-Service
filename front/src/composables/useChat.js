@@ -1,23 +1,25 @@
-import { ref, computed, nextTick, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { showToast } from 'vant';
-import { marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
 import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
+import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
+import { showToast } from 'vant';
+import { computed, nextTick, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import 'highlight.js/styles/github.css';
 import 'highlight.js/lib/common';
-import { useUserStore } from '../store/user';
 import { useSessionStore } from '../store/session';
+import { useUserStore } from '../store/user';
 
 // 配置 marked 高亮插件（只执行一次）
-marked.use(markedHighlight({
-  langPrefix: 'hljs language-',
-  highlight(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
-  },
-}));
+marked.use(
+  markedHighlight({
+    langPrefix: 'hljs language-',
+    highlight(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    },
+  }),
+);
 
 /**
  * AI 聊天逻辑封装
@@ -39,8 +41,8 @@ export function useChat(messagesContainer) {
   const autoCollapseTimer = ref(null);
 
   // 计算属性
-  const showWelcome = computed(() =>
-    messages.value.length === 1 && messages.value[0].role === 'assistant'
+  const showWelcome = computed(
+    () => messages.value.length === 1 && messages.value[0].role === 'assistant',
   );
 
   // 工具函数
@@ -56,7 +58,7 @@ export function useChat(messagesContainer) {
 
   const truncateText = (text, maxLen) => {
     if (!text) return '';
-    return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+    return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
   };
 
   // 滚动
@@ -75,8 +77,10 @@ export function useChat(messagesContainer) {
     if (!sid) return null;
     try {
       const history = JSON.parse(localStorage.getItem(THINKING_HISTORY_KEY) || '[]');
-      return history.find(e => e.sessionId === sid)?.thinking || null;
-    } catch { return null; }
+      return history.find((e) => e.sessionId === sid)?.thinking || null;
+    } catch {
+      return null;
+    }
   };
 
   // 思考过程展开/折叠
@@ -108,8 +112,11 @@ export function useChat(messagesContainer) {
     userInput.value = '';
 
     messages.value.push({
-      role: 'assistant', content: '', thinking: [],
-      thinkingCollapsed: false, thinkingAutoCollapsed: false,
+      role: 'assistant',
+      content: '',
+      thinking: [],
+      thinkingCollapsed: false,
+      thinkingAutoCollapsed: false,
     });
 
     await nextTick();
@@ -136,7 +143,7 @@ export function useChat(messagesContainer) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         session_id: sessionId.value || undefined,
@@ -187,7 +194,7 @@ export function useChat(messagesContainer) {
                   thinking: [...messages.value[idx].thinking, newStep],
                 };
                 await nextTick();
-                await new Promise(r => requestAnimationFrame(r));
+                await new Promise((r) => requestAnimationFrame(r));
                 scrollToBottom();
               }
               break;
@@ -211,12 +218,16 @@ export function useChat(messagesContainer) {
                 const remainingContent = aiResponse.substring(displayContent.length);
                 for (const char of remainingContent) {
                   lastMsg.content += char;
-                  await new Promise(r => setTimeout(r, 0));
+                  await new Promise((r) => setTimeout(r, 0));
                   scrollToBottom();
-                  await new Promise(r => setTimeout(r, 8));
+                  await new Promise((r) => setTimeout(r, 8));
                 }
               }
-              if (json.session_id && typeof json.session_id === 'string' && json.session_id.trim()) {
+              if (
+                json.session_id &&
+                typeof json.session_id === 'string' &&
+                json.session_id.trim()
+              ) {
                 sessionId.value = json.session_id;
               }
               break;
@@ -238,7 +249,6 @@ export function useChat(messagesContainer) {
           }
         } catch (e) {
           if (e.message && !e.message.includes('API错误')) {
-            console.error('Error parsing SSE data:', e);
           } else {
             throw e;
           }
@@ -254,9 +264,7 @@ export function useChat(messagesContainer) {
 
   // 重置为欢迎状态
   const resetToWelcome = () => {
-    messages.value = [
-      { role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' },
-    ];
+    messages.value = [{ role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' }];
     sessionId.value = '';
     sessionStore.currentSession = null;
   };
@@ -269,8 +277,11 @@ export function useChat(messagesContainer) {
     session.history.forEach(([userMsg, aiMsg]) => {
       messages.value.push({ role: 'user', content: userMsg });
       messages.value.push({
-        role: 'assistant', content: aiMsg, thinking: [],
-        thinkingCollapsed: true, thinkingAutoCollapsed: true,
+        role: 'assistant',
+        content: aiMsg,
+        thinking: [],
+        thinkingCollapsed: true,
+        thinkingAutoCollapsed: true,
       });
     });
     sessionId.value = session.session_id;
@@ -296,9 +307,17 @@ export function useChat(messagesContainer) {
   };
 
   return {
-    messages, userInput, isLoading, sessionId, showWelcome,
-    formatMessage, truncateText,
+    messages,
+    userInput,
+    isLoading,
+    sessionId,
+    showWelcome,
+    formatMessage,
+    truncateText,
     toggleThinking,
-    sendMessage, sendQuickQuestion, resetToWelcome, loadSessionHistory,
+    sendMessage,
+    sendQuickQuestion,
+    resetToWelcome,
+    loadSessionHistory,
   };
 }

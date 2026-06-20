@@ -22,11 +22,12 @@ export function useAuthImage() {
 
   const resolveImageUrls = (imagePaths, imageMap) => {
     return imagePaths
-      .map(p => {
-        const basename = p.split('/').pop().replace(/\.[^.]+$/, '');
-        const key = Object.keys(imageMap).find(
-          k => k.replace(/\.[^.]+$/, '') === basename
-        );
+      .map((p) => {
+        const basename = p
+          .split('/')
+          .pop()
+          .replace(/\.[^.]+$/, '');
+        const key = Object.keys(imageMap).find((k) => k.replace(/\.[^.]+$/, '') === basename);
         return key ? imageMap[key] : null;
       })
       .filter(Boolean);

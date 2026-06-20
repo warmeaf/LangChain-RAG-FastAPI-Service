@@ -3,6 +3,7 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+
 const props = defineProps<{ filename: string }>()
 const ext = computed(() => props.filename.split('.').pop() || '')
 const typeMap: Record<string, string> = {

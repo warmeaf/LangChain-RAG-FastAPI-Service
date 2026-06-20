@@ -62,9 +62,9 @@
 </template>
 
 <script setup>
+import { showToast } from 'vant';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { showToast } from 'vant';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
 

@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getFeedbackStats } from '../api/feedback'
 
 const stats = ref({ total_feedback: 0, like_rate: 0 })

@@ -36,8 +36,8 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { useUserStore } from '../../store/user';
 import { useAuthImage } from '../../composables/useAuthImage';
+import { useUserStore } from '../../store/user';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -59,7 +59,7 @@ const groupImagesByPage = (imagePaths, imageMap) => {
   for (const path of imagePaths) {
     const filename = path.split('/').pop();
     const match = filename.match(/^p(\d+)_i/);
-    const page = match ? parseInt(match[1]) : 0;
+    const page = match ? parseInt(match[1], 10) : 0;
     const url = resolveImageUrls([path], imageMap)[0];
     if (!url) continue;
     if (!pageMap[page]) {

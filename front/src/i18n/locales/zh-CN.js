@@ -12,14 +12,14 @@ export default {
     login: '登录',
     register: '注册',
     logout: '退出登录',
-    allCategories: '全部分类'
+    allCategories: '全部分类',
   },
   nav: {
     home: '首页',
     aiChat: 'AI问答',
     sessions: '会话管理',
     knowledge: '知识库',
-    my: '我的'
+    my: '我的',
   },
   home: {
     title: '新闻资讯',
@@ -37,14 +37,14 @@ export default {
       military: '军事',
       technology: '科技',
       finance: '财经',
-      more: '更多'
-    }
+      more: '更多',
+    },
   },
   aiChat: {
     title: 'AI问答',
     placeholder: '请输入您的问题...',
     send: '发送',
-    thinking: 'AI思考中...'
+    thinking: 'AI思考中...',
   },
   my: {
     title: '我的',
@@ -57,7 +57,7 @@ export default {
     aboutUs: '关于我们',
     settings: '设置',
     logout: '退出登录',
-    profile: '个人信息'
+    profile: '个人信息',
   },
   settings: {
     title: '设置',
@@ -71,13 +71,13 @@ export default {
     selectTheme: '选择主题',
     themeChanged: '主题已更改',
     languageChanged: '语言设置已更改，部分更改将在重启应用后生效',
-    selectLanguage: '选择语言'
+    selectLanguage: '选择语言',
   },
   profile: {
     title: '个人信息',
     username: '用户名',
     bio: '个人简介',
-    save: '保存修改'
+    save: '保存修改',
   },
   knowledgebase: {
     title: '知识库管理',
@@ -107,6 +107,6 @@ export default {
     cleanFailed: '清空失败',
     deleteConfirm: '确定要删除文档「{filename}」吗？此操作不可恢复。',
     deleteSuccess: '删除成功',
-    deleteFailed: '删除失败'
-  }
+    deleteFailed: '删除失败',
+  },
 };

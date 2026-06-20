@@ -36,8 +36,8 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { useUserStore } from '../../store/user';
 import { useAuthImage } from '../../composables/useAuthImage';
+import { useUserStore } from '../../store/user';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

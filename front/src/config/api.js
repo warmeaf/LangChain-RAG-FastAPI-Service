@@ -9,7 +9,7 @@ export const apiConfig = {
   baseURL: import.meta.env.VITE_BASE_URL || '',
   // 用户服务基础URL（使用相对路径，通过Vite代理访问）
   userBaseURL: import.meta.env.VITE_USER_BASE_URL || '',
-  
+
   // API端点配置
   endpoints: {
     // 认证相关
@@ -17,10 +17,10 @@ export const apiConfig = {
     logout: '/user/logout/',
     register: '/user/register/',
     profile: '/user/detail/',
-    
+
     // 文件上传
     uploadFile: '/file/upload/',
-    
+
     // AI对话相关
     agentQuery: '/chat/agent/query/stream',
     agentQueryStream: '/chat/agent/query/stream',
@@ -40,6 +40,6 @@ export const apiConfig = {
     cleanVectors: '/knowledge/clean',
 
     // 文档重排序
-    reorderDocuments: '/chat/reorder'
-  }
-}
+    reorderDocuments: '/chat/reorder',
+  },
+};

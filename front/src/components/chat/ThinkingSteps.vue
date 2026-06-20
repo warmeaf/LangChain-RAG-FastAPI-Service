@@ -70,6 +70,6 @@ const getStageColor = (stage) => stageConfig[stage]?.color || '#999';
 
 const truncateText = (text, maxLen) => {
   if (!text) return '';
-  return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+  return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
 };
 </script>

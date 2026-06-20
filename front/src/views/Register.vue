@@ -79,9 +79,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
 import { showToast } from 'vant';
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
 
 const router = useRouter();
@@ -165,22 +165,14 @@ const validateForm = () => {
 };
 
 const handleRegister = async () => {
-  console.log('handleRegister函数被调用');
-  console.log('表单数据:', form);
 
   if (!validateForm()) {
-    console.log('表单验证失败');
     return;
   }
-
-  console.log('表单验证通过，开始注册');
   loading.value = true;
 
   try {
-    console.log('调用userStore.register方法');
     const result = await userStore.register(form);
-
-    console.log('注册结果:', result);
 
     if (result.success) {
       showToast({
@@ -199,7 +191,6 @@ const handleRegister = async () => {
       });
     }
   } catch (error) {
-    console.error('注册失败:', error);
     showToast({
       message: '注册失败，请稍后重试',
       position: 'top',

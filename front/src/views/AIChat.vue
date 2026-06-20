@@ -91,14 +91,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import TabBar from '../components/TabBar.vue';
-import SessionDrawer from '../components/SessionDrawer.vue';
-import ThinkingSteps from '../components/chat/ThinkingSteps.vue';
 import { showToast } from 'vant';
-import { useSessionStore } from '../store/session';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import ThinkingSteps from '../components/chat/ThinkingSteps.vue';
+import SessionDrawer from '../components/SessionDrawer.vue';
+import TabBar from '../components/TabBar.vue';
 import { useChat } from '../composables/useChat';
+import { useSessionStore } from '../store/session';
 
 const route = useRoute();
 const sessionStore = useSessionStore();

@@ -37,11 +37,11 @@
 </template>
 
 <script setup>
+import { showFailToast, showLoadingToast, showToast } from 'vant';
 import { computed, onMounted } from 'vue';
-import { useUserStore } from '../store/user';
-import { showLoadingToast, showFailToast, showToast } from 'vant';
 import { useRouter } from 'vue-router';
 import { useProfileEdit } from '../composables/useProfileEdit';
+import { useUserStore } from '../store/user';
 
 const router = useRouter();
 const userStore = useUserStore();

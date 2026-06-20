@@ -1,9 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
     path: '/',
-    redirect: '/aichat'
+    redirect: '/aichat',
   },
   {
     path: '/login',
@@ -11,8 +11,8 @@ const routes = [
     component: () => import('../views/Login.vue'),
     meta: {
       title: '登录',
-      keepAlive: false
-    }
+      keepAlive: false,
+    },
   },
   {
     path: '/register',
@@ -20,8 +20,8 @@ const routes = [
     component: () => import('../views/Register.vue'),
     meta: {
       title: '注册',
-      keepAlive: false
-    }
+      keepAlive: false,
+    },
   },
   {
     path: '/aichat',
@@ -29,8 +29,8 @@ const routes = [
     component: () => import('../views/AIChat.vue'),
     meta: {
       title: 'AI问答',
-      keepAlive: true
-    }
+      keepAlive: true,
+    },
   },
   {
     path: '/aichat/:sessionId',
@@ -38,8 +38,8 @@ const routes = [
     component: () => import('../views/AIChat.vue'),
     meta: {
       title: 'AI问答',
-      keepAlive: true
-    }
+      keepAlive: true,
+    },
   },
   {
     path: '/my',
@@ -47,8 +47,8 @@ const routes = [
     component: () => import('../views/My.vue'),
     meta: {
       title: '我的',
-      keepAlive: true
-    }
+      keepAlive: true,
+    },
   },
   {
     path: '/profile',
@@ -56,8 +56,8 @@ const routes = [
     component: () => import('../views/Profile.vue'),
     meta: {
       title: '个人信息',
-      keepAlive: false
-    }
+      keepAlive: false,
+    },
   },
   {
     path: '/knowledgebase',
@@ -65,38 +65,38 @@ const routes = [
     component: () => import('../views/KnowledgeBase.vue'),
     meta: {
       title: '知识库管理',
-      keepAlive: false
-    }
+      keepAlive: false,
+    },
   },
   {
     path: '/sessions',
-    redirect: '/aichat'
+    redirect: '/aichat',
   },
   {
     path: '/settings',
-    redirect: '/my'
+    redirect: '/my',
   },
 
   {
     path: '/analytics',
     name: 'Analytics',
     component: () => import('../views/AnalyticsView.vue'),
-    meta: { title: '数据分析', keepAlive: false }
+    meta: { title: '数据分析', keepAlive: false },
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
-})
+  routes,
+});
 
 // 全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 设置页面标题
-  document.title = to.meta.title || '新闻资讯'
-  
-  // 直接允许访问所有页面
-  next()
-})
+  document.title = to.meta.title || '新闻资讯';
 
-export default router
+  // 直接允许访问所有页面
+  next();
+});
+
+export default router;

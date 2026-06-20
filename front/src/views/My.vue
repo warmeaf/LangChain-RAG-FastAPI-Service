@@ -67,15 +67,14 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import { useUserStore } from '../store/user';
-import { useRouter } from 'vue-router';
-import { computed } from 'vue';
 import { showDialog, showToast } from 'vant';
-import TabBar from '../components/TabBar.vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useThemeStore } from '../store/theme';
+import { useRouter } from 'vue-router';
+import TabBar from '../components/TabBar.vue';
 import { useLanguageStore } from '../store/language';
+import { useThemeStore } from '../store/theme';
+import { useUserStore } from '../store/user';
 
 const userStore = useUserStore();
 const themeStore = useThemeStore();
@@ -127,7 +126,7 @@ const goToProfile = () => {
 const handleLogout = () => {
   showDialog({
     title: t('common.confirm'),
-    message: t('my.logout') + '?',
+    message: `${t('my.logout')}?`,
     showCancelButton: true,
   }).then((action) => {
     if (action === 'confirm') {
@@ -141,7 +140,6 @@ onMounted(async () => {
   try {
     await userStore.getUserInfoDetail();
   } catch (error) {
-    console.error('获取用户信息失败:', error);
   }
 });
 </script>
