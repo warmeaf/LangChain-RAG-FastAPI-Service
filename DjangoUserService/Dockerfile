@@ -1,9 +1,9 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-# 使用国内 Debian 镜像加速
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+# 使用国内 Debian 镜像加速 (Bookworm)
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
 
 # 系统依赖 (mysqlclient)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,17 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 ENV UV_SYSTEM_PYTHON=1
-# PyPI 国内镜像加速
 ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 先拷贝依赖文件
-COPY pyproject.toml uv.lock ./
-
-# 删除旧 lock，强制从镜像重新解析
-RUN rm -f uv.lock && uv sync --no-dev
-
-# 拷贝源码
+# 拷贝全部源码（setuptools 项目需要完整代码才能构建）
 COPY . .
+
+# 安装依赖（删除旧 lock，从镜像重新解析）
+RUN rm -f uv.lock && uv sync --no-dev
 
 # 启动脚本
 COPY entrypoint.sh /entrypoint.sh

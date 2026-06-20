@@ -12,7 +12,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-chat_history}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
       - rag-net
     healthcheck:
@@ -116,96 +115,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # =============================================
-  # Django 用户认证微服务
-  # =============================================
-  django:
-    build:
-      context: ./DjangoUserService
-      dockerfile: Dockerfile
-    container_name: rag-django
-    ports:
-      - "${DJANGO_PORT:-8001}:8001"
-    env_file:
-      - DjangoUserService/.env
-    environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - REDIS_CACHE_URL=redis://redis:6379/1
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - django_media:/app/media
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rag-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  # =============================================
-  # FastAPI 后端
-  # =============================================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: rag-backend
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
-    env_file:
-      - backend/.env
-    environment:
-      # 覆盖为 Docker 内部服务名
-      - MYSQL_HOST=mysql
-      - REDIS_HOST=redis
-      - MILVUS_HOST=milvus
-      # Ollama 仍在宿主机上
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      # Django 用户服务
-      - DJANGO_API_URL=http://django:8001
-      # 清空宿主机绝对路径，走 HF 镜像下载
-      - RERANKER_MODEL_PATH=
-      # HuggingFace 缓存持久化
-      - HF_HOME=/app/.cache/huggingface
-      - HF_ENDPOINT=https://hf-mirror.com
-    volumes:
-      - hf_cache:/app/.cache/huggingface
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      milvus:
-        condition: service_healthy
-      django:
-        condition: service_healthy
-    networks:
-      - rag-net
-    restart: unless-stopped
-
-# =============================================
-# 持久化卷
-# =============================================
 volumes:
   mysql_data:
   redis_data:
   etcd_data:
   minio_data:
   milvus_data:
-  hf_cache:
-  django_media:
 
-# =============================================
-# 共享网络
-# =============================================
 networks:
   rag-net:
     driver: bridge

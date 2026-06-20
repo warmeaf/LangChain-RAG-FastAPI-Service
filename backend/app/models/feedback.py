@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, BigInteger, String, Text, Boolean, Integer,
-    Float, TIMESTAMP, JSON, Enum as SAEnum, UniqueConstraint, Index
+    Float, TIMESTAMP, JSON, Enum as SAEnum, UniqueConstraint, Index, text
 )
 from sqlalchemy.sql import func
 
@@ -23,7 +23,7 @@ class UserFeedback(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     __table_args__ = (
-        Index("idx_user_query", "user_id", "query"),
+        Index("idx_user_query", "user_id", text("query(128)")),
     )
 
 
