@@ -9,7 +9,7 @@ class ReorderService:
     """文档重排序服务 (bge-reranker-large)"""
 
     def __init__(self):
-        model_name = os.getenv("RERANKER_MODEL_NAME", "BAAI/bge-reranker-large")
+        model_name = os.getenv("RERANKER_MODEL_PATH") or os.getenv("RERANKER_MODEL_NAME", "BAAI/bge-reranker-large")
         self.device = "cuda" if __import__("torch").cuda.is_available() else "cpu"
         self._model = None
         self._model_name = model_name
