@@ -73,30 +73,6 @@ chunk 2: "...ABC 科技后续 + XYZ 互联网公司 + DEF 人工智能实验室"
 
 ---
 
-## Q3：历史会话的思考过程面板为什么不显示？
-
-**场景**：刷新页面后进入历史会话，接口 `/chat/session/{id}/thinking` 返回了数据，但聊天窗口不渲染思考过程折叠面板。
-
-**原因**：前端取值路径多了一层 `.data`。
-
-API 返回结构：
-```json
-{ "code": 200, "data": { "session_id": "...", "thinking": [[...]] } }
-```
-
-代码取值：
-```ts
-// ❌ 错误：多了一层 .data
-response.data.data?.data?.thinking  // undefined
-
-// ✅ 正确
-response.data.data?.thinking        // 目标数据
-```
-
-**修复**：`front/src/store/session.ts` → `getThinking()` 方法。
-
----
-
 ## 关键文件索引
 
 | 问题 | 文件 | 方法/位置 |
@@ -104,4 +80,3 @@ response.data.data?.thinking        // 目标数据
 | 跨文档混淆 | `backend/app/rag/milvus_store.py` | `add_documents()` |
 | chunk 上下文断裂 | `backend/app/rag/milvus_store.py` | `get_adjacent_chunks()` |
 | chunk 上下文断裂 | `backend/app/rag/rag_service.py` | `_expand_adjacent_chunks()` |
-| 思考面板不渲染 | `front/src/store/session.ts` | `getThinking()` |
