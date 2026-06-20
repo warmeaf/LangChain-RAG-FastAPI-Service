@@ -43,7 +43,7 @@ services:
   # Milvus 元数据存储 (etcd)
   # =============================================
   etcd:
-    image: quay.io/coreos/etcd:v3.5.5
+    image: quay.io/coreos/etcd:v3.5.31
     container_name: milvus-etcd
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
@@ -65,7 +65,7 @@ services:
   # Milvus 对象存储 (MinIO)
   # =============================================
   minio:
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: milvus-minio
     environment:
       MINIO_ACCESS_KEY: minioadmin
@@ -88,7 +88,7 @@ services:
   # Milvus 向量数据库
   # =============================================
   milvus:
-    image: milvusdb/milvus:v2.4.0
+    image: milvusdb/milvus:v2.5.24
     container_name: milvus-standalone
     command: ["milvus", "run", "standalone"]
     security_opt:
