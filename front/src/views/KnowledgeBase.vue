@@ -68,11 +68,13 @@
           </div>
         </div>
 
-        <van-cell-group inset v-if="documents.length > 0">
+        <van-cell-group v-if="documents.length > 0" class="m-0!" inset>
           <van-cell v-for="doc in documents" :key="doc.id" :title="doc.original_filename || doc.filename" center is-link
-            @click="showDocumentActions(doc)">
+             @click="showDocumentActions(doc)">
             <template #icon>
-              <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="18" class="mr-2" />
+              <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
+                <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="16"/>
+              </div>
             </template>
             <template #label>
               <span>{{ doc.chunk_count }} {{ $t('knowledgebase.chunks') }}</span>
