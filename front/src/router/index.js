@@ -60,15 +60,6 @@ const routes = [
     }
   },
   {
-    path: '/settings',
-    name: 'Settings',
-    component: () => import('../views/Settings.vue'),
-    meta: {
-      title: '设置',
-      keepAlive: false
-    }
-  },
-  {
     path: '/knowledgebase',
     name: 'KnowledgeBase',
     component: () => import('../views/KnowledgeBase.vue'),
@@ -80,6 +71,10 @@ const routes = [
   {
     path: '/sessions',
     redirect: '/aichat'
+  },
+  {
+    path: '/settings',
+    redirect: '/my'
   },
 
   {

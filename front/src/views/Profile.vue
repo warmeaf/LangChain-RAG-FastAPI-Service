@@ -64,13 +64,13 @@ onMounted(async () => {
       duration: 0
     });
     
-    console.log('获取用户信息，当前token:', userStore.token);
+    // console.log('获取用户信息，当前token:', userStore.token);
     
     // 使用新的 getUserInfoDetail 方法
     const result = await userStore.getUserInfoDetail();
     
-    console.log('获取用户信息结果:', result);
-    console.log('当前用户信息:', userStore.userInfo);
+    // console.log('获取用户信息结果:', result);
+    // console.log('当前用户信息:', userStore.userInfo);
     
     // 手动关闭加载提示
     loadingInstance.close();
