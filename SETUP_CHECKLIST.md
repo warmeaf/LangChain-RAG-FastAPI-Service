@@ -10,7 +10,6 @@
 - [ ] **Node.js 16+** + **pnpm**
 - [ ] **uv**（Python 包管理器，推荐 0.11.9+）
 - [ ] **Docker Desktop**（用于 MySQL / Redis / Milvus 基础设施）
-- [ ] **Ollama**（可选，仅当 `LLM_TYPE=OLLAMA` 时需要，端口 11434）
 
 ## API Key
 
