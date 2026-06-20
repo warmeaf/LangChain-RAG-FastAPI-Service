@@ -25,6 +25,8 @@
 | `BAAI/bge-reranker-large` | 文档重排序 | ~1.1 GB |
 | `openai/clip-vit-base-patch32` | 图片嵌入 | ~600 MB |
 
+> 可通过 `.env` 修改：`EMBED_MODEL_NAME`、`RERANKER_MODEL_NAME`、`IMAGE_EMBED_MODEL_NAME`
+
 > 已设置 `HF_ENDPOINT=https://hf-mirror.com` 镜像加速。
 
 ## 配置文件

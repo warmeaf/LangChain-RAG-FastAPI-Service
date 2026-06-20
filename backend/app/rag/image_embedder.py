@@ -1,13 +1,14 @@
 """CLIP 视觉 Embedding 模型，用于图片到图片的相似度检索"""
 import asyncio
+import os
 from typing import List
 
 
 class CLIPImageEmbedder:
     """CLIP 视觉嵌入模型 (ViT-B/32)"""
 
-    def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
-        self.model_name = model_name
+    def __init__(self, model_name: str = None):
+        self.model_name = model_name or os.getenv("IMAGE_EMBED_MODEL_NAME", "openai/clip-vit-base-patch32")
         self._model = None
         self._processor = None
 
