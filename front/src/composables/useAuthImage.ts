@@ -1,9 +1,14 @@
 import { useUserStore } from '../store/user';
 
-export function useAuthImage() {
+type ImageMap = Record<string, string>;
+
+export function useAuthImage(): {
+  getAllImages: (md5: string) => Promise<ImageMap>;
+  resolveImageUrls: (imagePaths: string[], imageMap: ImageMap) => string[];
+} {
   const userStore = useUserStore();
 
-  const getAllImages = async (md5) => {
+  const getAllImages = async (md5: string): Promise<ImageMap> => {
     const token = userStore.token;
     if (!token) return {};
 
@@ -12,7 +17,7 @@ export function useAuthImage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) return {};
-      const result = await response.json();
+      const result = (await response.json()) as { code: number; data?: { images?: ImageMap } };
       if (result.code !== 200 || !result.data?.images) return {};
       return result.data.images;
     } catch {
@@ -20,17 +25,17 @@ export function useAuthImage() {
     }
   };
 
-  const resolveImageUrls = (imagePaths, imageMap) => {
+  const resolveImageUrls = (imagePaths: string[], imageMap: ImageMap): string[] => {
     return imagePaths
       .map((p) => {
         const basename = p
           .split('/')
           .pop()
-          .replace(/\.[^.]+$/, '');
+          ?.replace(/\.[^.]+$/, '');
         const key = Object.keys(imageMap).find((k) => k.replace(/\.[^.]+$/, '') === basename);
         return key ? imageMap[key] : null;
       })
-      .filter(Boolean);
+      .filter((url): url is string => url !== null);
   };
 
   return { getAllImages, resolveImageUrls };

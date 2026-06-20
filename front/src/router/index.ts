@@ -1,82 +1,51 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 
-const routes = [
-  {
-    path: '/',
-    redirect: '/aichat',
-  },
+const routes: RouteRecordRaw[] = [
+  { path: '/', redirect: '/aichat' },
   {
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-    meta: {
-      title: '登录',
-      keepAlive: false,
-    },
+    meta: { title: '登录', keepAlive: false },
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('../views/Register.vue'),
-    meta: {
-      title: '注册',
-      keepAlive: false,
-    },
+    meta: { title: '注册', keepAlive: false },
   },
   {
     path: '/aichat',
     name: 'AIChat',
     component: () => import('../views/AIChat.vue'),
-    meta: {
-      title: 'AI问答',
-      keepAlive: true,
-    },
+    meta: { title: 'AI问答', keepAlive: true },
   },
   {
     path: '/aichat/:sessionId',
     name: 'AIChatWithSession',
     component: () => import('../views/AIChat.vue'),
-    meta: {
-      title: 'AI问答',
-      keepAlive: true,
-    },
+    meta: { title: 'AI问答', keepAlive: true },
   },
   {
     path: '/my',
     name: 'My',
     component: () => import('../views/My.vue'),
-    meta: {
-      title: '我的',
-      keepAlive: true,
-    },
+    meta: { title: '我的', keepAlive: true },
   },
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/Profile.vue'),
-    meta: {
-      title: '个人信息',
-      keepAlive: false,
-    },
+    meta: { title: '个人信息', keepAlive: false },
   },
   {
     path: '/knowledgebase',
     name: 'KnowledgeBase',
     component: () => import('../views/KnowledgeBase.vue'),
-    meta: {
-      title: '知识库管理',
-      keepAlive: false,
-    },
+    meta: { title: '知识库管理', keepAlive: false },
   },
-  {
-    path: '/sessions',
-    redirect: '/aichat',
-  },
-  {
-    path: '/settings',
-    redirect: '/my',
-  },
-
+  { path: '/sessions', redirect: '/aichat' },
+  { path: '/settings', redirect: '/my' },
   {
     path: '/analytics',
     name: 'Analytics',
@@ -90,12 +59,8 @@ const router = createRouter({
   routes,
 });
 
-// 全局前置守卫
 router.beforeEach((to, _from, next) => {
-  // 设置页面标题
-  document.title = to.meta.title || '新闻资讯';
-
-  // 直接允许访问所有页面
+  document.title = (to.meta.title as string) || '新闻资讯';
   next();
 });
 

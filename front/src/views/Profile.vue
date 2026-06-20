@@ -36,7 +36,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showFailToast, showLoadingToast, showToast } from 'vant';
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -60,8 +60,8 @@ onMounted(async () => {
     loadingInstance.close();
     if (!result.success) showFailToast(result.message || '获取用户信息失败');
   } catch {
-    showToast.clear();
-    showToast.fail('获取用户信息失败');
+    (showToast as unknown as { clear: () => void }).clear();
+    (showToast as unknown as { fail: (m: string) => void }).fail('获取用户信息失败');
   }
 });
 

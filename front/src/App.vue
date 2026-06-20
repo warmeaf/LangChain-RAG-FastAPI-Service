@@ -1,5 +1,5 @@
 <template>
-  <van-config-provider :theme="themeStore.currentTheme === 'dark' ? 'dark' : ''">
+  <van-config-provider :theme="themeStore.currentTheme === 'dark' ? 'dark' : undefined">
     <div>
       <router-view v-slot="{ Component }">
         <template v-if="$route.meta.keepAlive">
@@ -15,7 +15,7 @@
   </van-config-provider>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { useThemeStore } from './store/theme'
 

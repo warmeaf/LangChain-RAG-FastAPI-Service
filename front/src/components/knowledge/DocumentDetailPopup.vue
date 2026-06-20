@@ -34,31 +34,41 @@
   </van-popup>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useAuthImage } from '../../composables/useAuthImage';
 import { useUserStore } from '../../store/user';
+import type { DocumentItem } from '../../types';
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  document: { type: Object, default: null },
-});
+interface PageImageGroup {
+  page: number;
+  urls: string[];
+}
 
-defineEmits(['update:modelValue']);
+type ImageMap = Record<string, string>;
+
+const props = defineProps<{
+  modelValue: boolean;
+  document: DocumentItem | null;
+}>();
+
+defineEmits<{
+  'update:modelValue': [value: boolean];
+}>();
 
 const userStore = useUserStore();
 const { getAllImages, resolveImageUrls } = useAuthImage();
 
 const loading = ref(false);
-const detail = ref(null);
-const pageImages = ref([]);
+const detail = ref<DocumentItem | null>(null);
+const pageImages = ref<PageImageGroup[]>([]);
 
-const groupImagesByPage = (imagePaths, imageMap) => {
-  const pageMap = {};
-  const pageOrder = [];
+const groupImagesByPage = (imagePaths: string[], imageMap: ImageMap): PageImageGroup[] => {
+  const pageMap: Record<number, PageImageGroup> = {};
+  const pageOrder: PageImageGroup[] = [];
   for (const path of imagePaths) {
     const filename = path.split('/').pop();
-    const match = filename.match(/^p(\d+)_i/);
+    const match = filename?.match(/^p(\d+)_i/);
     const page = match ? parseInt(match[1], 10) : 0;
     const url = resolveImageUrls([path], imageMap)[0];
     if (!url) continue;
@@ -71,15 +81,15 @@ const groupImagesByPage = (imagePaths, imageMap) => {
   return pageOrder;
 };
 
-const fetchDetail = async (filename) => {
+const fetchDetail = async (filename: string): Promise<DocumentItem | null> => {
   const token = userStore.token;
   if (!token) return null;
   try {
     const res = await fetch(`/knowledge/detail?filename=${encodeURIComponent(filename)}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     if (res.ok) {
-      const result = await res.json();
+      const result = (await res.json()) as { code: number; data?: DocumentItem };
       return result.code === 200 && result.data ? result.data : null;
     }
   } catch { /* ignore */ }

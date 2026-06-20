@@ -3,88 +3,94 @@ import hljs from 'highlight.js';
 import { marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { showToast } from 'vant';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, type Ref, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import 'highlight.js/styles/github.css';
 import 'highlight.js/lib/common';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
+import type { ChatMessage, SessionData, SseEvent } from '../types';
 
-// 配置 marked 高亮插件（只执行一次）
+// Configure marked highlight plugin once
 marked.use(
   markedHighlight({
     langPrefix: 'hljs language-',
-    highlight(code, lang) {
+    highlight(code: string, lang: string) {
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
   }),
 );
 
-/**
- * AI 聊天逻辑封装
- * 提取 AIChat.vue 中的 SSE 流式聊天、消息管理、打字机效果、会话历史加载
- */
-export function useChat(messagesContainer) {
+interface UseChatReturn {
+  messages: Ref<ChatMessage[]>;
+  userInput: Ref<string>;
+  isLoading: Ref<boolean>;
+  sessionId: Ref<string>;
+  showWelcome: Ref<boolean>;
+  formatMessage: (content: string) => string;
+  toggleThinking: (message: ChatMessage) => void;
+  sendMessage: () => Promise<void>;
+  sendQuickQuestion: (question: string) => void;
+  resetToWelcome: () => void;
+  loadSessionHistory: (session: SessionData) => Promise<void>;
+}
+
+export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatReturn {
   const router = useRouter();
   const route = useRoute();
   const userStore = useUserStore();
   const sessionStore = useSessionStore();
 
-  // 状态
-  const messages = ref([
+  const messages = ref<ChatMessage[]>([
     { role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' },
   ]);
   const userInput = ref('');
   const isLoading = ref(false);
   const sessionId = ref('');
-  const autoCollapseTimer = ref(null);
+  const autoCollapseTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
-  // 计算属性
   const showWelcome = computed(
     () => messages.value.length === 1 && messages.value[0].role === 'assistant',
   );
 
-  // 工具函数
-  const formatMessage = (content) => {
+  const formatMessage = (content: string): string => {
     if (!content) return '';
     try {
-      const parsed = marked(content, { breaks: true, gfm: true, headerIds: false, mangle: false });
-      return DOMPurify.sanitize(parsed);
+      const parsed = marked.parse(content, {
+        breaks: true,
+        gfm: true,
+      }) as string;
+      return DOMPurify.sanitize(parsed) as string;
     } catch {
       return content;
     }
   };
 
-  const truncateText = (text, maxLen) => {
-    if (!text) return '';
-    return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
-  };
-
-  // 滚动
-  const scrollToBottom = () => {
+  const scrollToBottom = (): void => {
     if (messagesContainer?.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
   };
 
-  // 消息变化自动滚动
   watch(messages, () => nextTick(() => scrollToBottom()), { deep: true });
 
-  // localStorage 降级回退
   const THINKING_HISTORY_KEY = 'ai_thinking_history';
-  const loadThinkingFromHistory = (sid) => {
+
+  const loadThinkingFromHistory = (sid: string) => {
     if (!sid) return null;
     try {
-      const history = JSON.parse(localStorage.getItem(THINKING_HISTORY_KEY) || '[]');
+      const history = JSON.parse(localStorage.getItem(THINKING_HISTORY_KEY) || '[]') as Array<{
+        sessionId: string;
+        thinking: ChatMessage['thinking'];
+      }>;
       return history.find((e) => e.sessionId === sid)?.thinking || null;
     } catch {
       return null;
     }
   };
 
-  // 思考过程展开/折叠
-  const toggleThinking = (message) => {
+  const toggleThinking = (message: ChatMessage): void => {
     message.thinkingCollapsed = !message.thinkingCollapsed;
     if (autoCollapseTimer.value) {
       clearTimeout(autoCollapseTimer.value);
@@ -92,14 +98,12 @@ export function useChat(messagesContainer) {
     }
   };
 
-  // 发送快捷问题
-  const sendQuickQuestion = (question) => {
+  const sendQuickQuestion = (question: string): void => {
     userInput.value = question;
     sendMessage();
   };
 
-  // 发送消息
-  const sendMessage = async () => {
+  const sendMessage = async (): Promise<void> => {
     if (!userInput.value.trim() || isLoading.value) return;
 
     if (!userStore.getLoginStatus) {
@@ -125,9 +129,10 @@ export function useChat(messagesContainer) {
     isLoading.value = true;
     try {
       await fetchAIResponse(userMessage);
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       messages.value[messages.value.length - 1].content =
-        `发生错误: ${error.message || '请检查网络连接和API设置'}`;
+        `发生错误: ${err.message || '请检查网络连接和API设置'}`;
     } finally {
       isLoading.value = false;
       await nextTick();
@@ -135,8 +140,7 @@ export function useChat(messagesContainer) {
     }
   };
 
-  // SSE 流式响应
-  const fetchAIResponse = async (userMessage) => {
+  const fetchAIResponse = async (userMessage: string): Promise<void> => {
     const token = localStorage.getItem('jwt_token') || userStore.token;
 
     const response = await fetch('/chat/agent/query/stream', {
@@ -152,11 +156,13 @@ export function useChat(messagesContainer) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = (await response.json().catch(() => ({}))) as { detail?: string };
       throw new Error(error.detail || `HTTP error! status: ${response.status}`);
     }
 
-    const reader = response.body.getReader();
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No reader');
+
     const decoder = new TextDecoder();
     let buffer = '';
     let aiResponse = '';
@@ -175,12 +181,9 @@ export function useChat(messagesContainer) {
         if (!data) continue;
 
         try {
-          const json = JSON.parse(data);
+          const json = JSON.parse(data) as SseEvent;
 
           switch (json.type) {
-            case 'step':
-              break;
-
             case 'thinking': {
               const idx = messages.value.length - 1;
               if (messages.value[idx].role === 'assistant') {
@@ -191,10 +194,10 @@ export function useChat(messagesContainer) {
                 };
                 messages.value[idx] = {
                   ...messages.value[idx],
-                  thinking: [...messages.value[idx].thinking, newStep],
+                  thinking: [...(messages.value[idx].thinking || []), newStep],
                 };
                 await nextTick();
-                await new Promise((r) => requestAnimationFrame(r));
+                await new Promise<void>((r) => requestAnimationFrame(() => r()));
                 scrollToBottom();
               }
               break;
@@ -202,8 +205,7 @@ export function useChat(messagesContainer) {
 
             case 'response': {
               const lastMsg = messages.value[messages.value.length - 1];
-              // 第一条 response 到达时自动折叠思考过程
-              if (!lastMsg.thinkingAutoCollapsed && lastMsg.thinking.length > 0) {
+              if (!lastMsg.thinkingAutoCollapsed && (lastMsg.thinking?.length || 0) > 0) {
                 lastMsg.thinkingAutoCollapsed = true;
                 if (autoCollapseTimer.value) clearTimeout(autoCollapseTimer.value);
                 autoCollapseTimer.value = setTimeout(() => {
@@ -218,9 +220,9 @@ export function useChat(messagesContainer) {
                 const remainingContent = aiResponse.substring(displayContent.length);
                 for (const char of remainingContent) {
                   lastMsg.content += char;
-                  await new Promise((r) => setTimeout(r, 0));
+                  await new Promise<void>((r) => setTimeout(r, 0));
                   scrollToBottom();
-                  await new Promise((r) => setTimeout(r, 8));
+                  await new Promise<void>((r) => setTimeout(r, 8));
                 }
               }
               if (
@@ -247,8 +249,10 @@ export function useChat(messagesContainer) {
             case 'error':
               throw new Error(json.content || 'API错误');
           }
-        } catch (e) {
-          if (e.message && !e.message.includes('API错误')) {
+        } catch (e: unknown) {
+          const err = e as { message?: string };
+          if (err.message && !err.message.includes('API错误')) {
+            // Log parse errors but don't throw
           } else {
             throw e;
           }
@@ -262,15 +266,13 @@ export function useChat(messagesContainer) {
     }
   };
 
-  // 重置为欢迎状态
-  const resetToWelcome = () => {
+  const resetToWelcome = (): void => {
     messages.value = [{ role: 'assistant', content: '你好！我是AI助手，有什么可以帮助你的吗？' }];
     sessionId.value = '';
     sessionStore.currentSession = null;
   };
 
-  // 加载会话历史
-  const loadSessionHistory = async (session) => {
+  const loadSessionHistory = async (session: SessionData): Promise<void> => {
     if (!session.history?.length) return;
 
     messages.value = [];
@@ -286,18 +288,16 @@ export function useChat(messagesContainer) {
     });
     sessionId.value = session.session_id;
 
-    // 从 API 加载思考过程
     const thinkingData = await sessionStore.getThinking(session.session_id);
     if (thinkingData?.length) {
       let aiIndex = 0;
       for (const msg of messages.value) {
         if (msg.role === 'assistant' && aiIndex < thinkingData.length) {
-          msg.thinking = thinkingData[aiIndex];
+          msg.thinking = thinkingData[aiIndex] as ChatMessage['thinking'];
           aiIndex++;
         }
       }
     } else {
-      // API 无数据时回退到 localStorage
       const saved = loadThinkingFromHistory(session.session_id);
       if (saved) {
         const last = messages.value[messages.value.length - 1];
@@ -313,7 +313,6 @@ export function useChat(messagesContainer) {
     sessionId,
     showWelcome,
     formatMessage,
-    truncateText,
     toggleThinking,
     sendMessage,
     sendQuickQuestion,

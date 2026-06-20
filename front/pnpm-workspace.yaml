@@ -1,4 +1,7 @@
 allowBuilds:
   esbuild: false
+  simple-git-hooks: false
 ignoredBuiltDependencies:
   - esbuild
+minimumReleaseAgeExclude:
+  - '@types/node@26.0.0'

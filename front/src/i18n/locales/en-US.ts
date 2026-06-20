@@ -1,4 +1,6 @@
-export default {
+import type { LocaleMessages } from '../types';
+
+const enUS: LocaleMessages = {
   common: {
     confirm: 'Confirm',
     cancel: 'Cancel',
@@ -112,3 +114,5 @@ export default {
     deleteFailed: 'Failed to delete',
   },
 };
+
+export default enUS;

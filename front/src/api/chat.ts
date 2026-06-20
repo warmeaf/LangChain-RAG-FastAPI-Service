@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE || ''
+const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function sendChatMessage(
   query: string,
@@ -16,26 +16,27 @@ export async function sendChatMessage(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ query, session_id: sessionId }),
-  })
+  });
 
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+  const reader = response.body?.getReader();
+  if (!reader) return;
+  const decoder = new TextDecoder();
+  let buffer = '';
 
   while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() || ''
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
     for (const line of lines) {
       if (line.startsWith('data: ')) {
         try {
-          const data = JSON.parse(line.slice(6))
-          if (data.type === 'thinking') onThinking(data)
-          else if (data.type === 'text') onText(data.content)
-          else if (data.type === 'done') onDone()
-          else if (data.type === 'error') onError(data.content)
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'thinking') onThinking(data);
+          else if (data.type === 'text') onText(data.content);
+          else if (data.type === 'done') onDone();
+          else if (data.type === 'error') onError(data.content);
         } catch {}
       }
     }

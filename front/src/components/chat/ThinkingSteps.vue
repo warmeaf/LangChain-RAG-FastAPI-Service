@@ -50,25 +50,29 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  thinking: { type: Array, default: () => [] },
-  collapsed: { type: Boolean, default: false },
-});
+<script setup lang="ts">
+import type { ThinkingStep } from '../../types';
 
-defineEmits(['toggle']);
+defineProps<{
+  thinking: ThinkingStep[];
+  collapsed: boolean;
+}>();
 
-const stageConfig = {
+defineEmits<{
+  toggle: [];
+}>();
+
+const stageConfig: Record<string, { label: string; color: string }> = {
   retrieval: { label: '检索', color: '#B8926E' },
   hyde: { label: 'HyDE', color: '#8B7E6F' },
   reorder: { label: '重排序', color: '#D4914A' },
   summarize: { label: '总结', color: '#7D9B7A' },
 };
 
-const getStageLabel = (stage) => stageConfig[stage]?.label || stage || '处理中';
-const getStageColor = (stage) => stageConfig[stage]?.color || '#999';
+const getStageLabel = (stage: string): string => stageConfig[stage]?.label || stage || '处理中';
+const getStageColor = (stage: string): string => stageConfig[stage]?.color || '#999';
 
-const truncateText = (text, maxLen) => {
+const truncateText = (text: string, maxLen: number): string => {
   if (!text) return '';
   return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
 };

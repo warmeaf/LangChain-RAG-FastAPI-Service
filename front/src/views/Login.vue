@@ -48,7 +48,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showToast } from 'vant';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -60,7 +60,7 @@ const userStore = useUserStore();
 const username = ref('');
 const password = ref('');
 
-const onSubmit = async (_values) => {
+const onSubmit = async (_values: unknown) => {
   showToast({
     type: 'loading',
     message: '登录中...',

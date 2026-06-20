@@ -34,34 +34,49 @@
   </van-popup>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useAuthImage } from '../../composables/useAuthImage';
 import { useUserStore } from '../../store/user';
+import type { DocumentItem } from '../../types';
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  document: { type: Object, default: null },
-});
+interface ChunkItem {
+  chunk_id: string;
+  index: number;
+  content: string;
+  images?: string[];
+  _imageUrls?: string[];
+}
 
-defineEmits(['update:modelValue']);
+interface ImageMap {
+  [key: string]: string;
+}
+
+const props = defineProps<{
+  modelValue: boolean;
+  document: DocumentItem | null;
+}>();
+
+defineEmits<{
+  'update:modelValue': [value: boolean];
+}>();
 
 const userStore = useUserStore();
 const { getAllImages, resolveImageUrls } = useAuthImage();
 
 const loading = ref(false);
-const chunks = ref([]);
+const chunks = ref<ChunkItem[]>([]);
 const totalChunks = ref(0);
 
-const fetchChunks = async (filename) => {
+const fetchChunks = async (filename: string): Promise<void> => {
   const token = userStore.token;
   if (!token) return;
   try {
     const res = await fetch(`/knowledge/chunks?filename=${encodeURIComponent(filename)}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     if (res.ok) {
-      const result = await res.json();
+      const result = (await res.json()) as { code: number; data?: { chunks?: ChunkItem[]; total_chunks?: number } };
       if (result.code === 200 && result.data) {
         chunks.value = result.data.chunks || [];
         totalChunks.value = result.data.total_chunks || 0;
@@ -70,9 +85,9 @@ const fetchChunks = async (filename) => {
   } catch { /* ignore */ }
 };
 
-const loadChunkImages = async (chunksList, md5) => {
+const loadChunkImages = async (chunksList: ChunkItem[], md5: string): Promise<void> => {
   if (!md5) return;
-  const imageMap = await getAllImages(md5);
+  const imageMap = await getAllImages(md5) as ImageMap;
   for (const chunk of chunksList) {
     if (chunk.images?.length) {
       chunk._imageUrls = resolveImageUrls(chunk.images, imageMap);
@@ -86,7 +101,7 @@ watch(() => props.modelValue, async (show) => {
     chunks.value = [];
     totalChunks.value = 0;
     await fetchChunks(props.document.filename);
-    await loadChunkImages(chunks.value, props.document.md5);
+    await loadChunkImages(chunks.value, props.document.md5 || '');
     loading.value = false;
   }
 });

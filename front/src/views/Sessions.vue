@@ -34,7 +34,7 @@
           v-for="session in sessionStore.sessions"
           :key="session.session_id"
           :title="session.title || '新会话'"
-          :value="formatSessionTime(session.created_at)"
+          :value="formatSessionTime(session.created_at || '')"
           is-link
           @click="selectSession(session)"
         >
@@ -75,7 +75,7 @@
   <tab-bar />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showToast, Toast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -139,7 +139,7 @@ onMounted(async () => {
 });
 
 // 获取会话标题（使用第一条消息作为标题）
-const getSessionTitle = (session) => {
+const getSessionTitle = (session: { history?: string[][] }) => {
   if (session.history && session.history.length > 0) {
     const firstMessage = session.history[0][0]; // 第一条用户消息
     return firstMessage.length > 20 ? `${firstMessage.substring(0, 20)}...` : firstMessage;
@@ -148,7 +148,7 @@ const getSessionTitle = (session) => {
 };
 
 // 格式化会话时间
-const formatSessionTime = (timeString) => {
+const formatSessionTime = (timeString: string) => {
   if (!timeString) return '';
   try {
     const date = new Date(timeString);
@@ -165,15 +165,16 @@ const formatSessionTime = (timeString) => {
 };
 
 // 选择会话
-const selectSession = (session) => {
+const selectSession = (session: { session_id: string }) => {
   // 跳转到带会话ID的路由
   router.push(`/aichat/${session.session_id}`);
 };
 
 // 删除会话
-const deleteSession = async (sessionId) => {
+const deleteSession = async (sessionId: string | undefined) => {
 
   
+  if (!sessionId) return;
   const result = await sessionStore.deleteSession(sessionId);
   if (result.success) {
     showToast('会话删除成功');

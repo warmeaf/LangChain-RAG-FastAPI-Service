@@ -1,4 +1,6 @@
-export default {
+import type { LocaleMessages } from '../types';
+
+const zhCN: LocaleMessages = {
   common: {
     confirm: '确认',
     cancel: '取消',
@@ -110,3 +112,5 @@ export default {
     deleteFailed: '删除失败',
   },
 };
+
+export default zhCN;

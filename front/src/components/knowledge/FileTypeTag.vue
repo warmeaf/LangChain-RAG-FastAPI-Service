@@ -1,5 +1,5 @@
 <template>
-  <van-tag :type="tagType" size="medium">{{ ext.toUpperCase() }}</van-tag>
+  <van-tag :type="(tagType as 'default' | 'primary' | 'success' | 'warning' | 'danger')" size="medium">{{ ext.toUpperCase() }}</van-tag>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'

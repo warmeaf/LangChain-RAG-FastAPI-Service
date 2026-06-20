@@ -47,8 +47,8 @@
           <div :class="['max-w-[85%] rounded-lg px-4 py-3', message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-50']">
             <!-- 思考过程区域 -->
             <ThinkingSteps
-              :thinking="message.thinking"
-              :collapsed="message.thinkingCollapsed"
+              :thinking="message.thinking || []"
+              :collapsed="message.thinkingCollapsed || false"
               @toggle="toggleThinking(message)"
             />
             <!-- 回复正文 -->
@@ -90,7 +90,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showToast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -124,7 +124,7 @@ const quickQuestions = [
 watch(() => route.params.sessionId, async (newSessionId) => {
   if (newSessionId) {
     try {
-      const result = await sessionStore.getSession(newSessionId);
+      const result = await sessionStore.getSession(newSessionId as string);
       if (result.success && sessionStore.currentSession) {
         await loadSessionHistory(sessionStore.currentSession);
       } else {
@@ -141,7 +141,7 @@ onMounted(async () => {
   const routeSessionId = route.params.sessionId;
   if (routeSessionId) {
     try {
-      const result = await sessionStore.getSession(routeSessionId);
+      const result = await sessionStore.getSession(routeSessionId as string);
       if (result.success && sessionStore.currentSession) {
         await loadSessionHistory(sessionStore.currentSession);
       } else {

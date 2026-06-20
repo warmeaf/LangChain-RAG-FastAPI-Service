@@ -78,7 +78,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showToast } from 'vant';
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';

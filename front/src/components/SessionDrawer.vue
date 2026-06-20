@@ -38,7 +38,7 @@
             <van-swipe-cell v-for="session in sessionStore.sessions" :key="session.session_id">
               <van-cell
                 :title="session.title || '新会话'"
-                :label="formatSessionTime(session.created_at)"
+                :label="formatSessionTime(session.created_at || '')"
                 is-link
                 @click="selectSession(session)"
               >
@@ -49,7 +49,7 @@
                 </template>
               </van-cell>
               <template #right>
-                <van-button square type="danger" @click="deleteSession(session.session_id)">
+                <van-button square type="danger" @click="deleteSession(session.session_id || '')">
                   <van-icon name="delete-o" size="16" />
                 </van-button>
               </template>
@@ -61,7 +61,7 @@
   </van-popup>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showToast } from 'vant';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -82,7 +82,7 @@ watch(() => props.show, async (val) => {
   if (val) await loadSessions();
 });
 
-const loadSessions = async () => {
+const loadSessions = async (): Promise<void> => {
   if (!userStore.getLoginStatus) { showToast('请先登录'); return; }
   if (!userStore.userInfo) {
     const result = await userStore.getUserInfoDetail();
@@ -94,7 +94,7 @@ const loadSessions = async () => {
   }
 };
 
-const formatSessionTime = (timeString) => {
+const formatSessionTime = (timeString: string) => {
   if (!timeString) return '';
   try {
     const date = new Date(timeString);
@@ -102,12 +102,12 @@ const formatSessionTime = (timeString) => {
   } catch { return timeString; }
 };
 
-const selectSession = (session) => {
+const selectSession = (session: { session_id: string; title?: string; created_at?: string }) => {
   emit('update:show', false);
   router.push(`/aichat/${session.session_id}`);
 };
 
-const deleteSession = async (sessionId) => {
+const deleteSession = async (sessionId: string) => {
   const result = await sessionStore.deleteSession(sessionId);
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
 };

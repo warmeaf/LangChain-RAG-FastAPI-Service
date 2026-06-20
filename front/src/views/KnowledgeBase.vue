@@ -15,8 +15,7 @@
       </div>
 
       <!-- 已选文件列表 -->
-      <div v-if="selectedFiles.length > 0">
-        <h3 class="text-base font-semibold m-0 mb-2">{{ $t('knowledgebase.selectedFiles') }}</h3>
+      <div v-if="(selectedFiles as File[]).length > 0">
         <van-cell-group inset>
           <van-cell v-for="(file, index) in selectedFiles" :key="index" :title="file.name"
             :value="formatFileSize(file.size)" is-link @click="removeFile(index)">
@@ -28,7 +27,7 @@
       </div>
 
       <!-- 上传按钮 -->
-      <van-button v-if="selectedFiles.length > 0 && !uploading" type="primary" block size="large" @click="uploadFiles">
+      <van-button v-if="(selectedFiles as File[]).length > 0 && !uploading" type="primary" block size="large" @click="uploadFiles">
         {{ $t('knowledgebase.uploadButton') }}
       </van-button>
 
@@ -102,7 +101,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showDialog, showToast } from 'vant';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -112,16 +111,17 @@ import DocumentDetailPopup from '../components/knowledge/DocumentDetailPopup.vue
 import TabBar from '../components/TabBar.vue';
 import { useKnowledgeUpload } from '../composables/useKnowledgeUpload';
 import { useUserStore } from '../store/user';
+import type { DocumentItem } from '../types';
 
 const router = useRouter();
 const { t } = useI18n();
 const userStore = useUserStore();
 
-const documents = ref([]);
+const documents = ref<DocumentItem[]>([]);
 const loadingDocuments = ref(false);
 const showDetail = ref(false);
 const showChunks = ref(false);
-const currentDocument = ref(null);
+const currentDocument = ref<DocumentItem | null>(null);
 
 const showActions = ref(false);
 const documentActions = ref([
@@ -160,7 +160,7 @@ const {
 } = useKnowledgeUpload(fetchDocuments);
 
 // 删除文档
-const deleteDocumentByFilename = async (filename) => {
+const deleteDocumentByFilename = async (filename: string) => {
   const token = userStore.token;
   if (!token || !filename) return false;
   try {
@@ -176,20 +176,20 @@ const deleteDocumentByFilename = async (filename) => {
   return false;
 };
 
-const handleDeleteDocument = (doc) => {
-  return new Promise((resolve) => {
+const handleDeleteDocument = (doc: DocumentItem) => {
+  return new Promise<void>((resolve: (value: void | PromiseLike<void>) => void) => {
     showDialog({
       title: t('common.confirm'),
       message: t('knowledgebase.deleteConfirm', { filename: doc.original_filename || doc.filename }),
       showCancelButton: true,
-    }).then(async (result) => {
+    }).then(async (result: string | undefined) => {
       if (result) {
         const success = await deleteDocumentByFilename(doc.original_filename || doc.filename);
         showToast(success ? t('knowledgebase.deleteSuccess') : t('knowledgebase.deleteFailed'));
         if (success) await fetchDocuments();
       }
-      resolve();
-    }).catch(() => resolve());
+      (resolve as (v: undefined) => void)(void 0);
+    }).catch(() => (resolve as (v: undefined) => void)(void 0));
   });
 };
 
@@ -222,12 +222,12 @@ const handleCleanAll = () => {
 };
 
 // 文档操作
-const showDocumentActions = (doc) => {
+const showDocumentActions = (doc: DocumentItem) => {
   currentDocument.value = doc;
   showActions.value = true;
 };
 
-const onActionSelect = async (action) => {
+const onActionSelect = async (action: { action: string; name?: string }) => {
   showActions.value = false;
   switch (action.action) {
     case 'viewContent':
@@ -237,7 +237,7 @@ const onActionSelect = async (action) => {
       showChunks.value = true;
       break;
     case 'deleteDoc':
-      await handleDeleteDocument(currentDocument.value);
+      await handleDeleteDocument(currentDocument.value as DocumentItem);
       break;
   }
 };

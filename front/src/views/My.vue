@@ -66,7 +66,7 @@
   <tab-bar />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { showDialog, showToast } from 'vant';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -92,7 +92,7 @@ const themeActions = [
   { name: '浅色', value: 'light' },
   { name: '深色', value: 'dark' }
 ];
-const onThemeSelect = (action) => {
+const onThemeSelect = (action: { name: string; value: string }) => {
   themeStore.setTheme(action.value);
 };
 
@@ -102,7 +102,7 @@ const languageActions = [
   { name: '简体中文', value: 'zh-CN' },
   { name: 'English', value: 'en-US' }
 ];
-const onLanguageSelect = (action) => {
+const onLanguageSelect = (action: { name: string; value: string }) => {
   languageStore.setLanguage(action.value);
   locale.value = action.value;
   showToast(t('settings.languageChanged'));
@@ -128,7 +128,7 @@ const handleLogout = () => {
     title: t('common.confirm'),
     message: `${t('my.logout')}?`,
     showCancelButton: true,
-  }).then((action) => {
+  }).then((action: unknown) => {
     if (action === 'confirm') {
       userStore.logout();
       router.push('/login');
