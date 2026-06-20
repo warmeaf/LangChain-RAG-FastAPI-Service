@@ -73,6 +73,52 @@ chunk 2: "...ABC 科技后续 + XYZ 互联网公司 + DEF 人工智能实验室"
 
 ---
 
+## Q3：为什么 DOCX/MD 文件被切成几十个微小 chunk？
+
+**场景**：上传一份 DOCX 简历，竟被切成 67 个 chunk；上传一份 MD 简历，被切成 88 个 chunk。每个 chunk 只有一行或十几字，如「姓名：韩小团」「工作经历」「教育背景」各成一个 chunk。检索返回大量碎片，顺序也乱了。
+
+**原因**：`unstructured` 库将 DOCX/MD 拆成逐段落/标题的元素，`preserve_format()` 为每个元素创建一个 LangChain Document。每个元素只有几十字，远小于 400 字的 `chunk_size`，切分器不需要再分但也从不合并它们。结果就是几十个微小 chunk。
+
+**解决方案：入库前先聚合**
+
+新建 `aggregate_by_length()` 函数，将连续的元素按 `chunk_size`（400 字）合并。类似 PPTX 已有的 `aggregate_by_slide()`（按幻灯片聚合）。
+
+```
+旧: 67 个元素 → 67 个 Document → 67 个微小 chunk
+新: 67 个元素 → aggregate_by_length → 5-8 个 Document → 5-8 个合理 chunk
+```
+
+改动涉及文件：
+- `backend/app/rag/document_handler/format_preserver.py` → `aggregate_by_length()` 新函数
+- `backend/app/rag/document_handler/processor.py` → DOCX 分支改为调用 `aggregate_by_length`
+- `backend/app/utils/file_handler.py` → `word_loader`、`word_loader_sync`、`markdown_loader`、`markdown_loader_sync`、`ppt_loader`、`ppt_loader_sync` 全部改为调用对应的聚合函数
+
+---
+
+## Q4：为什么检索结果里显示的是临时路径而非文件名？
+
+**场景**：上传了「李大乐个人简历.pptx」，但检索时每个 chunk 的前缀是 `[文档: /var/folders/.../tmpXXXX.pptx]`，LLM 看不到真实文件名，无法把人名和文档对上号。
+
+**原因**：元数据前缀拼接时优先取了 `doc.metadata.get("source")`，而 unstructured 流程中 `source` 存的是系统临时路径。真正的原始文件名在 `doc.metadata.original_filename` 里，但没被用到。
+
+**解决方案：前缀优先取原始文件名**
+
+```python
+# 旧
+source = doc.metadata.get("source", doc.metadata.get("filename", ""))
+
+# 新
+source = doc.metadata.get("original_filename") \
+      or doc.metadata.get("source") \
+      or doc.metadata.get("filename", "")
+```
+
+改动涉及文件：`backend/app/rag/milvus_store.py` → `add_documents()`。
+
+**效果**：chunk 前缀从 `[文档: /var/folders/.../tmpXXXX.pptx]` 变为 `[文档: 李大乐个人简历.pptx]`，LLM 能正确识别人名与文档的关联。
+
+---
+
 ## 关键文件索引
 
 | 问题 | 文件 | 方法/位置 |
@@ -80,3 +126,6 @@ chunk 2: "...ABC 科技后续 + XYZ 互联网公司 + DEF 人工智能实验室"
 | 跨文档混淆 | `backend/app/rag/milvus_store.py` | `add_documents()` |
 | chunk 上下文断裂 | `backend/app/rag/milvus_store.py` | `get_adjacent_chunks()` |
 | chunk 上下文断裂 | `backend/app/rag/rag_service.py` | `_expand_adjacent_chunks()` |
+| DOCX/MD 碎片化 | `backend/app/rag/document_handler/format_preserver.py` | `aggregate_by_length()` |
+| DOCX/MD 碎片化 | `backend/app/utils/file_handler.py` | `word_loader`、`markdown_loader` 等 |
+| 临时路径前缀 | `backend/app/rag/milvus_store.py` | `add_documents()` |
