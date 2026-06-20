@@ -28,8 +28,8 @@ ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 # 先拷贝依赖文件，利用 Docker 缓存层
 COPY pyproject.toml uv.lock ./
 
-# 安装依赖
-RUN uv sync --frozen --no-dev || uv sync --no-dev
+# 删除旧 lock，强制从镜像重新解析
+RUN rm -f uv.lock && uv sync --no-dev
 
 # 拷贝源码
 COPY . .
