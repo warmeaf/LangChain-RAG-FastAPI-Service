@@ -7,10 +7,9 @@
   >
     <div class="flex flex-col h-full bg-white">
       <!-- 头部 -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div class="flex items-center justify-between px-4 h-[46px] border-b border-gray-100">
         <div class="flex items-center gap-2">
-          <van-icon name="chat-o" size="18" color="var(--van-primary-color)" />
-          <span class="text-base font-semibold">历史会话</span>
+          <van-icon name="records-o" size="18" color="var(--van-primary-color)" />
         </div>
         <van-button size="small" type="primary" plain @click="createNewSession">新会话</van-button>
       </div>
@@ -35,26 +34,23 @@
         <!-- 会话列表 -->
         <div v-else class="py-3">
           <van-cell-group inset class="m-0!">
-            <van-swipe-cell v-for="session in sessionStore.sessions" :key="session.session_id">
-              <van-cell
-                :title="session.title || '新会话'"
-                :label="formatSessionTime(session.created_at || '')"
-                is-link
-                center
-                @click="selectSession(session)"
-              >
-                <template #icon>
-                  <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-                    <van-icon name="chat-o" size="14" color="var(--van-gray-5)" />
-                  </div>
-                </template>
-              </van-cell>
-              <template #right>
-                <van-button square type="danger" @click="deleteSession(session.session_id || '')">
-                  <van-icon name="delete-o" size="16" />
-                </van-button>
+            <van-cell
+              v-for="session in sessionStore.sessions"
+              :key="session.session_id"
+              :title="session.title || '新会话'"
+              :label="formatSessionTime(session.created_at || '')"
+              center
+              @click="selectSession(session)"
+            >
+              <template #icon>
+                <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
+                  <van-icon name="chat-o" size="14" color="var(--van-gray-5)" />
+                </div>
               </template>
-            </van-swipe-cell>
+              <template #right-icon>
+                <van-icon name="delete-o" size="18" color="var(--van-gray-4)" @click.stop="deleteSession(session.session_id || '')" />
+              </template>
+            </van-cell>
           </van-cell-group>
         </div>
       </div>
@@ -63,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { showToast } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '../store/session';
@@ -109,6 +105,14 @@ const selectSession = (session: { session_id: string; title?: string; created_at
 };
 
 const deleteSession = async (sessionId: string) => {
+  try {
+    await showConfirmDialog({
+      title: '确认删除',
+      message: '确定要删除该会话吗？',
+    });
+  } catch {
+    return;
+  }
   const result = await sessionStore.deleteSession(sessionId);
   showToast(result.success ? '删除成功' : (result.message || '删除失败'));
 };
