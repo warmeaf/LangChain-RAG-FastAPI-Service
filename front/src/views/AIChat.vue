@@ -40,7 +40,13 @@
           :key="index"
           :class="['flex mb-3', message.role === 'user' ? 'justify-end' : 'justify-start']"
         >
-          <div :class="['max-w-[85%] rounded-lg px-4 py-3', message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 border border-gray-200']">
+          <div :class="[
+              message.role === 'user'
+                ? 'w-fit max-w-[85%] bg-blue-500 text-white rounded-lg px-4 py-3'
+                : message.thinking && message.thinking.length > 0
+                  ? 'w-full max-w-[85%] bg-gray-100 border border-gray-200 rounded-lg px-4 py-3'
+                  : 'w-fit max-w-[85%] bg-gray-100 border border-gray-200 rounded-lg px-4 py-3'
+            ]">
             <!-- 思考过程区域 -->
             <ThinkingSteps
               :thinking="message.thinking || []"
