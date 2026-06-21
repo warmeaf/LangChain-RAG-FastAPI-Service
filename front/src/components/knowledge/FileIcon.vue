@@ -1,6 +1,6 @@
 <template>
   <!-- PDF -->
-  <svg v-if="type === 'pdf'" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
+  <svg v-if="type === 'pdf'" :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
     <path d="M6 2h8l4 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" stroke-width="1.2" />
     <path d="M14 2v4h4" stroke="currentColor" stroke-width="1.2" />
     <!-- PDF 标签底框 -->
@@ -10,7 +10,7 @@
   </svg>
 
   <!-- DOCX -->
-  <svg v-else-if="type === 'docx'" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
+  <svg v-else-if="type === 'docx'" :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
     <path d="M6 2h8l4 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" stroke-width="1.2" />
     <path d="M14 2v4h4" stroke="currentColor" stroke-width="1.2" />
     <rect x="7" y="10" width="10" height="7" rx="1.5" fill="currentColor" opacity="0.1" />
@@ -19,7 +19,7 @@
   </svg>
 
   <!-- PPTX -->
-  <svg v-else-if="type === 'pptx'" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
+  <svg v-else-if="type === 'pptx'" :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
     <!-- 投影屏幕 -->
     <rect x="3" y="3" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="1.2" />
     <path d="M12 16v4" stroke="currentColor" stroke-width="1.2" />
@@ -31,7 +31,7 @@
   </svg>
 
   <!-- Markdown -->
-  <svg v-else-if="type === 'md'" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
+  <svg v-else-if="type === 'md'" :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
     <path d="M6 2h8l4 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" stroke-width="1.2" />
     <path d="M14 2v4h4" stroke="currentColor" stroke-width="1.2" />
     <!-- # 符号 -->
@@ -41,7 +41,7 @@
   </svg>
 
   <!-- TXT -->
-  <svg v-else viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
+  <svg v-else :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-bind="$attrs">
     <path d="M6 2h8l4 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" stroke-width="1.2" />
     <path d="M14 2v4h4" stroke="currentColor" stroke-width="1.2" />
     <!-- 文本横线 -->
@@ -54,9 +54,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   filename: string
-}>()
+  size?: number
+}>(), {
+  size: 24
+})
 
 const type = computed(() => {
   const ext = props.filename?.split('.').pop()?.toLowerCase() || ''
