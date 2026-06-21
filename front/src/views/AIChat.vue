@@ -66,27 +66,31 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2 mx-3 mb-3 px-3 py-2 bg-white rounded-xl shadow-sm">
-        <van-field
-          v-model="userInput"
-          rows="1"
-          autosize
-          type="textarea"
-          placeholder="请输入问题..."
-          :border="false"
-          class="flex-1!"
-          @keypress.enter.prevent="sendMessage"
-        />
-        <van-button
-          type="primary"
-          size="mini"
-          :disabled="isLoading || !userInput.trim()"
-          class="w-9! h-9! p-0! min-w-0! shrink-0"
+      <van-cell class="mx-3 mb-3 rounded-xl shadow-sm!" :border="false">
+        <template #title>
+          <van-field
+            v-model="userInput"
+            rows="1"
+            autosize
+            type="textarea"
+            placeholder="请输入问题..."
+            :border="false"
+            class="flex-1!"
+            @keypress.enter.prevent="sendMessage"
+          />
+        </template>
+        <template #right-icon>
+          <van-button
+            type="primary"
+            size="mini"
+            :disabled="isLoading || !userInput.trim()"
+            class="w-9! h-9! p-0! min-w-0! shrink-0"
           @click="sendMessage"
         >
-          <Send :size="16" color="currentColor" />
-        </van-button>
-      </div>
+            <Send :size="16" color="currentColor" />
+          </van-button>
+        </template>
+      </van-cell>
     </div>
     
     <tab-bar />
