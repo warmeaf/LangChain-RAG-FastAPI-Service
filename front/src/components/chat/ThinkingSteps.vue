@@ -2,7 +2,7 @@
   <div v-if="thinking && thinking.length > 0" class="mb-2">
     <div class="flex items-center justify-between py-1.5 px-2 bg-gray-100 rounded cursor-pointer select-none mb-2"
       @click="$emit('toggle')">
-      <span class="text-xs font-medium text-gray-600">💬 思考过程</span>
+      <span class="text-xs font-medium text-gray-600 flex items-center gap-1"><Brain :size="14" /> 思考过程</span>
       <span class="text-xs text-gray-400">{{ collapsed ? '展开' : '收起' }}</span>
     </div>
     <div v-show="!collapsed" class="flex flex-col gap-2">
@@ -51,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { Brain } from '@lucide/vue'
 import type { ThinkingStep } from '../../types';
 
 defineProps<{
