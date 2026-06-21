@@ -60,11 +60,11 @@
       <div v-if="!uploading" class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <div class="flex items-baseline gap-2">
-            <h3 class="text-base font-semibold m-0">{{ $t('knowledgebase.documentList') }}</h3>
-            <span class="text-sm text-gray-500">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
+            <h3 class="text-base text-gray-600 font-medium m-0">{{ $t('knowledgebase.documentList') }}</h3>
+            <span class="text-sm text-gray-400">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <BrushCleaning v-if="documents.length > 0" :size="22" class="cursor-pointer" @click="handleCleanAll" />
+            <BrushCleaning v-if="documents.length > 0" :size="20" color="var(--van-gray-5)" class="cursor-pointer" @click="handleCleanAll" />
           </div>
         </div>
 
