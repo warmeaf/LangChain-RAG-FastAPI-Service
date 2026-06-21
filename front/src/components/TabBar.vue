@@ -2,19 +2,19 @@
   <van-tabbar v-model="active" placeholder>
     <van-tabbar-item name="aichat" @click="router.push('/aichat')">
       <template #icon>
-        <MessageCircle />
+        <MessageCircle :size="20" />
       </template>
       <span>{{ $t('nav.aiChat') }}</span>
     </van-tabbar-item>
     <van-tabbar-item name="knowledgebase" @click="router.push('/knowledgebase')">
       <template #icon>
-        <Database />
+        <Database :size="20" />
       </template>
       <span>{{ $t('nav.knowledge') }}</span>
     </van-tabbar-item>
     <van-tabbar-item name="my" @click="router.push('/my')">
       <template #icon>
-        <User />
+        <User :size="20" />
       </template>
       <span>{{ $t('nav.my') }}</span>
     </van-tabbar-item>
