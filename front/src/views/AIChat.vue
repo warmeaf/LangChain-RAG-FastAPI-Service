@@ -66,7 +66,7 @@
         </div>
       </div>
       
-      <van-cell-group inset class="mb-3">
+      <van-cell-group inset class="mb-3!">
       <van-cell center class="shadow-sm!" :border="false">
         <template #title>
           <van-field
