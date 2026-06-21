@@ -7,7 +7,7 @@
     >
       <template #left>
         <span @click="showDrawer = true">
-          <MessageCircle :size="22" />
+          <History :size="18" />
         </span>
       </template>
     </van-nav-bar>
@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { Bot, MessageCircle, Send } from '@lucide/vue';
+import { Bot, History, Send } from '@lucide/vue';
 import { showToast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
