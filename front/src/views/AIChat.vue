@@ -13,7 +13,7 @@
     </van-nav-bar>
     
     <div class="flex flex-col" style="height: calc(100dvh - 46px - 50px)">
-      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3">
+      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3" style="scrollbar-gutter: stable">
         <!-- 欢迎状态（仅首次进入时显示） -->
         <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-5 py-12">
           <div class="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full">
