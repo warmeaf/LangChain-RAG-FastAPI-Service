@@ -44,8 +44,8 @@
               message.role === 'user'
                 ? 'w-fit max-w-[85%] bg-[var(--van-primary-color)] text-[var(--van-white)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
                 : message.thinking && message.thinking.length > 0
-                  ? 'w-full max-w-[85%] bg-[var(--van-gray-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
-                  : 'w-fit max-w-[85%] bg-[var(--van-gray-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
+                  ? 'w-full max-w-[85%] bg-[var(--van-gray-3)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
+                  : 'w-fit max-w-[85%] bg-[var(--van-gray-3)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
             ]">
             <!-- 思考过程区域 -->
             <ThinkingSteps
