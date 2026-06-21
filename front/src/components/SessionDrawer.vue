@@ -7,9 +7,9 @@
   >
     <div class="flex flex-col h-full bg-white">
       <!-- 头部 -->
-		    <div class="flex items-center justify-between px-4 h-[46px] border-b border-gray-100">
-	        <van-button size="small" type="primary" plain @click="createNewSession">新会话</van-button>
-      </div>
+			    <div class="flex items-center justify-end px-4 h-[46px] border-b border-gray-100">
+		        <MessageCirclePlus :size="22" color="var(--van-primary-color)" class="cursor-pointer" @click="createNewSession" />
+	      </div>
 
       <!-- 内容区（可滚动） -->
       <div class="flex-1 overflow-y-auto">
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { MessageCircle, Trash2 } from '@lucide/vue';
+import { MessageCircle, MessageCirclePlus, Trash2 } from '@lucide/vue';
 import { showConfirmDialog, showToast } from 'vant';
 import { watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
