@@ -7,7 +7,7 @@
     placeholder
   />
 
-  <div class="flex flex-col gap-6 mt-4">
+  <div class="flex flex-col gap-4 mt-4">
     <van-cell-group inset>
 	      <van-cell title="头像" center is-link @click="editAvatar">
         <template #right-icon>
