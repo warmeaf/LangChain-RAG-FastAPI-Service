@@ -7,7 +7,7 @@
     </div>
     <div v-show="!collapsed" class="flex flex-col gap-2">
       <div v-for="(step, sIndex) in thinking" :key="sIndex"
-        class="border border-gray-100 rounded-lg p-2.5">
+        class="bg-white border border-gray-200 rounded-lg p-2.5">
         <div class="flex items-center gap-2 mb-1">
           <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
             {{ getStageLabel(step.stage) }}
