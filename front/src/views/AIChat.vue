@@ -66,7 +66,7 @@
         </div>
       </div>
       
-      <van-cell class="mx-3 mb-3 rounded-xl shadow-sm!" :border="false">
+      <van-cell center class="mx-3 mb-3 rounded-xl shadow-sm!" :border="false">
         <template #title>
           <van-field
             v-model="userInput"
