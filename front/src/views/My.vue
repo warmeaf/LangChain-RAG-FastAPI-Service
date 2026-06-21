@@ -6,7 +6,7 @@
       <van-cell-group v-if="isLogin" inset>
         <van-cell center is-link @click="goToProfile">
           <template #icon>
-            <van-image round class="w-12 h-12 object-cover mr-2"
+            <van-image round class="w-12 h-12 object-cover mr-3"
               :src="userInfo?.avatar ? `http://localhost:8001${userInfo.avatar}` : ''" />
           </template>
           <template #title>
