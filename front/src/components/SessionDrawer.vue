@@ -8,7 +8,7 @@
     <div class="flex flex-col h-full bg-white">
       <!-- 头部 -->
 			    <div class="flex items-center justify-end px-4 h-[46px] border-b border-gray-100">
-		        <MessageCirclePlus :size="22" color="var(--van-primary-color)" class="cursor-pointer" @click="createNewSession" />
+		        <MessageCirclePlus :size="18" class="cursor-pointer" @click="createNewSession" />
 	      </div>
 
       <!-- 内容区（可滚动） -->
