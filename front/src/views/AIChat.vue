@@ -55,7 +55,7 @@
             />
             <!-- 回复正文 -->
             <div v-if="message.content" class="text-sm leading-relaxed">
-              <MarkdownRender :content="message.content" />
+              <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" />
             </div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
             <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)"

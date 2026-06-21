@@ -4,6 +4,25 @@
   @import "markstream-vue/index.css";
 }
 
+/* 紧凑间距覆盖 */
+[data-custom-id="chat"] p,
+[data-custom-id="chat"] li,
+[data-custom-id="chat"] blockquote {
+  margin: 0.25em 0;
+}
+[data-custom-id="chat"] h1,
+[data-custom-id="chat"] h2,
+[data-custom-id="chat"] h3,
+[data-custom-id="chat"] h4 {
+  margin: 0.5em 0 0.25em;
+}
+[data-custom-id="chat"] pre {
+  margin: 0.5em 0;
+}
+[data-custom-id="chat"] code {
+  padding: 0.1em 0.3em;
+}
+
 /* Vant UI 原生样式 */
 
 :root {
