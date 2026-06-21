@@ -7,7 +7,7 @@
     </div>
     <div v-show="!collapsed" class="flex flex-col gap-[var(--van-padding-xs)] max-h-60 overflow-y-auto" style="scrollbar-gutter: stable">
       <div v-for="(step, sIndex) in thinking" :key="sIndex"
-        class="bg-[var(--van-white)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] p-2.5">
+        class="bg-[var(--van-background-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] p-2.5">
         <div class="flex items-center gap-[var(--van-padding-xs)] mb-1">
           <van-tag :color="getStageColor(step.stage)" size="medium" text-color="var(--van-white)">
             {{ getStageLabel(step.stage) }}
@@ -71,7 +71,7 @@ const stageConfig: Record<string, { label: string; color: string }> = {
 };
 
 const getStageLabel = (stage: string): string => stageConfig[stage]?.label || stage || '处理中';
-const getStageColor = (stage: string): string => stageConfig[stage]?.color || 'var(--van-gray-5)';
+const getStageColor = (stage: string): string => stageConfig[stage]?.color || 'var(--van-text-color-3)';
 
 const truncateText = (text: string, maxLen: number): string => {
   if (!text) return '';

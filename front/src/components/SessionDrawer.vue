@@ -5,7 +5,7 @@
     :style="{ width: '68%', height: '100%' }"
     @update:show="$emit('update:show', $event)"
   >
-	    <div class="flex flex-col h-full bg-[var(--van-white)]">
+	    <div class="flex flex-col h-full bg-[var(--van-background-2)]">
 	      <!-- 头部 -->
 				    <div class="flex items-center justify-end px-[var(--van-padding-md)] h-[46px] border-b border-[var(--van-border-color)]">
 		        <MessageCirclePlus :size="18" class="cursor-pointer" @click="createNewSession" />
@@ -22,7 +22,7 @@
 	        <!-- 空状态 -->
 	        <div v-else-if="sessionStore.sessions.length === 0" class="flex flex-col items-center justify-center gap-4 py-16 px-[var(--van-padding-md)]">
 		          <div class="flex items-center justify-center w-14 h-14 bg-[var(--van-background)] rounded-full">
-		            <MessageCircle :size="24" color="var(--van-gray-4)" />
+		            <MessageCircle :size="24" color="var(--van-text-color-3)" />
 		          </div>
 	          <p class="text-[var(--van-font-size-md)] text-[var(--van-text-color-2)] m-0">暂无会话记录</p>
           <van-button type="primary" size="small" @click="createNewSession">创建新会话</van-button>
@@ -40,7 +40,7 @@
               @click="selectSession(session)"
             >
 		              <template #right-icon>
-	                <Trash2 :size="18" color="var(--van-gray-4)" class="cursor-pointer" @click.stop="deleteSession(session.session_id || '')" />
+	                <Trash2 :size="18" color="var(--van-text-color-3)" class="cursor-pointer" @click.stop="deleteSession(session.session_id || '')" />
               </template>
             </van-cell>
           </van-cell-group>

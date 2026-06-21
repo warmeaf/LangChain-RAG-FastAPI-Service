@@ -44,8 +44,8 @@
               message.role === 'user'
                 ? 'w-fit max-w-[85%] bg-[var(--van-primary-color)] text-[var(--van-white)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
                 : message.thinking && message.thinking.length > 0
-                  ? 'w-full max-w-[85%] bg-[var(--van-gray-3)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
-                  : 'w-fit max-w-[85%] bg-[var(--van-gray-3)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
+                  ? 'w-full max-w-[85%] bg-[var(--van-background-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
+                  : 'w-fit max-w-[85%] bg-[var(--van-background-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
             ]">
             <!-- 思考过程区域 -->
             <ThinkingSteps
@@ -182,7 +182,7 @@ onMounted(async () => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: var(--van-gray-5);
+  background-color: var(--van-text-color-3);
   animation: typing-wave 1.2s ease-in-out infinite;
 }
 .typing-indicator span:nth-child(2) {

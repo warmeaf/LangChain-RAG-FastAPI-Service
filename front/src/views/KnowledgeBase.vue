@@ -5,9 +5,9 @@
 	    <div class="flex flex-col gap-[var(--van-padding-md)] px-[var(--van-padding-md)] mt-4">
 	      <!-- 文件上传区域 -->
 	      <div
-	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-gray-5)] rounded-[var(--van-radius-lg)] cursor-pointer"
+	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-text-color-3)] rounded-[var(--van-radius-lg)] cursor-pointer"
 	        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
-	        <FileUp :size="40" color="var(--van-gray-5)" />
+	        <FileUp :size="40" color="var(--van-text-color-3)" />
 	        <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)]">{{ $t('knowledgebase.uploadText') }}</p>
 	        <p class="m-0 text-[var(--van-font-size-sm)] text-[var(--van-text-color-3)]">{{ $t('knowledgebase.uploadHint') }}</p>
         <input ref="fileInput" type="file" multiple accept=".md,.txt,.pdf,.docx,.pptx" class="hidden"
@@ -64,7 +64,7 @@
 	            <span class="text-[var(--van-font-size-md)] text-[var(--van-text-color-3)]">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
 	          </div>
 	          <div class="flex items-center gap-[var(--van-padding-xs)]">
-            <BrushCleaning v-if="documents.length > 0" :size="20" color="var(--van-gray-5)" class="cursor-pointer" @click="handleCleanAll" />
+            <BrushCleaning v-if="documents.length > 0" :size="20" color="var(--van-text-color-3)" class="cursor-pointer" @click="handleCleanAll" />
           </div>
         </div>
 
