@@ -5,7 +5,7 @@
       <span class="text-xs font-medium text-gray-600 flex items-center gap-1"><Brain :size="14" /> 思考过程</span>
       <span class="text-xs text-gray-400">{{ collapsed ? '展开' : '收起' }}</span>
     </div>
-    <div v-show="!collapsed" class="flex flex-col gap-2">
+    <div v-show="!collapsed" class="flex flex-col gap-2 max-h-60 overflow-y-auto" style="scrollbar-gutter: stable">
       <div v-for="(step, sIndex) in thinking" :key="sIndex"
         class="bg-white border border-gray-200 rounded-lg p-2.5">
         <div class="flex items-center gap-2 mb-1">
