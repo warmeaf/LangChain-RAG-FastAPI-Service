@@ -7,7 +7,7 @@
 	      <div
 	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-gray-5)] rounded-[var(--van-radius-lg)] cursor-pointer"
 	        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
-	        <Upload :size="40" color="var(--van-gray-5)" />
+	        <FileUp :size="40" color="var(--van-gray-5)" />
 	        <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)]">{{ $t('knowledgebase.uploadText') }}</p>
 	        <p class="m-0 text-[var(--van-font-size-sm)] text-[var(--van-text-color-3)]">{{ $t('knowledgebase.uploadHint') }}</p>
         <input ref="fileInput" type="file" multiple accept=".md,.txt,.pdf,.docx,.pptx" class="hidden"
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { BrushCleaning, CheckCircle, Trash2, Upload } from '@lucide/vue';
+import { BrushCleaning, CheckCircle, FileUp, Trash2 } from '@lucide/vue';
 import { showDialog, showToast } from 'vant';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
