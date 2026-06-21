@@ -64,9 +64,7 @@
             <span class="text-sm text-gray-500">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <van-button v-if="documents.length > 0" size="small" type="danger" plain @click="handleCleanAll">
-              {{ $t('knowledgebase.cleanAll') }}
-            </van-button>
+            <BrushCleaning v-if="documents.length > 0" :size="22" class="cursor-pointer" @click="handleCleanAll" />
           </div>
         </div>
 
@@ -105,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle, Trash2, Upload } from '@lucide/vue';
+import { BrushCleaning, CheckCircle, Trash2, Upload } from '@lucide/vue';
 import { showDialog, showToast } from 'vant';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
