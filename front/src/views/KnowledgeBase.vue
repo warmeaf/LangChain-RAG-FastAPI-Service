@@ -5,7 +5,7 @@
 	    <div class="flex flex-col gap-[var(--van-padding-md)] px-[var(--van-padding-md)] mt-4">
 	      <!-- 文件上传区域 -->
 	      <div
-	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-gray-3)] rounded-[var(--van-radius-lg)] cursor-pointer"
+	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-gray-5)] rounded-[var(--van-radius-lg)] cursor-pointer"
 	        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
 	        <Upload :size="40" color="var(--van-gray-5)" />
 	        <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)]">{{ $t('knowledgebase.uploadText') }}</p>
