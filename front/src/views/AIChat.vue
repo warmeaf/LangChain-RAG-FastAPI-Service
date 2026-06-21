@@ -55,7 +55,7 @@
             />
             <!-- 回复正文 -->
             <div v-if="message.content" class="text-[var(--van-font-size-md)] leading-relaxed">
-              <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" />
+              <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" :is-dark="themeStore.isDark" />
             </div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
             <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)"
@@ -113,9 +113,11 @@ import SessionDrawer from '../components/SessionDrawer.vue';
 import TabBar from '../components/TabBar.vue';
 import { useChat } from '../composables/useChat';
 import { useSessionStore } from '../store/session';
+import { useThemeStore } from '../store/theme';
 
 const route = useRoute();
 const sessionStore = useSessionStore();
+const themeStore = useThemeStore();
 
 const messagesContainer = ref<HTMLElement | null>(null);
 const showDrawer = ref(false);
