@@ -1,6 +1,8 @@
 <template>
   <div v-if="stages.length > 0">
-    <div>🔍 RAG 检索过程</div>
+    <div class="flex items-center gap-1">
+      <Search :size="14" /> RAG 检索过程
+    </div>
     <van-collapse>
       <van-collapse-item v-for="stage in stages" :key="stage.stage" :title="stage.title">
         <p>{{ stage.content }}</p>
@@ -15,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { Search } from '@lucide/vue'
 import { ref } from 'vue'
 
 const stages = ref<any[]>([])

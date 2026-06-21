@@ -7,7 +7,7 @@
     >
       <template #left>
         <span @click="showDrawer = true">
-          <van-icon name="chat-o" size="22" />
+          <MessageCircle :size="22" />
         </span>
       </template>
     </van-nav-bar>
@@ -17,7 +17,7 @@
         <!-- 欢迎状态（仅首次进入时显示） -->
         <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-5 py-12">
           <div class="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full">
-            <van-icon name="service-o" size="32" color="var(--van-blue)" />
+            <Bot :size="32" color="var(--van-blue)" />
           </div>
           <h3 class="m-0 text-lg font-semibold">RAG 智能问答</h3>
           <p class="m-0 text-sm text-gray-500 text-center px-4">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
@@ -84,10 +84,7 @@
           class="w-9! h-9! p-0! min-w-0! shrink-0"
           @click="sendMessage"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
+          <Send :size="16" color="currentColor" />
         </van-button>
       </div>
     </div>
@@ -98,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import { Bot, MessageCircle, Send } from '@lucide/vue';
 import { showToast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';

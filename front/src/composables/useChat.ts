@@ -48,9 +48,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
   const sessionId = ref('');
   const autoCollapseTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
-  const showWelcome = computed(
-    () => messages.value.length === 0,
-  );
+  const showWelcome = computed(() => messages.value.length === 0);
 
   const formatMessage = (content: string): string => {
     if (!content) return '';

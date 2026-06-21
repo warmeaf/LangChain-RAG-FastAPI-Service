@@ -7,7 +7,7 @@
       <div
         class="flex flex-col items-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer"
         @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
-        <van-icon name="upgrade" size="40" color="var(--van-gray-5)" />
+        <Upload :size="40" color="var(--van-gray-5)" />
         <p class="m-0 text-sm text-gray-600">{{ $t('knowledgebase.uploadText') }}</p>
         <p class="m-0 text-xs text-gray-400">{{ $t('knowledgebase.uploadHint') }}</p>
         <input ref="fileInput" type="file" multiple accept=".md,.txt,.pdf,.docx,.pptx" class="hidden"
@@ -22,7 +22,7 @@
               <span>{{ formatFileSize(file.size) }}</span>
             </template>
             <template #right-icon>
-              <van-icon name="delete-o" color="var(--van-danger-color)" @click.stop="removeFile(index)" />
+              <Trash2 color="var(--van-danger-color)" class="cursor-pointer" @click.stop="removeFile(index)" />
             </template>
           </van-cell>
         </van-cell-group>
@@ -48,7 +48,7 @@
           <p class="m-0 text-xs text-gray-500">{{ progress.message }}</p>
         </div>
         <div v-if="uploadComplete" class="flex flex-col items-center gap-2 py-4">
-          <van-icon name="success" size="32" color="var(--van-success-color)" />
+          <CheckCircle :size="32" color="var(--van-success-color)" />
           <p class="m-0 font-medium">{{ $t('knowledgebase.uploadComplete') }}</p>
           <p class="m-0 text-sm text-gray-500">{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }}
             {{
@@ -75,7 +75,7 @@
             @click="showDocumentActions(doc)">
             <template #icon>
               <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-                <van-icon :name="getFileIcon(doc.original_filename || doc.filename)" size="16" />
+                <FileIcon :filename="doc.original_filename || doc.filename" :size="16" />
               </div>
             </template>
             <template #label>
@@ -105,12 +105,14 @@
 </template>
 
 <script setup lang="ts">
+import { CheckCircle, Trash2, Upload } from '@lucide/vue';
 import { showDialog, showToast } from 'vant';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import ChunkListPopup from '../components/knowledge/ChunkListPopup.vue';
 import DocumentDetailPopup from '../components/knowledge/DocumentDetailPopup.vue';
+import FileIcon from '../components/knowledge/FileIcon.vue';
 import TabBar from '../components/TabBar.vue';
 import { useKnowledgeUpload } from '../composables/useKnowledgeUpload';
 import { useUserStore } from '../store/user';
@@ -158,7 +160,7 @@ const {
   fileInput, selectedFiles,
   uploading, uploadProgressList, uploadComplete, successCount, failedCount,
   openFilePicker, handleFileSelect, handleDrop, removeFile,
-  formatFileSize, getFileIcon, getStatusType, getStatusText,
+  formatFileSize, getStatusType, getStatusText,
   uploadFiles,
 } = useKnowledgeUpload(fetchDocuments);
 

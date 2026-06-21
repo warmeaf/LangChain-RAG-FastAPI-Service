@@ -7,10 +7,10 @@
   >
     <div class="flex flex-col h-full bg-white">
       <!-- 头部 -->
-      <div class="flex items-center justify-between px-4 h-[46px] border-b border-gray-100">
-        <div class="flex items-center gap-2">
-          <van-icon name="records-o" size="18" color="var(--van-primary-color)" />
-        </div>
+	    <div class="flex items-center justify-between px-4 h-[46px] border-b border-gray-100">
+	        <div class="flex items-center gap-2">
+	          <MessageSquare :size="18" color="var(--van-primary-color)" />
+	        </div>
         <van-button size="small" type="primary" plain @click="createNewSession">新会话</van-button>
       </div>
 
@@ -24,9 +24,9 @@
 
         <!-- 空状态 -->
         <div v-else-if="sessionStore.sessions.length === 0" class="flex flex-col items-center justify-center gap-4 py-16 px-4">
-          <div class="flex items-center justify-center w-14 h-14 bg-gray-50 rounded-full">
-            <van-icon name="chat-o" size="24" color="var(--van-gray-4)" />
-          </div>
+	          <div class="flex items-center justify-center w-14 h-14 bg-gray-50 rounded-full">
+	            <MessageCircle :size="24" color="var(--van-gray-4)" />
+	          </div>
           <p class="text-sm text-gray-500 m-0">暂无会话记录</p>
           <van-button type="primary" size="small" @click="createNewSession">创建新会话</van-button>
         </div>
@@ -43,12 +43,12 @@
               @click="selectSession(session)"
             >
               <template #icon>
-                <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-                  <van-icon name="chat-o" size="14" color="var(--van-gray-5)" />
-                </div>
-              </template>
-              <template #right-icon>
-                <van-icon name="delete-o" size="18" color="var(--van-gray-4)" @click.stop="deleteSession(session.session_id || '')" />
+	                <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
+	                  <MessageCircle :size="14" color="var(--van-gray-5)" />
+	                </div>
+	              </template>
+	              <template #right-icon>
+	                <Trash2 :size="18" color="var(--van-gray-4)" class="cursor-pointer" @click.stop="deleteSession(session.session_id || '')" />
               </template>
             </van-cell>
           </van-cell-group>
@@ -59,6 +59,7 @@
 </template>
 
 <script setup lang="ts">
+import { MessageCircle, MessageSquare, Trash2 } from '@lucide/vue';
 import { showConfirmDialog, showToast } from 'vant';
 import { watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

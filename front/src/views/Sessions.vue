@@ -3,7 +3,7 @@
 
   <div>
     <div>
-      <van-icon name="chat-o" size="24" color="var(--van-primary-color)" />
+      <MessageSquare :size="24" color="var(--van-primary-color)" />
       <h2>历史会话</h2>
       <van-button type="primary" @click="createNewSession">
         新会话
@@ -16,11 +16,7 @@
     </div>
 
     <div v-else-if="sessionStore.sessions.length === 0">
-      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        <line x1="9" y1="10" x2="15" y2="10"/>
-        <line x1="12" y1="7" x2="12" y2="13"/>
-      </svg>
+      <MessageCircle :size="56" :stroke-width="1" color="currentColor" />
       <p>暂无会话记录</p>
       <p>开始一段新的对话吧</p>
       <van-button type="primary" round @click="createNewSession">
@@ -39,14 +35,7 @@
           @click="selectSession(session)"
         >
           <template #right-icon>
-            <span @click.stop="deleteSession(session.session_id)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                <line x1="10" y1="11" x2="10" y2="17"/>
-                <line x1="14" y1="11" x2="14" y2="17"/>
-              </svg>
-            </span>
+            <Trash2 :size="18" :stroke-width="1.5" class="cursor-pointer" @click.stop="deleteSession(session.session_id)" />
           </template>
         </van-cell>
       </van-cell-group>
@@ -76,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import { MessageCircle, MessageSquare, Trash2 } from '@lucide/vue';
 import { showToast, Toast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

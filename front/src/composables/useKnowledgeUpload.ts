@@ -18,7 +18,6 @@ interface UseKnowledgeUploadReturn {
   handleDrop: (event: DragEvent) => void;
   removeFile: (index: number) => void;
   formatFileSize: (bytes: number) => string;
-  getFileIcon: (filename: string) => string;
   getStatusType: (status: string) => 'success' | 'danger' | 'warning';
   getStatusText: (status: string) => string;
   uploadFiles: () => Promise<void>;
@@ -63,20 +62,6 @@ export function useKnowledgeUpload(
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const getFileIcon = (filename: string): string => {
-    const ext = filename?.split('.').pop()?.toLowerCase();
-    const icons: Record<string, string> = {
-      pdf: 'bookmark-o',
-      doc: 'description',
-      docx: 'description',
-      txt: 'notes-o',
-      md: 'orders-o',
-      ppt: 'chart-trending-o',
-      pptx: 'chart-trending-o',
-    };
-    return icons[ext || ''] || 'notes-o';
   };
 
   const getStatusType = (status: string): 'success' | 'danger' | 'warning' => {
@@ -222,7 +207,6 @@ export function useKnowledgeUpload(
     handleDrop,
     removeFile,
     formatFileSize,
-    getFileIcon,
     getStatusType,
     getStatusText,
     uploadFiles,

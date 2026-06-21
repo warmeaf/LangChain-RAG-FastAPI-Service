@@ -9,7 +9,7 @@
 
   <div class="flex flex-col items-center gap-8 px-4 mt-8">
     <div class="flex flex-col items-center gap-3">
-      <van-icon name="service-o" size="48" />
+      <Bot :size="48" color="var(--van-primary-color)" />
       <h2 class="text-xl font-semibold m-0">RAG 智能问答</h2>
     </div>
 
@@ -49,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import { Bot } from '@lucide/vue';
 import { showToast } from 'vant';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';

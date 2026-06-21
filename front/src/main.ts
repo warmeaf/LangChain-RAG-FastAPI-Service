@@ -12,7 +12,6 @@ import {
   Form,
   Grid,
   GridItem,
-  Icon,
   Image,
   List,
   Loading,
@@ -64,7 +63,6 @@ app.use(Form);
 app.use(Field);
 app.use(Image);
 app.use(Toast);
-app.use(Icon);
 app.use(Popup);
 app.use(Radio);
 app.use(RadioGroup);
