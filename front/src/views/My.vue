@@ -1,7 +1,7 @@
 <template>
   <van-nav-bar :title="$t('my.title')" fixed placeholder />
 
-  <div class="flex flex-col gap-6 mt-4">
+  <div class="flex flex-col gap-4 mt-4">
     <div>
       <van-cell-group v-if="isLogin" inset>
         <van-cell center is-link @click="goToProfile">
