@@ -2,14 +2,14 @@
   <div>
     <van-nav-bar :title="$t('knowledgebase.title')" fixed placeholder />
 
-    <div class="flex flex-col gap-4 px-4 mt-4">
-      <!-- 文件上传区域 -->
-      <div
-        class="flex flex-col items-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer"
-        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
-        <Upload :size="40" color="var(--van-gray-5)" />
-        <p class="m-0 text-sm text-gray-600">{{ $t('knowledgebase.uploadText') }}</p>
-        <p class="m-0 text-xs text-gray-400">{{ $t('knowledgebase.uploadHint') }}</p>
+	    <div class="flex flex-col gap-[var(--van-padding-md)] px-[var(--van-padding-md)] mt-4">
+	      <!-- 文件上传区域 -->
+	      <div
+	        class="flex flex-col items-center gap-[var(--van-padding-xs)] py-8 border-2 border-dashed border-[var(--van-gray-3)] rounded-[var(--van-radius-lg)] cursor-pointer"
+	        @click="openFilePicker" @dragover.prevent @drop.prevent="handleDrop">
+	        <Upload :size="40" color="var(--van-gray-5)" />
+	        <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)]">{{ $t('knowledgebase.uploadText') }}</p>
+	        <p class="m-0 text-[var(--van-font-size-sm)] text-[var(--van-text-color-3)]">{{ $t('knowledgebase.uploadHint') }}</p>
         <input ref="fileInput" type="file" multiple accept=".md,.txt,.pdf,.docx,.pptx" class="hidden"
           @change="handleFileSelect" />
       </div>
@@ -35,35 +35,35 @@
       </van-button>
 
       <!-- 上传进度 -->
-      <div v-if="uploading" class="flex flex-col gap-3">
-        <h3 class="text-base font-semibold m-0">{{ $t('knowledgebase.uploadProgress') }}</h3>
-        <div v-for="(progress, index) in uploadProgressList" :key="index" class="flex flex-col gap-1">
-          <div class="flex items-center justify-between">
-            <span class="text-sm truncate">{{ progress.filename }}</span>
-            <van-tag :type="getStatusType(progress.status)" size="medium">
-              {{ getStatusText(progress.status) }}
-            </van-tag>
-          </div>
-          <van-progress :percentage="progress.percentage" v-if="progress.percentage !== null" />
-          <p class="m-0 text-xs text-gray-500">{{ progress.message }}</p>
-        </div>
-        <div v-if="uploadComplete" class="flex flex-col items-center gap-2 py-4">
+	      <div v-if="uploading" class="flex flex-col gap-[var(--van-padding-sm)]">
+	        <h3 class="text-[var(--van-font-size-lg)] font-semibold m-0">{{ $t('knowledgebase.uploadProgress') }}</h3>
+	        <div v-for="(progress, index) in uploadProgressList" :key="index" class="flex flex-col gap-1">
+	          <div class="flex items-center justify-between">
+	            <span class="text-[var(--van-font-size-md)] truncate">{{ progress.filename }}</span>
+	            <van-tag :type="getStatusType(progress.status)" size="medium">
+	              {{ getStatusText(progress.status) }}
+	            </van-tag>
+	          </div>
+	          <van-progress :percentage="progress.percentage" v-if="progress.percentage !== null" />
+	          <p class="m-0 text-[var(--van-font-size-sm)] text-[var(--van-text-color-2)]">{{ progress.message }}</p>
+	        </div>
+	        <div v-if="uploadComplete" class="flex flex-col items-center gap-[var(--van-padding-xs)] py-[var(--van-padding-md)]">
           <CheckCircle :size="32" color="var(--van-success-color)" />
           <p class="m-0 font-medium">{{ $t('knowledgebase.uploadComplete') }}</p>
-          <p class="m-0 text-sm text-gray-500">{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }}
-            {{
-              $t('knowledgebase.failed') }}</p>
+	          <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)]">{{ successCount }} {{ $t('knowledgebase.success') }}, {{ failedCount }}
+	            {{
+	              $t('knowledgebase.failed') }}</p>
         </div>
       </div>
 
       <!-- 文档列表 -->
-      <div v-if="!uploading" class="flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-baseline gap-2">
-            <h3 class="text-base text-gray-600 font-medium m-0">{{ $t('knowledgebase.documentList') }}</h3>
-            <span class="text-sm text-gray-400">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
+	      <div v-if="!uploading" class="flex flex-col gap-[var(--van-padding-sm)]">
+	        <div class="flex items-center justify-between">
+	          <div class="flex items-baseline gap-[var(--van-padding-xs)]">
+	            <h3 class="text-[var(--van-font-size-lg)] text-[var(--van-text-color-2)] font-medium m-0">{{ $t('knowledgebase.documentList') }}</h3>
+	            <span class="text-[var(--van-font-size-md)] text-[var(--van-text-color-3)]">{{ documents.length }} {{ $t('knowledgebase.total') }}</span>
+	          </div>
+	          <div class="flex items-center gap-[var(--van-padding-xs)]">
             <BrushCleaning v-if="documents.length > 0" :size="20" color="var(--van-gray-5)" class="cursor-pointer" @click="handleCleanAll" />
           </div>
         </div>
@@ -72,7 +72,7 @@
           <van-cell v-for="doc in documents" :key="doc.id" :title="doc.original_filename || doc.filename" center is-link
             @click="showDocumentActions(doc)">
             <template #icon>
-              <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
+	              <div class="flex items-center justify-center w-8 h-8 bg-[var(--van-background)] rounded-[var(--van-radius-max)] mr-[var(--van-padding-xs)]">
                 <FileIcon :filename="doc.original_filename || doc.filename" :size="24" />
               </div>
             </template>
@@ -130,7 +130,7 @@ const showActions = ref(false);
 const documentActions = ref([
   { name: '查看内容', action: 'viewContent' },
   { name: '查看切片', action: 'viewChunks' },
-  { name: '删除文档', action: 'deleteDoc', color: '#ee0a24' },
+	  { name: '删除文档', action: 'deleteDoc', color: 'var(--van-danger-color)' },
 ]);
 
 // 文档列表（须在 useKnowledgeUpload 之前声明）
