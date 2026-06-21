@@ -66,7 +66,8 @@
         </div>
       </div>
       
-      <van-cell center class="mb-3 shadow-sm!" :border="false">
+      <van-cell-group inset class="mb-3">
+      <van-cell center class="shadow-sm!" :border="false">
         <template #title>
           <van-field
             v-model="userInput"
@@ -91,6 +92,7 @@
           </van-button>
         </template>
       </van-cell>
+      </van-cell-group>
     </div>
     
     <tab-bar />
