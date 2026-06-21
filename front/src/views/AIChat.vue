@@ -54,7 +54,9 @@
               @toggle="toggleThinking(message)"
             />
             <!-- 回复正文 -->
-            <div v-if="message.content" class="text-sm leading-relaxed" v-html="formatMessage(message.content)"></div>
+            <div v-if="message.content" class="text-sm leading-relaxed">
+              <MarkdownRender :content="message.content" />
+            </div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
             <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)"
               class="typing-indicator">
@@ -102,6 +104,7 @@
 
 <script setup lang="ts">
 import { Bot, History, Send } from '@lucide/vue';
+import MarkdownRender from 'markstream-vue';
 import { showToast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -117,11 +120,11 @@ const sessionStore = useSessionStore();
 const messagesContainer = ref<HTMLElement | null>(null);
 const showDrawer = ref(false);
 
-const {
-  messages, userInput, isLoading, sessionId, showWelcome,
-  formatMessage, toggleThinking,
-  sendMessage, sendQuickQuestion, resetToWelcome, loadSessionHistory,
-} = useChat(messagesContainer);
+	const {
+	  messages, userInput, isLoading, sessionId, showWelcome,
+	  toggleThinking,
+	  sendMessage, sendQuickQuestion, resetToWelcome, loadSessionHistory,
+	} = useChat(messagesContainer);
 
 // 快捷提问
 const quickQuestions = [

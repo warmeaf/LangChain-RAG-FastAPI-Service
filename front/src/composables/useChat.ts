@@ -1,26 +1,9 @@
-import DOMPurify from 'dompurify';
-import hljs from 'highlight.js';
-import { marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
 import { showToast } from 'vant';
 import { computed, nextTick, type Ref, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import 'highlight.js/styles/github.css';
-import 'highlight.js/lib/common';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
 import type { ChatMessage, SessionData, SseEvent } from '../types';
-
-// Configure marked highlight plugin once
-marked.use(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code: string, lang: string) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, { language }).value;
-    },
-  }),
-);
 
 interface UseChatReturn {
   messages: Ref<ChatMessage[]>;
@@ -28,7 +11,6 @@ interface UseChatReturn {
   isLoading: Ref<boolean>;
   sessionId: Ref<string>;
   showWelcome: Ref<boolean>;
-  formatMessage: (content: string) => string;
   toggleThinking: (message: ChatMessage) => void;
   sendMessage: () => Promise<void>;
   sendQuickQuestion: (question: string) => void;
@@ -49,19 +31,6 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
   const autoCollapseTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
   const showWelcome = computed(() => messages.value.length === 0);
-
-  const formatMessage = (content: string): string => {
-    if (!content) return '';
-    try {
-      const parsed = marked.parse(content, {
-        breaks: true,
-        gfm: true,
-      }) as string;
-      return DOMPurify.sanitize(parsed) as string;
-    } catch {
-      return content;
-    }
-  };
 
   const scrollToBottom = (): void => {
     if (messagesContainer?.value) {
@@ -308,7 +277,6 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     isLoading,
     sessionId,
     showWelcome,
-    formatMessage,
     toggleThinking,
     sendMessage,
     sendQuickQuestion,
