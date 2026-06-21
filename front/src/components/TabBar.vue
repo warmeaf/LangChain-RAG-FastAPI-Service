@@ -8,7 +8,7 @@
     </van-tabbar-item>
     <van-tabbar-item name="knowledgebase" @click="router.push('/knowledgebase')">
       <template #icon>
-        <Database :size="18" />
+        <Book :size="18" />
       </template>
       <span>{{ $t('nav.knowledge') }}</span>
     </van-tabbar-item>
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { Database, MessageCircle, User } from '@lucide/vue'
+import { Book, MessageCircle, User } from '@lucide/vue'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
