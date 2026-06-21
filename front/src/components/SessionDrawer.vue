@@ -39,12 +39,7 @@
               center
               @click="selectSession(session)"
             >
-              <template #icon>
-	                <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-	                  <MessageCircle :size="14" color="var(--van-gray-5)" />
-	                </div>
-	              </template>
-	              <template #right-icon>
+		              <template #right-icon>
 	                <Trash2 :size="18" color="var(--van-gray-4)" class="cursor-pointer" @click.stop="deleteSession(session.session_id || '')" />
               </template>
             </van-cell>
