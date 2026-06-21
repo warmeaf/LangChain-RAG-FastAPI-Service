@@ -75,7 +75,7 @@
             @click="showDocumentActions(doc)">
             <template #icon>
               <div class="flex items-center justify-center w-8 h-8 bg-gray-50 rounded-full mr-2">
-                <FileIcon :filename="doc.original_filename || doc.filename" :size="16" />
+                <FileIcon :filename="doc.original_filename || doc.filename" :size="20" />
               </div>
             </template>
             <template #label>
