@@ -5,31 +5,31 @@
     :style="{ width: '68%', height: '100%' }"
     @update:show="$emit('update:show', $event)"
   >
-    <div class="flex flex-col h-full bg-white">
-      <!-- 头部 -->
-			    <div class="flex items-center justify-end px-4 h-[46px] border-b border-gray-100">
+	    <div class="flex flex-col h-full bg-[var(--van-white)]">
+	      <!-- 头部 -->
+				    <div class="flex items-center justify-end px-[var(--van-padding-md)] h-[46px] border-b border-[var(--van-border-color)]">
 		        <MessageCirclePlus :size="18" class="cursor-pointer" @click="createNewSession" />
 	      </div>
 
       <!-- 内容区（可滚动） -->
       <div class="flex-1 overflow-y-auto">
         <!-- 加载中 -->
-        <div v-if="sessionStore.isLoading" class="flex flex-col items-center justify-center gap-2 py-16">
-          <van-loading type="spinner" />
-          <p class="text-sm text-gray-400 m-0">加载中...</p>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-else-if="sessionStore.sessions.length === 0" class="flex flex-col items-center justify-center gap-4 py-16 px-4">
-	          <div class="flex items-center justify-center w-14 h-14 bg-gray-50 rounded-full">
-	            <MessageCircle :size="24" color="var(--van-gray-4)" />
-	          </div>
-          <p class="text-sm text-gray-500 m-0">暂无会话记录</p>
+	        <div v-if="sessionStore.isLoading" class="flex flex-col items-center justify-center gap-[var(--van-padding-xs)] py-16">
+	          <van-loading type="spinner" />
+	          <p class="text-[var(--van-font-size-md)] text-[var(--van-text-color-3)] m-0">加载中...</p>
+	        </div>
+	
+	        <!-- 空状态 -->
+	        <div v-else-if="sessionStore.sessions.length === 0" class="flex flex-col items-center justify-center gap-4 py-16 px-[var(--van-padding-md)]">
+		          <div class="flex items-center justify-center w-14 h-14 bg-[var(--van-background)] rounded-full">
+		            <MessageCircle :size="24" color="var(--van-gray-4)" />
+		          </div>
+	          <p class="text-[var(--van-font-size-md)] text-[var(--van-text-color-2)] m-0">暂无会话记录</p>
           <van-button type="primary" size="small" @click="createNewSession">创建新会话</van-button>
         </div>
 
         <!-- 会话列表 -->
-        <div v-else class="py-3">
+	        <div v-else class="py-[var(--van-padding-sm)]">
           <van-cell-group inset class="m-0!">
             <van-cell
               v-for="session in sessionStore.sessions"

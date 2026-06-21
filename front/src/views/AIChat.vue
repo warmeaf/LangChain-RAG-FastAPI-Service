@@ -13,15 +13,15 @@
     </van-nav-bar>
     
     <div class="flex flex-col" style="height: calc(100dvh - 46px - 50px)">
-      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3" style="scrollbar-gutter: stable">
+      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-[var(--van-padding-md)] py-[var(--van-padding-sm)]" style="scrollbar-gutter: stable">
         <!-- 欢迎状态（仅首次进入时显示） -->
-        <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-5 py-12">
+        <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-[var(--van-padding-lg)] py-12">
           <div class="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full">
             <Bot :size="32" color="var(--van-blue)" />
           </div>
-          <h3 class="m-0 text-lg font-semibold">RAG 智能问答</h3>
-          <p class="m-0 text-sm text-gray-500 text-center px-4">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
-          <div class="flex flex-wrap justify-center gap-2">
+          <h3 class="m-0 text-[var(--van-font-size-lg)] font-semibold">RAG 智能问答</h3>
+          <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)] text-center px-[var(--van-padding-md)]">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
+          <div class="flex flex-wrap justify-center gap-[var(--van-padding-xs)]">
             <van-button
               v-for="(q, i) in quickQuestions"
               :key="i"
@@ -38,14 +38,14 @@
           v-for="(message, index) in messages"
           v-show="!showWelcome || message.role === 'user' || index > 0"
           :key="index"
-          :class="['flex mb-3', message.role === 'user' ? 'justify-end' : 'justify-start']"
+          :class="['flex mb-[var(--van-padding-sm)]', message.role === 'user' ? 'justify-end' : 'justify-start']"
         >
           <div :class="[
               message.role === 'user'
-                ? 'w-fit max-w-[85%] bg-blue-500 text-white rounded-lg px-4 py-3'
+                ? 'w-fit max-w-[85%] bg-[var(--van-primary-color)] text-[var(--van-white)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
                 : message.thinking && message.thinking.length > 0
-                  ? 'w-full max-w-[85%] bg-gray-100 border border-gray-200 rounded-lg px-4 py-3'
-                  : 'w-fit max-w-[85%] bg-gray-100 border border-gray-200 rounded-lg px-4 py-3'
+                  ? 'w-full max-w-[85%] bg-[var(--van-background)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
+                  : 'w-fit max-w-[85%] bg-[var(--van-background)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-md)] py-[var(--van-padding-sm)]'
             ]">
             <!-- 思考过程区域 -->
             <ThinkingSteps
@@ -54,7 +54,7 @@
               @toggle="toggleThinking(message)"
             />
             <!-- 回复正文 -->
-            <div v-if="message.content" class="text-sm leading-relaxed">
+            <div v-if="message.content" class="text-[var(--van-font-size-md)] leading-relaxed">
               <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" />
             </div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
@@ -68,7 +68,7 @@
         </div>
       </div>
       
-      <van-cell-group inset class="mb-3!">
+      <van-cell-group inset class="mb-[var(--van-padding-sm)]!">
       <van-cell center class="shadow-sm!" :border="false">
         <template #title>
           <van-field
@@ -182,7 +182,7 @@ onMounted(async () => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #c1c1c1;
+  background-color: var(--van-gray-5);
   animation: typing-wave 1.2s ease-in-out infinite;
 }
 .typing-indicator span:nth-child(2) {

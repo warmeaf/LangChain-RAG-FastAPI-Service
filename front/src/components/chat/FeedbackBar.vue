@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-3">
+  <div class="flex items-center gap-[var(--van-padding-sm)]">
     <span class="cursor-pointer" @click="$emit('feedback', 'like')">
       <ThumbsUp :size="16" />
     </span>
