@@ -12,7 +12,7 @@ from langchain_core.tools import BaseTool
 
 from app.agent.agent_tools import (
     rag_summary_tools, get_weather_tools, what_time_is_now,
-    get_user_info_tools, reorder_documents_tools,
+    get_user_info_tools, reorder_documents_tools, execute_readonly_sql,
     set_current_user_id,
 )
 from app.core.logger_handler import logger
@@ -25,6 +25,7 @@ _SYSTEM_PROMPT = load_prompt('main_prompt')
 
 DEFAULT_TOOLS = [
     rag_summary_tools,
+    execute_readonly_sql,
     get_weather_tools,
     what_time_is_now,
     get_user_info_tools,

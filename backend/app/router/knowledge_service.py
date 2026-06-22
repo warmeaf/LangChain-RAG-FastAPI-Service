@@ -88,6 +88,63 @@ def _sync_slice_file(file_content: bytes, filename: str, file_index: int, user_i
 class KnowledgeService:
     """知识库管理服务"""
 
+    async def _init_doc_weight(
+        self, user_id: str, md5_hex: str, filename: str, documents: list
+    ):
+        """初始化文档权重记录（与 processor.py 异步路径保持一致）"""
+        from app.models.feedback import DocWeight
+        from app.db.db_config import AsyncSessionLocal
+        from sqlalchemy import select
+        from app.utils.config import rag_config
+
+        # 检测类别（同 processor._detect_category 逻辑）
+        name_lower = filename.lower()
+        category = "default"
+        category_keywords = rag_config.get("doc_category", {
+            "政策制度": ["政策", "制度", "规定", "办法", "条例", "章程"],
+            "技术文档": ["技术", "架构", "api", "接口", "代码", "开发", "部署", "运维"],
+            "产品手册": ["产品", "手册", "指南", "用户", "帮助", "使用说明"],
+            "周报日报": ["周报", "日报", "月报", "季度", "年终总结"],
+            "会议纪要": ["会议", "纪要", "记录", "讨论"],
+        })
+        for cat, keywords in category_keywords.items():
+            for kw in keywords:
+                if kw in name_lower:
+                    category = cat
+                    break
+            if category != "default":
+                break
+
+        # 计算质量分（同 processor._calc_quality_score 逻辑）
+        quality_score = 0.5
+        if documents:
+            total_length = sum(len(doc.page_content) for doc in documents)
+            avg_length = total_length / len(documents)
+            chunk_bonus = min(1.0, len(documents) / 20)
+            length_bonus = min(1.0, avg_length / 300)
+            quality_score = round(0.4 * chunk_bonus + 0.6 * length_bonus, 2)
+
+        category_weights = rag_config.get("doc_category_weights", {})
+        category_weight = category_weights.get(category, category_weights.get("default", 0.7))
+
+        async with AsyncSessionLocal() as session:
+            existing = await session.execute(
+                select(DocWeight).where(
+                    DocWeight.user_id == user_id,
+                    DocWeight.doc_md5 == md5_hex,
+                )
+            )
+            if existing.scalar_one_or_none() is None:
+                session.add(DocWeight(
+                    user_id=user_id,
+                    doc_md5=md5_hex,
+                    doc_filename=filename,
+                    category=category,
+                    weight=category_weight,
+                    quality_score=quality_score,
+                ))
+                await session.commit()
+
     async def handle_add_vector_single(self, file: UploadFile, user_id: str) -> str:
         """处理添加单个向量逻辑"""
         store = VectorStoreService()
@@ -322,6 +379,12 @@ class KnowledgeService:
                         yield self._yield_writing_event(result, state)
 
                         await asyncio.to_thread(store.add_documents, result.documents)
+
+                        # 写入文档权重记录（与 processor.py 异步路径保持一致）
+                        await self._init_doc_weight(
+                            user_id, result.md5, result.filename, result.documents
+                        )
+
                         await store.save_md5_hex(result.md5, result.filename, result.filename, user_id)
 
                         state.success_count += 1
