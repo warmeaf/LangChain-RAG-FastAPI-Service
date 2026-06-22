@@ -44,7 +44,6 @@ media/
 # Database
 *.db
 *.sqlite3
-migrations/
 
 # Build artifacts
 build/
