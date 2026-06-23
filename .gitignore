@@ -94,3 +94,6 @@ ehthumbs_vista.db
 *.temp
 
 volumes/
+
+# WorkBuddy (工具元数据/记忆)
+.workbuddy/
