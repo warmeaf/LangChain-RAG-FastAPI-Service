@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 
 from app.utils.config import rag_config
 from app.utils.factory import embed_model
+from app.utils.retry import rag_retry
 from app.core.logger_handler import logger
 
 from .retrievers.milvus_retriever import MilvusRetriever
@@ -117,6 +118,17 @@ class MilvusService:
         """批量向量化文本 (bge-large-zh, 1024维)"""
         return embed_model.encode(texts, normalize_embeddings=True).tolist()
 
+    async def check_connection(self) -> bool:
+        """健康检查：验证 Milvus 连接是否正常"""
+        def _probe():
+            self.client.list_collections()
+            return True
+        try:
+            return await asyncio.to_thread(_probe)
+        except Exception as e:
+            logger.error(f"Milvus健康检查失败: {e}")
+            return False
+
     def add_documents(self, documents: List[Document]) -> List[str]:
         """向 Milvus 添加文档"""
         if not documents:
@@ -152,6 +164,7 @@ class MilvusService:
         self.client.flush(collection_name=self.collection_name)
         return ids
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def get_adjacent_chunks(
         self, source: str, chunk_indices: set, user_id: str
     ) -> dict:
@@ -199,6 +212,7 @@ class MilvusService:
             return RRFRetriever(retrievers=[milvus_retriever, bm25_retriever], weights=weights)
         return milvus_retriever
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def _get_all_documents_for_user(self, user_id: str) -> List[Document]:
         """获取用户的所有文档 (供 BM25 用)"""
         def _query():

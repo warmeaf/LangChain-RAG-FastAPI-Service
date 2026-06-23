@@ -3,6 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from app.utils.factory import chat_model
 from app.utils.config import rag_config
+from app.utils.retry import rag_retry
 from app.core.logger_handler import logger
 
 
@@ -58,6 +59,7 @@ class QueryProcessor:
         logger.info(f"查询预处理: 原始长度={len(query)} → {len(result)}个变体")
         return result
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def _compress(self, query: str) -> str:
         try:
             chain = COMPRESS_PROMPT | self.llm | StrOutputParser()
@@ -67,6 +69,7 @@ class QueryProcessor:
             logger.warning(f"查询压缩失败: {e}")
             return query
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def _decompose(self, query: str) -> List[str]:
         try:
             chain = DECOMPOSE_PROMPT | self.llm | StrOutputParser()
@@ -79,6 +82,7 @@ class QueryProcessor:
             logger.warning(f"查询拆解失败: {e}")
         return [query]
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def _expand(self, query: str) -> List[str]:
         try:
             chain = EXPAND_PROMPT | self.llm | StrOutputParser()

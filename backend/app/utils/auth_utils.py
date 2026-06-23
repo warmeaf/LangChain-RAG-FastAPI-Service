@@ -1,7 +1,8 @@
 import os
 import json
 from typing import Optional, Dict, Any
-import requests
+
+import httpx
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
@@ -9,6 +10,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.failed_response import logger
 from app.db.redis_config import connect_redis, set_redis_cache
+from app.utils.retry import rag_retry
 
 load_dotenv()
 
@@ -18,6 +20,25 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 # 创建Bearer认证方案
 security = HTTPBearer()
+
+# 模块级 httpx 客户端（复用连接池，应用 shutdown 时需 aclose）
+_http_client: Optional[httpx.AsyncClient] = None
+
+
+async def get_http_client() -> httpx.AsyncClient:
+    """获取模块级 httpx 异步客户端（懒加载，复用连接池）"""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=10.0, trust_env=False)
+    return _http_client
+
+
+async def close_http_client():
+    """关闭模块级 httpx 客户端，供应用 shutdown 调用"""
+    global _http_client
+    if _http_client is not None and not _http_client.is_closed:
+        await _http_client.aclose()
+    _http_client = None
 
 
 def decode_django_jwt(token: str) -> Optional[Dict[str, Any]]:
@@ -97,23 +118,25 @@ async def fetch_user_info_from_django_api(token: str, url: str) -> Optional[Dict
     
     Args:
         token: JWT token字符串
+        url: 请求URL
         
     Returns:
         用户信息字典，如果获取失败返回None
     """
 
     try:
-        # 构建请求头
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        # 调用Django API
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        
+        client = await get_http_client()
+
+        @rag_retry(max_attempts=3, max_wait=8)
+        async def _do_request():
+            return await client.get(url=url, headers=headers)
+
+        response = await _do_request()
+
         if response.status_code == 200:
             user_data = response.json()
             logger.info(f"【debug】 从Django API获取用户信息成功", extra={"path": "auth_utils.fetch_user_info_from_django_api"})

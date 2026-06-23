@@ -73,7 +73,11 @@ class ChatModel(BaseChatModel):
         self._client = AsyncOpenAI(
             api_key=API_KEY_MAP[llm_type],
             base_url=BASE_URL_MAP[llm_type],
-            http_client=httpx.AsyncClient(trust_env=False),
+            http_client=httpx.AsyncClient(
+                trust_env=False,
+                timeout=httpx.Timeout(30.0, connect=5.0),
+            ),
+            timeout=httpx.Timeout(30.0, connect=5.0),
         )
         logger.info(f"🤖 ChatModel 初始化: type={llm_type}, model={self._model_name}, base_url={BASE_URL_MAP[llm_type]}")
 

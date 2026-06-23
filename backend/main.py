@@ -100,3 +100,8 @@ async def shutdown_event():
     """应用关闭时关闭Redis连接"""
     await close_redis()
     logger.info("Redis连接已关闭")
+
+    # 关闭 auth_utils 的 httpx 客户端
+    from app.utils.auth_utils import close_http_client
+    await close_http_client()
+    logger.info("httpx 客户端已关闭")
