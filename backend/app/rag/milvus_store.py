@@ -5,7 +5,7 @@ import uuid
 import time
 from typing import List
 
-from pymilvus import MilvusClient, DataType
+from pymilvus import MilvusClient, DataType, Function, FunctionType
 from langchain_core.documents import Document
 
 from app.utils.config import rag_config
@@ -13,7 +13,6 @@ from app.utils.factory import embed_model
 from app.utils.retry import rag_retry
 from app.core.logger_handler import logger
 
-from .retrievers.milvus_retriever import MilvusRetriever
 from .md5_manager import MD5Store
 from .document_handler import DocumentProcessor
 
@@ -55,34 +54,60 @@ class MilvusService:
             self.md5_store = MD5Store()
             self.document_processor = DocumentProcessor(self, self.md5_store)
 
-            # BM25 检索器进程内缓存（user_id → (timestamp, BM25Retriever)）
-            # 避免每次请求都拉全量文档 + jieba 分词 + 重建索引
-            self._bm25_cache: dict[str, tuple[float, object]] = {}
-            self._bm25_cache_ttl = 300  # 5 分钟
-
             MilvusService._initialized = True
 
     def _ensure_collection(self):
-        """创建或获取 collection"""
+        """创建或获取 collection，自动检测旧 schema 并重建（加 sparse 字段）"""
+        milvus_cfg = rag_config.get("milvus", {})
+        analyzer_type = milvus_cfg.get("analyzer_type", "chinese")
+
         if self.client.has_collection(self.collection_name):
-            logger.info(f"Milvus collection '{self.collection_name}' 已存在，加载完成")
-            return
+            # 检测是否有 sparse 字段，无则 drop 重建（迁移到原生 BM25）
+            desc = self.client.describe_collection(self.collection_name)
+            field_names = {f["name"] for f in desc.get("fields", [])}
+            if "sparse" not in field_names:
+                logger.warning(f"Collection '{self.collection_name}' 无 sparse 字段，drop 后重建（迁移到原生 BM25）")
+                self.client.drop_collection(self.collection_name)
+            else:
+                logger.info(f"Milvus collection '{self.collection_name}' 已存在（含 sparse），加载完成")
+                self._ensure_image_collection()
+                return
 
         schema = self.client.create_schema()
         schema.add_field("id", DataType.VARCHAR, max_length=128, is_primary=True)
-        schema.add_field("text", DataType.VARCHAR, max_length=65535)
+        schema.add_field(
+            "text", DataType.VARCHAR, max_length=65535,
+            enable_analyzer=True,
+            analyzer_params={"type": analyzer_type},
+        )
         schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1024)
+        schema.add_field("sparse", DataType.SPARSE_FLOAT_VECTOR)
         schema.add_field("user_id", DataType.VARCHAR, max_length=64, is_partition_key=True)
         schema.add_field("doc_weight", DataType.FLOAT)
         schema.add_field("created_at", DataType.INT64)
         schema.add_field("metadata", DataType.JSON)
 
+        # BM25 Function：text → sparse 自动生成
+        bm25_function = Function(
+            name="text_bm25_emb",
+            input_field_names=["text"],
+            output_field_names=["sparse"],
+            function_type=FunctionType.BM25,
+        )
+        schema.add_function(bm25_function)
+
         index_params = MilvusClient.prepare_index_params()
         index_params.add_index(
             field_name="embedding",
-            index_type=rag_config["milvus"].get("index_type", "IVF_FLAT"),
-            metric_type=rag_config["milvus"].get("metric_type", "COSINE"),
-            params={"nlist": rag_config["milvus"].get("nlist", 128)},
+            index_type=milvus_cfg.get("index_type", "IVF_FLAT"),
+            metric_type=milvus_cfg.get("metric_type", "COSINE"),
+            params={"nlist": milvus_cfg.get("nlist", 128)},
+        )
+        index_params.add_index(
+            field_name="sparse",
+            index_type="SPARSE_INVERTED_INDEX",
+            metric_type="BM25",
+            params={"inverted_index_algo": "DAAT_MAXSCORE"},
         )
 
         self.client.create_collection(
@@ -90,9 +115,12 @@ class MilvusService:
             schema=schema,
             index_params=index_params,
         )
-        logger.info(f"Milvus collection '{self.collection_name}' 创建完成")
+        logger.info(f"Milvus collection '{self.collection_name}' 创建完成（含 sparse BM25）")
 
-        # 创建图片向量 collection
+        self._ensure_image_collection()
+
+    def _ensure_image_collection(self):
+        """创建或获取图片向量 collection"""
         img_collection = rag_config.get("image_retrieval", {}).get("visual_collection", "rag_image_collection")
         if not self.client.has_collection(img_collection):
             img_schema = self.client.create_schema()
@@ -139,21 +167,14 @@ class MilvusService:
             return False
 
     def add_documents(self, documents: List[Document]) -> List[str]:
-        """向 Milvus 添加文档"""
+        """向 Milvus 添加文档（sparse 向量由 BM25 Function 自动生成）"""
         if not documents:
             return []
 
         ids = [str(uuid.uuid4()) for _ in documents]
 
-        # 给每个 chunk 拼接文档来源前缀，避免跨文档混淆
-        texts = []
-        for doc in documents:
-            source = doc.metadata.get("original_filename") \
-                  or doc.metadata.get("source") \
-                  or doc.metadata.get("filename", "")
-            prefix = f"[文档: {source}] " if source else ""
-            texts.append(prefix + doc.page_content)
-
+        # 直接用原文作为 text（不拼接前缀，避免干扰 BM25 分词语义）
+        texts = [doc.page_content for doc in documents]
         embeddings = self._embed_texts(texts)
         now = int(time.time())
 
@@ -171,12 +192,6 @@ class MilvusService:
 
         self.client.insert(collection_name=self.collection_name, data=data)
         self.client.flush(collection_name=self.collection_name)
-
-        # 文档变更，失效对应用户的 BM25 缓存
-        for doc in documents:
-            uid = doc.metadata.get("user_id")
-            if uid:
-                self._invalidate_bm25_cache(uid)
         return ids
 
     @rag_retry(max_attempts=3, max_wait=8)
@@ -209,66 +224,30 @@ class MilvusService:
         return await asyncio.to_thread(_query)
 
     async def get_retriever(self, query: str = None, user_id: str = None):
-        """获取混合检索器"""
+        """获取 Milvus 原生 hybrid 检索器（dense + sparse BM25 融合）"""
         if not user_id:
             from .retrievers.empty_retriever import EmptyRetriever
             return EmptyRetriever()
 
-        from .retrievers.bm25_retriever import BM25Retriever
-        from .retrievers.rrf_retriever import RRFRetriever
+        from .retrievers.milvus_hybrid_retriever import MilvusHybridRetriever
 
         k = rag_config["retrieval"]["coarse_k"]
-        milvus_retriever = MilvusRetriever(self.client, self.collection_name, embed_model, user_id, k)
+        weights = await self.get_dynamic_weights(query)
+        # weights = [bm25_weight, vector_weight]
+        hybrid_cfg = rag_config.get("hybrid_search", {})
 
-        bm25_retriever = await self._get_bm25_retriever(user_id, k)
-        if bm25_retriever:
-            weights = await self.get_dynamic_weights(query)
-            return RRFRetriever(retrievers=[milvus_retriever, bm25_retriever], weights=weights)
-        return milvus_retriever
-
-    async def _get_bm25_retriever(self, user_id: str, k: int):
-        """获取 BM25 检索器（带进程内 TTL 缓存，避免每次重建）"""
-        now = time.time()
-        cached = self._bm25_cache.get(user_id)
-        if cached and (now - cached[0]) < self._bm25_cache_ttl:
-            return cached[1]
-
-        # 缓存未命中：拉文档 + 建索引
-        from .retrievers.bm25_retriever import BM25Retriever
-        all_docs = await self._get_all_documents_for_user(user_id)
-        if not all_docs:
-            return None
-        bm25 = BM25Retriever(all_docs, k=k)
-        self._bm25_cache[user_id] = (now, bm25)
-        logger.info(f"BM25 索引重建: user={user_id}, docs={len(all_docs)}")
-        return bm25
-
-    def _invalidate_bm25_cache(self, user_id: str = None):
-        """失效 BM25 缓存（文档变更时调用）"""
-        if user_id:
-            self._bm25_cache.pop(user_id, None)
-        else:
-            self._bm25_cache.clear()
-
-    @rag_retry(max_attempts=3, max_wait=8)
-    async def _get_all_documents_for_user(self, user_id: str) -> List[Document]:
-        """获取用户的所有文档 (供 BM25 用)"""
-        def _query():
-            return self.client.query(
-                collection_name=self.collection_name,
-                filter=f'user_id == "{user_id}"',
-                output_fields=["text", "metadata"],
-                limit=self._QUERY_LIMIT,
-            )
-
-        results = await asyncio.to_thread(_query)
-        documents = []
-        for r in results:
-            documents.append(Document(
-                page_content=r["text"],
-                metadata=r.get("metadata", {}),
-            ))
-        return documents
+        return MilvusHybridRetriever(
+            client=self.client,
+            collection_name=self.collection_name,
+            embed_model=embed_model,
+            user_id=user_id,
+            k=k,
+            dense_weight=weights[1],   # vector
+            sparse_weight=weights[0],  # bm25
+            nprobe=self._SEARCH_NPROBE,
+            reranker=hybrid_cfg.get("reranker", "weighted"),
+            rrf_k=hybrid_cfg.get("rrf_k", 60),
+        )
 
     async def delete_user_documents(self, user_id: str):
         """删除用户所有文档"""
@@ -278,7 +257,6 @@ class MilvusService:
         )
         self.client.flush(collection_name=self.collection_name)
         await self.md5_store.delete_user_md5(user_id)
-        self._invalidate_bm25_cache(user_id)
 
     # MD5 代理方法
     async def check_md5_hex(self, md5: str, user_id: str = None) -> bool:
@@ -301,7 +279,6 @@ class MilvusService:
             )
             self.client.flush(collection_name=self.collection_name)
             logger.info(f"【Milvus数据库】已删除用户 {user_id} 的所有文档")
-        self._invalidate_bm25_cache(user_id)
 
     async def delete_single_md5(self, user_id: str, md5_value: str, delete_documents: bool = True):
         """删除单个MD5记录及其对应的知识库内容"""
@@ -325,7 +302,6 @@ class MilvusService:
         from app.utils.image_extractor import delete_image_directory
         delete_image_directory(user_id, md5_value)
 
-        self._invalidate_bm25_cache(user_id)
         return True
 
     async def delete_by_filename(self, user_id: str, filename: str, delete_documents: bool = True):
@@ -350,7 +326,6 @@ class MilvusService:
         from app.utils.image_extractor import delete_image_directory
         delete_image_directory(user_id, md5_to_delete)
 
-        self._invalidate_bm25_cache(user_id)
         return True
 
     async def get_md5_info(self, user_id: str, md5_value: str):
