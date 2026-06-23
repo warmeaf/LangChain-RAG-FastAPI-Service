@@ -84,16 +84,13 @@ async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depend
     logger.info(f"【debug】 检查JWT是否在黑名单中，jti: {jti}", extra={"path": "auth_utils.get_current_user_id"})
     if jti:
         redis_client = await connect_redis()
-        # 使用通配符查询所有可能的黑名单键格式
-        # 匹配任何前缀的blacklist键，如:1:blacklist:{jti}、blacklist:{jti}等
-        wildcard_pattern = f"*blacklist:{jti}"
-        
-        # 获取所有匹配的键
-        matching_keys = await redis_client.keys(wildcard_pattern)
-        logger.info(f"【debug】 检查JWT是否在黑名单中，匹配的键: {matching_keys}", extra={"path": "auth_utils.get_current_user_id"})
-        
-        # 如果有匹配的键，说明JWT在黑名单中
-        if matching_keys:
+        # 黑名单 key 格式固定为 blacklist:{jti}（由 DjangoUserService 写入）
+        blacklist_key = f"blacklist:{jti}"
+        is_blacklisted = await redis_client.get(blacklist_key)
+        logger.info(f"【debug】 检查JWT黑名单，key={blacklist_key}, 命中={is_blacklisted is not None}", extra={"path": "auth_utils.get_current_user_id"})
+
+        # key 存在说明 JWT 已被吊销
+        if is_blacklisted is not None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",

@@ -10,6 +10,12 @@ from app.core.logger_handler import logger
 class MultiFactorRanker:
     """多因素排序：相关性 + 时间衰减 + 文档权重"""
 
+    # 文档权重组合：类别权重 vs 质量评分的相对重要度
+    _W_CATEGORY = 0.7
+    _W_QUALITY = 0.3
+    # 默认质量评分（无 DB 记录时）
+    _DEFAULT_QUALITY = 0.7
+
     def __init__(self):
         ranking_cfg = rag_config.get("ranking", {})
         self.w_relevance = ranking_cfg.get("w_relevance", 0.5)
@@ -52,10 +58,10 @@ class MultiFactorRanker:
                         for dw in result.scalars().all():
                             doc_weights_map[dw.doc_md5] = {
                                 "weight": dw.weight or 1.0,
-                                "quality_score": dw.quality_score or 0.7,
+                                "quality_score": dw.quality_score or self._DEFAULT_QUALITY,
                             }
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"查询文档权重失败，使用默认值: {e}", exc_info=True)
 
         now = time.time()
         scored = []
@@ -72,8 +78,8 @@ class MultiFactorRanker:
             doc_md5 = doc.metadata.get("md5", "")
             stored = doc_weights_map.get(doc_md5, {})
             category_weight = stored.get("weight", float(doc.metadata.get("doc_weight", 1.0)))
-            quality_score = stored.get("quality_score", 0.7)
-            doc_weight = category_weight * 0.7 + quality_score * 0.3
+            quality_score = stored.get("quality_score", self._DEFAULT_QUALITY)
+            doc_weight = category_weight * self._W_CATEGORY + quality_score * self._W_QUALITY
 
             # 综合得分
             final_score = (

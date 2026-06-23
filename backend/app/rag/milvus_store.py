@@ -25,6 +25,10 @@ class MilvusService:
     _initialized = False
     _init_lock = threading.Lock()
 
+    # 查询参数（魔法数字命名化）
+    _QUERY_LIMIT = 10000        # 用户文档列表查询上限
+    _SEARCH_NPROBE = 16         # IVF_FLAT 搜索 nprobe（召回精度/速度权衡）
+
     def __new__(cls):
         if cls._instance is None:
             with cls._init_lock:
@@ -179,7 +183,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=f'user_id == "{user_id}"',
                 output_fields=["text", "metadata"],
-                limit=10000,
+                limit=self._QUERY_LIMIT,
             )
             result = {}
             for r in results:
@@ -220,7 +224,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=f'user_id == "{user_id}"',
                 output_fields=["text", "metadata"],
-                limit=10000,
+                limit=self._QUERY_LIMIT,
             )
 
         results = await asyncio.to_thread(_query)
@@ -328,13 +332,13 @@ class MilvusService:
                         collection_name=self.collection_name,
                         filter=f'user_id == "{user_id}"',
                         output_fields=["text", "metadata"],
-                        limit=10000,
+                        limit=self._QUERY_LIMIT,
                     )
                 else:
                     return self.client.query(
                         collection_name=self.collection_name,
                         output_fields=["text", "metadata"],
-                        limit=10000,
+                        limit=self._QUERY_LIMIT,
                     )
 
             all_docs = await asyncio.to_thread(_query)
@@ -381,7 +385,7 @@ class MilvusService:
                     collection_name=self.collection_name,
                     filter=f'user_id == "{user_id}"',
                     output_fields=["text", "metadata"],
-                    limit=10000,
+                    limit=self._QUERY_LIMIT,
                 )
 
             all_docs = await asyncio.to_thread(_query)
@@ -431,7 +435,7 @@ class MilvusService:
                     collection_name=self.collection_name,
                     filter=f'user_id == "{user_id}"',
                     output_fields=["text", "metadata"],
-                    limit=10000,
+                    limit=self._QUERY_LIMIT,
                 )
 
             all_docs = await asyncio.to_thread(_query)
@@ -516,7 +520,7 @@ class MilvusService:
             return []
 
         img_coll = getattr(self, 'img_collection_name', 'rag_image_collection')
-        search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
+        search_params = {"metric_type": "COSINE", "params": {"nprobe": self._SEARCH_NPROBE}}
 
         def _search():
             return self.client.search(
