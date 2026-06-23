@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 
 import torch
 from sentence_transformers import CrossEncoder
+from app.utils.config import rag_config
 from app.core.logger_handler import logger
 
 
@@ -48,9 +49,10 @@ class ReorderService:
             pairs = [(query, doc) for doc in documents]
             model = await self.model
 
+            batch_size = rag_config.get("reranker", {}).get("batch_size", 16)
             with torch.no_grad():
                 raw_scores = await asyncio.to_thread(
-                    model.predict, pairs, batch_size=1
+                    model.predict, pairs, batch_size=batch_size
                 )
 
             min_score = min(raw_scores)

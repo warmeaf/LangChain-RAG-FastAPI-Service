@@ -30,6 +30,10 @@ class RagService:
     # 文档去重：按内容前缀去重，避免重复 chunk 进入下游
     _DEDUP_CONTENT_PREFIX = 100
 
+    # 上下文组装预算：按字符数截断（1 中文字 ≈ 1.5 token，6000 字符 ≈ 9K token）
+    # 为 64K context window 留足输出空间，防御性保护
+    _MAX_CONTEXT_CHARS = 6000
+
     def __init__(self, user_id: str = None, thinking_callback=None):
         self.milvus = MilvusService()
         self.retriever = None
@@ -289,10 +293,16 @@ class RagService:
         max_docs = rag_config["retrieval"]["max_documents"]
         docs = documents[:max_docs]
 
-        # 直接拼接所有文档原文作为上下文
+        # 拼接文档原文作为上下文，带 [编号] 供 LLM 引用，按字符预算截断
         combined = ""
+        total_chars = 0
         for i, doc in enumerate(docs, 1):
-            combined += f"【参考资料{i}】\n{doc.page_content}\n\n"
+            chunk_text = f"[{i}] {doc.page_content}\n\n"
+            if total_chars + len(chunk_text) > self._MAX_CONTEXT_CHARS:
+                logger.info(f"上下文达字符预算({self._MAX_CONTEXT_CHARS})，截断于第 {i} 篇文档")
+                break
+            combined += chunk_text
+            total_chars += len(chunk_text)
 
         try:
             final = await asyncio.wait_for(

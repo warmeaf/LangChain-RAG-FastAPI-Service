@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -42,10 +43,10 @@ class QueryProcessor:
         # Step 2: 拆分子问题
         sub_queries = await self._decompose(processed)
 
-        # Step 3: 查询扩展
+        # Step 3: 查询扩展（并行）
+        expand_results = await asyncio.gather(*[self._expand(q) for q in sub_queries])
         all_variants = []
-        for q in sub_queries:
-            expanded = await self._expand(q)
+        for expanded in expand_results:
             all_variants.extend(expanded)
 
         # 去重保持顺序
