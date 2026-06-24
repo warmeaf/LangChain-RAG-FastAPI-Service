@@ -5,14 +5,14 @@ import uuid
 import time
 from typing import List
 
-from pymilvus import MilvusClient, DataType
+from pymilvus import MilvusClient, DataType, Function, FunctionType
 from langchain_core.documents import Document
 
 from app.utils.config import rag_config
 from app.utils.factory import embed_model
+from app.utils.retry import rag_retry
 from app.core.logger_handler import logger
 
-from .retrievers.milvus_retriever import MilvusRetriever
 from .md5_manager import MD5Store
 from .document_handler import DocumentProcessor
 
@@ -23,6 +23,10 @@ class MilvusService:
     _instance = None
     _initialized = False
     _init_lock = threading.Lock()
+
+    # 查询参数（魔法数字命名化）
+    _QUERY_LIMIT = 10000        # 用户文档列表查询上限
+    _SEARCH_NPROBE = 16         # IVF_FLAT 搜索 nprobe（召回精度/速度权衡）
 
     def __new__(cls):
         if cls._instance is None:
@@ -53,26 +57,57 @@ class MilvusService:
             MilvusService._initialized = True
 
     def _ensure_collection(self):
-        """创建或获取 collection"""
+        """创建或获取 collection，自动检测旧 schema 并重建（加 sparse 字段）"""
+        milvus_cfg = rag_config.get("milvus", {})
+        analyzer_type = milvus_cfg.get("analyzer_type", "chinese")
+
         if self.client.has_collection(self.collection_name):
-            logger.info(f"Milvus collection '{self.collection_name}' 已存在，加载完成")
-            return
+            # 检测是否有 sparse 字段，无则 drop 重建（迁移到原生 BM25）
+            desc = self.client.describe_collection(self.collection_name)
+            field_names = {f["name"] for f in desc.get("fields", [])}
+            if "sparse" not in field_names:
+                logger.warning(f"Collection '{self.collection_name}' 无 sparse 字段，drop 后重建（迁移到原生 BM25）")
+                self.client.drop_collection(self.collection_name)
+            else:
+                logger.info(f"Milvus collection '{self.collection_name}' 已存在（含 sparse），加载完成")
+                self._ensure_image_collection()
+                return
 
         schema = self.client.create_schema()
         schema.add_field("id", DataType.VARCHAR, max_length=128, is_primary=True)
-        schema.add_field("text", DataType.VARCHAR, max_length=65535)
+        schema.add_field(
+            "text", DataType.VARCHAR, max_length=65535,
+            enable_analyzer=True,
+            analyzer_params={"type": analyzer_type},
+        )
         schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1024)
+        schema.add_field("sparse", DataType.SPARSE_FLOAT_VECTOR)
         schema.add_field("user_id", DataType.VARCHAR, max_length=64, is_partition_key=True)
         schema.add_field("doc_weight", DataType.FLOAT)
         schema.add_field("created_at", DataType.INT64)
         schema.add_field("metadata", DataType.JSON)
 
+        # BM25 Function：text → sparse 自动生成
+        bm25_function = Function(
+            name="text_bm25_emb",
+            input_field_names=["text"],
+            output_field_names=["sparse"],
+            function_type=FunctionType.BM25,
+        )
+        schema.add_function(bm25_function)
+
         index_params = MilvusClient.prepare_index_params()
         index_params.add_index(
             field_name="embedding",
-            index_type=rag_config["milvus"].get("index_type", "IVF_FLAT"),
-            metric_type=rag_config["milvus"].get("metric_type", "COSINE"),
-            params={"nlist": rag_config["milvus"].get("nlist", 128)},
+            index_type=milvus_cfg.get("index_type", "IVF_FLAT"),
+            metric_type=milvus_cfg.get("metric_type", "COSINE"),
+            params={"nlist": milvus_cfg.get("nlist", 128)},
+        )
+        index_params.add_index(
+            field_name="sparse",
+            index_type="SPARSE_INVERTED_INDEX",
+            metric_type="BM25",
+            params={"inverted_index_algo": "DAAT_MAXSCORE"},
         )
 
         self.client.create_collection(
@@ -80,9 +115,12 @@ class MilvusService:
             schema=schema,
             index_params=index_params,
         )
-        logger.info(f"Milvus collection '{self.collection_name}' 创建完成")
+        logger.info(f"Milvus collection '{self.collection_name}' 创建完成（含 sparse BM25）")
 
-        # 创建图片向量 collection
+        self._ensure_image_collection()
+
+    def _ensure_image_collection(self):
+        """创建或获取图片向量 collection"""
         img_collection = rag_config.get("image_retrieval", {}).get("visual_collection", "rag_image_collection")
         if not self.client.has_collection(img_collection):
             img_schema = self.client.create_schema()
@@ -117,22 +155,26 @@ class MilvusService:
         """批量向量化文本 (bge-large-zh, 1024维)"""
         return embed_model.encode(texts, normalize_embeddings=True).tolist()
 
+    async def check_connection(self) -> bool:
+        """健康检查：验证 Milvus 连接是否正常"""
+        def _probe():
+            self.client.list_collections()
+            return True
+        try:
+            return await asyncio.to_thread(_probe)
+        except Exception as e:
+            logger.error(f"Milvus健康检查失败: {e}")
+            return False
+
     def add_documents(self, documents: List[Document]) -> List[str]:
-        """向 Milvus 添加文档"""
+        """向 Milvus 添加文档（sparse 向量由 BM25 Function 自动生成）"""
         if not documents:
             return []
 
         ids = [str(uuid.uuid4()) for _ in documents]
 
-        # 给每个 chunk 拼接文档来源前缀，避免跨文档混淆
-        texts = []
-        for doc in documents:
-            source = doc.metadata.get("original_filename") \
-                  or doc.metadata.get("source") \
-                  or doc.metadata.get("filename", "")
-            prefix = f"[文档: {source}] " if source else ""
-            texts.append(prefix + doc.page_content)
-
+        # 直接用原文作为 text（不拼接前缀，避免干扰 BM25 分词语义）
+        texts = [doc.page_content for doc in documents]
         embeddings = self._embed_texts(texts)
         now = int(time.time())
 
@@ -152,6 +194,7 @@ class MilvusService:
         self.client.flush(collection_name=self.collection_name)
         return ids
 
+    @rag_retry(max_attempts=3, max_wait=8)
     async def get_adjacent_chunks(
         self, source: str, chunk_indices: set, user_id: str
     ) -> dict:
@@ -166,7 +209,7 @@ class MilvusService:
                 collection_name=self.collection_name,
                 filter=f'user_id == "{user_id}"',
                 output_fields=["text", "metadata"],
-                limit=10000,
+                limit=self._QUERY_LIMIT,
             )
             result = {}
             for r in results:
@@ -181,42 +224,30 @@ class MilvusService:
         return await asyncio.to_thread(_query)
 
     async def get_retriever(self, query: str = None, user_id: str = None):
-        """获取混合检索器"""
+        """获取 Milvus 原生 hybrid 检索器（dense + sparse BM25 融合）"""
         if not user_id:
             from .retrievers.empty_retriever import EmptyRetriever
             return EmptyRetriever()
 
-        from .retrievers.bm25_retriever import BM25Retriever
-        from .retrievers.rrf_retriever import RRFRetriever
+        from .retrievers.milvus_hybrid_retriever import MilvusHybridRetriever
 
         k = rag_config["retrieval"]["coarse_k"]
-        milvus_retriever = MilvusRetriever(self.client, self.collection_name, embed_model, user_id, k)
+        weights = await self.get_dynamic_weights(query)
+        # weights = [bm25_weight, vector_weight]
+        hybrid_cfg = rag_config.get("hybrid_search", {})
 
-        all_docs = await self._get_all_documents_for_user(user_id)
-        if all_docs:
-            bm25_retriever = BM25Retriever(all_docs, k=k)
-            weights = await self.get_dynamic_weights(query)
-            return RRFRetriever(retrievers=[milvus_retriever, bm25_retriever], weights=weights)
-        return milvus_retriever
-
-    async def _get_all_documents_for_user(self, user_id: str) -> List[Document]:
-        """获取用户的所有文档 (供 BM25 用)"""
-        def _query():
-            return self.client.query(
-                collection_name=self.collection_name,
-                filter=f'user_id == "{user_id}"',
-                output_fields=["text", "metadata"],
-                limit=10000,
-            )
-
-        results = await asyncio.to_thread(_query)
-        documents = []
-        for r in results:
-            documents.append(Document(
-                page_content=r["text"],
-                metadata=r.get("metadata", {}),
-            ))
-        return documents
+        return MilvusHybridRetriever(
+            client=self.client,
+            collection_name=self.collection_name,
+            embed_model=embed_model,
+            user_id=user_id,
+            k=k,
+            dense_weight=weights[1],   # vector
+            sparse_weight=weights[0],  # bm25
+            nprobe=self._SEARCH_NPROBE,
+            reranker=hybrid_cfg.get("reranker", "weighted"),
+            rrf_k=hybrid_cfg.get("rrf_k", 60),
+        )
 
     async def delete_user_documents(self, user_id: str):
         """删除用户所有文档"""
@@ -314,13 +345,13 @@ class MilvusService:
                         collection_name=self.collection_name,
                         filter=f'user_id == "{user_id}"',
                         output_fields=["text", "metadata"],
-                        limit=10000,
+                        limit=self._QUERY_LIMIT,
                     )
                 else:
                     return self.client.query(
                         collection_name=self.collection_name,
                         output_fields=["text", "metadata"],
-                        limit=10000,
+                        limit=self._QUERY_LIMIT,
                     )
 
             all_docs = await asyncio.to_thread(_query)
@@ -367,7 +398,7 @@ class MilvusService:
                     collection_name=self.collection_name,
                     filter=f'user_id == "{user_id}"',
                     output_fields=["text", "metadata"],
-                    limit=10000,
+                    limit=self._QUERY_LIMIT,
                 )
 
             all_docs = await asyncio.to_thread(_query)
@@ -417,7 +448,7 @@ class MilvusService:
                     collection_name=self.collection_name,
                     filter=f'user_id == "{user_id}"',
                     output_fields=["text", "metadata"],
-                    limit=10000,
+                    limit=self._QUERY_LIMIT,
                 )
 
             all_docs = await asyncio.to_thread(_query)
@@ -502,7 +533,7 @@ class MilvusService:
             return []
 
         img_coll = getattr(self, 'img_collection_name', 'rag_image_collection')
-        search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
+        search_params = {"metric_type": "COSINE", "params": {"nprobe": self._SEARCH_NPROBE}}
 
         def _search():
             return self.client.search(

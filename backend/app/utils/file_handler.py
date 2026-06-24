@@ -256,10 +256,57 @@ def word_loader_sync(file_path: str) -> List[Document]:
         from unstructured.partition.docx import partition_docx
         from app.rag.document_handler.format_preserver import aggregate_by_length
         elements = partition_docx(filename=abs_file_path)
-        return aggregate_by_length(elements, abs_file_path)
+        if elements:
+            return aggregate_by_length(elements, abs_file_path)
+
+        # partition_docx 返回空 → 尝试回退提取浮动文本框中的内容
+        # （Aspose.Words 等自动化工具生成的 docx 使用 wp:anchor 浮动形状）
+        logger.debug(f"【WORD文件加载(同步)】partition_docx 返回空，尝试回退: {file_path}")
+        return _extract_textbox_docx(abs_file_path)
     except Exception as e:
         logger.error(f"【WORD文件加载(同步)】失败: {e}")
         return []
+
+
+def _extract_textbox_docx(file_path: str) -> List[Document]:
+    """从 docx 浮动文本框 (wps:wsp / wp:anchor) 中手动提取文本
+
+    方案 A 精神：扩展 XPath 覆盖 wp:anchor 浮动形状
+    方案 B 精神：直接遍历 w:txbxContent 提取全部文本内容
+    提取结果复用 aggregate_by_length 进行聚合。
+    """
+    from lxml import etree
+    from docx import Document as DocxDocument
+    from app.rag.document_handler.format_preserver import aggregate_by_length
+
+    W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+
+    doc = DocxDocument(file_path)
+    root = doc.element.getroottree().getroot()
+
+    # 遍历所有 w:txbxContent（文本框内容容器），收集每个内部段落的文字
+    items: list[str] = []
+    for txbx in root.iter(f'{{{W_NS}}}txbxContent'):
+        for p in txbx.iter(f'{{{W_NS}}}p'):
+            text = ''.join(t.text or '' for t in p.iter(f'{{{W_NS}}}t'))
+            if text.strip():
+                items.append(text.strip())
+
+    if not items:
+        return []
+
+    # 构建简单对象供 aggregate_by_length 使用（category=None → 纯文本，无 Markdown 标记）
+    class _TextElement:
+        __slots__ = ('_text',)
+        def __init__(self, text: str):
+            self._text = text
+        def __str__(self) -> str:
+            return self._text
+        @property
+        def category(self):
+            return None
+
+    return aggregate_by_length([_TextElement(t) for t in items], file_path)
 
 
 def markdown_loader_sync(file_path: str) -> List[Document]:

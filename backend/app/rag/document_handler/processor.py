@@ -85,7 +85,7 @@ class DocumentProcessor:
             from .format_preserver import aggregate_by_length
             from unstructured.partition.docx import partition_docx
             elements = partition_docx(filename=read_path)
-            chunk_cfg = self.config.get("chunking", {}).get("default", {})
+            chunk_cfg = rag_config.get("chunking", {}).get("default", {})
             chunk_size = chunk_cfg.get("chunk_size", 400)
             return aggregate_by_length(elements, read_path, chunk_size)
         else:

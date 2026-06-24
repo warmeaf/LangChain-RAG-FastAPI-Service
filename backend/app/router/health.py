@@ -4,6 +4,7 @@ from fastapi.routing import APIRouter
 from app.core.success_response import success_response
 from app.db.db_config import check_mysql_connection
 from app.db.redis_config import check_redis_connection
+from app.rag.milvus_store import MilvusService
 
 health_router = APIRouter(prefix="/health")
 
@@ -24,7 +25,9 @@ async def get_health_readiness():
     mysql_status = await check_mysql_connection()
     # 检查redis连接
     redis_status = await check_redis_connection()
-    if mysql_status and redis_status:
+    # 检查Milvus连接
+    milvus_status = await MilvusService().check_connection()
+    if mysql_status and redis_status and milvus_status:
         return success_response(
             message="health readiness status",
             data={
@@ -32,5 +35,5 @@ async def get_health_readiness():
             }
         )
     else:
-        raise HTTPException(status_code=503, detail="MySQL或Redis连接失败")
+        raise HTTPException(status_code=503, detail="MySQL/Redis/Milvus连接失败")
 

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设计系统 — 颜色</title>
+    <link rel="stylesheet" href="./tokens.css">
+    <style>
+        body {
+            background-color: var(--color-page-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            margin: 0;
+            padding: 40px;
+            color: var(--color-text-title);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 1000px;
+            max-width: 100%;
+        }
+
+        /* 顶部标题区 */
+        header {
+            margin-bottom: 40px;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .logo-title span {
+            margin-right: 8px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        /* 模块卡片 */
+        section {
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--color-popup-bg);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 色块通用样式 */
+        .color-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .swatch-item {
+            text-align: left;
+            width: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .swatch {
+            width: 72px;
+            height: 72px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .swatch-label {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 色值标签：明暗主题切换 */
+        .hsl-v.dark { display: none; }
+        [data-theme="dark"] .hsl-v:not(.dark):not(.same) { display: none; }
+        [data-theme="dark"] .hsl-v.dark { display: inline; }
+
+        .swatch-name {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* 02 辅助色布局 */
+        .secondary-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .row-label {
+            width: 80px;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+            margin-right: 12px;
+        }
+
+        .secondary-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 04 语义色布局 */
+        .semantic-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .semantic-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 05 背景/文字/边框布局 */
+        .surface-container {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .surface-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .surface-label {
+            width: 100px;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        .surface-item {
+            display: flex;
+            align-items: center;
+            margin-right: 40px;
+        }
+
+        .surface-swatch {
+            width: 56px;
+            height: 56px;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+
+        .text-info {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+        }
+
+        .text-info b {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 2px;
+            color: var(--color-text-secondary)
+        }
+
+        /* 特殊修饰 */
+        .star::after {
+            content: " ★";
+            font-size: 12px;
+        }
+
+        .on-primary {
+            background-color: var(--color-primary-400);
+            width: 90px;
+            height: 76px;
+            color: var(--color-neutral-0);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .border-sample {
+            width: 50px;
+            height: 24px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        /* ── 暗色模式切换按钮 ── */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--color-border-default);
+            background: var(--color-popup-bg);
+            color: var(--color-text);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .theme-toggle:hover {
+            border-color: var(--color-border-focus);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 暗色模式切换 -->
+    <button id="themeToggle" class="theme-toggle" title="切换明暗主题">🌙</button>
+
+    <div class="container">
+        <header id="header"></header>
+        <main id="content"></main>
+    </div>
+
+    <script src="./tokens.js"></script>
+    <script>
+    (function() {
+        var T = window.__TOKENS__;
+        if (!T) { document.getElementById('content').textContent = '错误：无法加载 tokens.js'; return; }
+
+        // ─── 暗色模式切换 ───────────────────────────────────────────
+        var themeBtn = document.getElementById('themeToggle');
+        var html = document.documentElement;
+
+        function getTheme() { return html.getAttribute('data-theme'); }
+        function setTheme(t) {
+            html.setAttribute('data-theme', t);
+            localStorage.setItem('color-theme', t);
+            updateThemeIcon(t);
+        }
+
+        function updateThemeIcon(t) {
+            themeBtn.textContent = (t === 'dark') ? '☀️' : '🌙';
+        }
+
+        // 初始化：从 localStorage 读取，无记录则跟随系统
+        var saved = localStorage.getItem('color-theme');
+        if (saved) {
+            setTheme(saved);
+        } else {
+            updateThemeIcon(getTheme() || 'light');
+        }
+
+        themeBtn.addEventListener('click', function() {
+            var next = (getTheme() === 'dark') ? 'light' : 'dark';
+            setTheme(next);
+        });
+
+        // ─── 辅助函数 ──────────────────────────────────────────────
+        function cssVar(name) { return 'var(--' + name + ')'; }
+
+        // 生成明暗双标签 HTML（light=dark 相同时只输出一个，加 .same 避免被隐藏）
+        function formatHSLDual(lightHsl, darkHsl) {
+            var same = (lightHsl.h === darkHsl.h && lightHsl.s === darkHsl.s && lightHsl.l === darkHsl.l);
+            if (same) {
+                return '<span class="hsl-v same">' + T.formatHSL(lightHsl) + '</span>';
+            }
+            return '<span class="hsl-v">' + T.formatHSL(lightHsl) + '</span>' +
+                   '<span class="hsl-v dark">' + T.formatHSL(darkHsl) + '</span>';
+        }
+
+        // ─── 生成边框 CSS（响应明暗主题） ──────────────────────────
+        function generateBorderCSS() {
+            var rules = [];
+
+            function addRule(cls, lightBorder, darkBorder) {
+                rules.push(':root { --' + cls + ': ' + (lightBorder ? '1px solid var(--' + lightBorder + ')' : 'none') + '; }');
+                rules.push('[data-theme="dark"] { --' + cls + ': ' + (darkBorder ? '1px solid var(--' + darkBorder + ')' : 'none') + '; }');
+                rules.push('.' + cls + ' { border: var(--' + cls + '); }');
+            }
+
+            // 扫描所有 token 中的 border 配置
+            for (var si = 0; si < T.sections.length; si++) {
+                var sec = T.sections[si];
+                if (sec.rows) {
+                    for (var ri = 0; ri < sec.rows.length; ri++) {
+                        var row = sec.rows[ri];
+                        if (row.tokens) {
+                            var keys = Object.keys(row.tokens);
+                            for (var ki = 0; ki < keys.length; ki++) {
+                                var token = row.tokens[keys[ki]];
+                                if (token.border) {
+                                    var cls = 'sb-' + keys[ki].replace(/^color-/, '');
+                                    // 兼容旧 boolean 格式：true → 仅 light 模式带边框
+                                    var borderCfg = (typeof token.border === 'object') ? token.border : { light: 'color-neutral-100' };
+                                    addRule(cls, borderCfg.light || null, borderCfg.dark || null);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // popup-bg 特殊处理：仅 light 模式带边框
+            addRule('sb-popup-bg', 'color-neutral-100', 'color-neutral-700');
+
+            var styleEl = document.createElement('style');
+            styleEl.id = 'border-css';
+            styleEl.textContent = rules.join('\n');
+            document.head.appendChild(styleEl);
+        }
+
+        // ─── 渲染入口 ──────────────────────────────────────────────
+        function renderAll() {
+            // Header
+            var header = document.getElementById('header');
+            header.innerHTML =
+                '<div class="logo-title">' + T.meta.name + '</div>' +
+                '<div class="subtitle">' + T.meta.description + '</div>';
+
+            // Sections
+            var content = document.getElementById('content');
+            var html = '';
+            for (var i = 0; i < T.sections.length; i++) {
+                var sec = T.sections[i];
+                switch (sec.renderType) {
+                    case 'scale': html += renderScale(sec); break;
+                    case 'semantic': html += renderSemantic(sec); break;
+                    case 'surface-text-border': html += renderSurfaceTextBorder(sec); break;
+                }
+            }
+            content.innerHTML = html;
+        }
+
+        // ─── renderScale: 色阶类（Primary / Secondary / Neutral 等） ─
+        function renderScale(sec) {
+            var h = '';
+            h += '<section>';
+            h += '<div class="section-title">' + sec.sectionTitle + '</div>';
+            h += '<div class="card">';
+
+            var rows = sec.rows;
+            // 单行且 showStepNumbers → 平面网格（Primary 风格）
+            var flat = (rows.length === 1 && rows[0].showStepNumbers);
+
+            for (var ri = 0; ri < rows.length; ri++) {
+                var row = rows[ri];
+
+                if (!flat) {
+                    // 有行标签的布局
+                    h += '<div class="secondary-row">';
+                    if (row.displayNameCN) {
+                        // 只在有中文名时才渲染 row-label（避免 neutral 显示狭窄标签）
+                        h += '<div class="row-label">' + row.displayNameCN + '<br>' + row.displayNameEN + '</div>';
+                    }
+                }
+
+                h += '<div class="color-grid">';
+                for (var si = 0; si < row.steps.length; si++) {
+                    var step = row.steps[si];
+                    var tokenKey = 'color-' + row.id + '-' + step;
+                    var token = row.tokens[tokenKey];
+                    var isAccent = (row.accentStep === step);
+                    var hslLabel = formatHSLDual(token.light, token.dark);
+
+                    h += '<div class="swatch-item">';
+                    var borderClass = '';
+                    if (token.border) {
+                        borderClass = ' sb-' + tokenKey.replace(/^color-/, '');
+                    }
+                    h += '<div class="swatch' + borderClass + '" style="background: ' + cssVar(tokenKey) + ';"></div>';
+
+                    var labelClass = 'swatch-label' + (isAccent ? ' star' : '');
+                    h += '<div class="' + labelClass + '">';
+                    if (flat && row.showStepNumbers) {
+                        h += '<span class="swatch-name">' + step + '</span>';
+                    }
+                    h += hslLabel + '</div>';
+                    h += '</div>';
+                }
+                h += '</div>'; // .color-grid
+
+                if (!flat) {
+                    h += '</div>'; // .secondary-row
+                }
+            }
+
+            h += '</div>'; // .card
+            h += '</section>';
+            return h;
+        }
+
+        // ─── renderSemantic: 语义色（成功/警告/错误/信息） ──────────
+        function renderSemantic(sec) {
+            var h = '';
+            h += '<section>';
+            h += '<div class="section-title">' + sec.sectionTitle + '</div>';
+            h += '<div class="card">';
+
+            for (var ri = 0; ri < sec.rows.length; ri++) {
+                var row = sec.rows[ri];
+                h += '<div class="semantic-row">';
+                h += '<div class="row-label">' + row.displayNameCN + '<br>' + row.displayNameEN + '</div>';
+
+                for (var si = 0; si < row.steps.length; si++) {
+                    var step = row.steps[si];
+                    var tokenKey = 'color-' + row.id + '-' + step;
+                    var token = row.tokens[tokenKey];
+                    var hslLabel = formatHSLDual(token.light, token.dark);
+
+                    h += '<div class="swatch-item" style="margin-right:20px;">';
+                    h += '<div class="swatch" style="background: ' + cssVar(tokenKey) + ';"></div>';
+
+                    // step 400 的标签使用语义色本身
+                    var labelColor = (step === 400) ? cssVar(tokenKey) : '';
+                    h += '<div class="swatch-label"' + (labelColor ? ' style="color:' + labelColor + '"' : '') + '>';
+                    h += hslLabel + '</div>';
+                    h += '</div>';
+                }
+
+                h += '</div>'; // .semantic-row
+            }
+
+            h += '</div>'; // .card
+            h += '</section>';
+            return h;
+        }
+
+        // ─── renderSurfaceTextBorder: 背景/文字/边框 ───────────────
+        function renderSurfaceTextBorder(sec) {
+            var h = '';
+            h += '<section>';
+            h += '<div class="section-title">' + sec.sectionTitle + '</div>';
+            h += '<div class="card">';
+            h += '<div class="surface-container">';
+
+            for (var bi = 0; bi < sec.blocks.length; bi++) {
+                var block = sec.blocks[bi];
+                switch (block.renderType) {
+                    case 'surface': h += renderSurfaceBlock(block); break;
+                    case 'text': h += renderTextBlock(block); break;
+                    case 'border': h += renderBorderBlock(block); break;
+                }
+            }
+
+            h += '</div>'; // .surface-container
+            h += '</div>'; // .card
+            h += '</section>';
+            return h;
+        }
+
+        function renderSurfaceBlock(block) {
+            var h = '';
+            h += '<div class="surface-row">';
+            h += '<div class="surface-label">' + block.displayNameCN + '<br>' + block.displayNameEN + '</div>';
+
+            for (var i = 0; i < block.items.length; i++) {
+                var item = block.items[i];
+                var hslLabel = formatHSLDual(item.light, item.dark);
+
+                h += '<div class="surface-item">';
+                // popup-bg 在 light 模式加边框
+                var borderClass = (item.name === 'color-popup-bg') ? ' sb-popup-bg' : '';
+                h += '<div class="surface-swatch' + borderClass + '" style="background: ' + cssVar(item.name) + ';"></div>';
+                h += '<div class="text-info">' + hslLabel + '<br>' + item.label + '</div>';
+                h += '</div>';
+            }
+
+            h += '</div>'; // .surface-row
+            return h;
+        }
+
+        function renderTextBlock(block) {
+            var h = '';
+            h += '<div class="surface-row" style="align-items: flex-end;">';
+            h += '<div class="surface-label">' + block.displayNameCN + '<br>' + block.displayNameEN + '</div>';
+
+            for (var i = 0; i < block.items.length; i++) {
+                var item = block.items[i];
+                var hslLabel = formatHSLDual(item.light, item.dark);
+
+                h += '<div class="surface-item">';
+                h += '<div class="text-info" style="color: ' + cssVar(item.name) + ';">';
+                h += item.label + '<br>' + hslLabel + '</div>';
+                h += '</div>';
+            }
+
+            // extras
+            if (block.extras) {
+                for (var ei = 0; ei < block.extras.length; ei++) {
+                    var extra = block.extras[ei];
+                    if (extra.id === 'on-primary') {
+                        var fgLight = T.getTokenValue(extra.fgToken, 'light');
+                        var fgDark = T.getTokenValue(extra.fgToken, 'dark');
+                        h += '<div class="on-primary" style="background:' + cssVar(extra.bgToken) + '; color:' + cssVar(extra.fgToken) + ';">';
+                        h += extra.label + '<br>' + formatHSLDual(fgLight, fgDark);
+                        h += '</div>';
+                    }
+                }
+            }
+
+            h += '</div>'; // .surface-row
+            return h;
+        }
+
+        function renderBorderBlock(block) {
+            var h = '';
+            h += '<div class="surface-row">';
+            h += '<div class="surface-label">' + block.displayNameCN + '<br>' + block.displayNameEN + '</div>';
+
+            for (var i = 0; i < block.items.length; i++) {
+                var item = block.items[i];
+                var hslLabel = formatHSLDual(item.light, item.dark);
+
+                h += '<div class="surface-item" style="margin-right: 24px;">';
+                h += '<span class="text-info" style="margin-right:8px; color: ' + cssVar(item.name) + ';">';
+                h += item.label + ' ' + hslLabel + '</span>';
+                h += '<div class="border-sample" style="border: 1px solid ' + cssVar(item.name) + ';"></div>';
+                h += '</div>';
+            }
+
+            h += '</div>'; // .surface-row
+            return h;
+        }
+
+        // ─── 启动渲染 ──────────────────────────────────────────────
+        generateBorderCSS();
+        renderAll();
+    })();
+    </script>
+</body>
+
+</html>

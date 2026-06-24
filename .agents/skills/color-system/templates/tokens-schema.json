@@ -1,0 +1,206 @@
+{
+  "meta": {
+    "name": "设计系统 — 颜色",
+    "description": "主色调：暖金 hsl(41, 61%, 56%) · 风格：自然萃取 Nature Distilled"
+  },
+  "sections": [
+    {
+      "id": "primary",
+      "renderType": "scale",
+      "sectionTitle": "01 · 主色调 Primary",
+      "rows": [
+        {
+          "id": "primary",
+          "displayNameCN": "暖金",
+          "displayNameEN": "Primary",
+          "accentStep": 400,
+          "showStepNumbers": true,
+          "steps": [50, 100, 200, 300, 400, 500, 600, 700, 800, 900],
+          "tokens": {
+            "color-primary-50":  { "step": 50,  "light": { "h": 40, "s": 65, "l": 95 }, "dark": { "h": 40, "s": 65, "l": 95 } },
+            "color-primary-100": { "step": 100, "light": { "h": 40, "s": 71, "l": 89 }, "dark": { "h": 40, "s": 71, "l": 89 } },
+            "color-primary-200": { "step": 200, "light": { "h": 43, "s": 69, "l": 77 }, "dark": { "h": 43, "s": 69, "l": 77 } },
+            "color-primary-300": { "step": 300, "light": { "h": 42, "s": 66, "l": 65 }, "dark": { "h": 42, "s": 66, "l": 65 } },
+            "color-primary-400": { "step": 400, "light": { "h": 41, "s": 61, "l": 56 }, "dark": { "h": 41, "s": 61, "l": 56 } },
+            "color-primary-500": { "step": 500, "light": { "h": 39, "s": 57, "l": 49 }, "dark": { "h": 39, "s": 57, "l": 49 } },
+            "color-primary-600": { "step": 600, "light": { "h": 41, "s": 69, "l": 39 }, "dark": { "h": 41, "s": 69, "l": 39 } },
+            "color-primary-700": { "step": 700, "light": { "h": 41, "s": 70, "l": 32 }, "dark": { "h": 41, "s": 70, "l": 32 } },
+            "color-primary-800": { "step": 800, "light": { "h": 41, "s": 68, "l": 26 }, "dark": { "h": 41, "s": 68, "l": 26 } },
+            "color-primary-900": { "step": 900, "light": { "h": 41, "s": 68, "l": 20 }, "dark": { "h": 41, "s": 68, "l": 20 } }
+          }
+        }
+      ]
+    },
+    {
+      "id": "secondary-set",
+      "renderType": "scale",
+      "sectionTitle": "02 · 辅助色 Secondary & Accent",
+      "rows": [
+        {
+          "id": "secondary",
+          "displayNameCN": "辅助色",
+          "displayNameEN": "Secondary",
+          "accentStep": 400,
+          "steps": [50, 100, 200, 300, 400],
+          "tokens": {
+            "color-secondary-50":  { "step": 50,  "light": { "h": 36, "s": 43, "l": 93 }, "dark": { "h": 36, "s": 60, "l": 20 } },
+            "color-secondary-100": { "step": 100, "light": { "h": 35, "s": 40, "l": 82 }, "dark": { "h": 35, "s": 58, "l": 26 } },
+            "color-secondary-200": { "step": 200, "light": { "h": 37, "s": 32, "l": 70 }, "dark": { "h": 37, "s": 62, "l": 22 } },
+            "color-secondary-300": { "step": 300, "light": { "h": 37, "s": 30, "l": 57 }, "dark": { "h": 37, "s": 65, "l": 40 } },
+            "color-secondary-400": { "step": 400, "light": { "h": 37, "s": 31, "l": 46 }, "dark": { "h": 37, "s": 62, "l": 48 } }
+          }
+        },
+        {
+          "id": "accent",
+          "displayNameCN": "强调色",
+          "displayNameEN": "Accent",
+          "accentStep": 400,
+          "steps": [50, 100, 200, 300, 400],
+          "tokens": {
+            "color-accent-50":  { "step": 50,  "light": { "h": 13, "s": 90, "l": 96 }, "dark": { "h": 13, "s": 89, "l": 18 } },
+            "color-accent-100": { "step": 100, "light": { "h": 19, "s": 89, "l": 89 }, "dark": { "h": 19, "s": 88, "l": 26 } },
+            "color-accent-200": { "step": 200, "light": { "h": 21, "s": 86, "l": 78 }, "dark": { "h": 21, "s": 88, "l": 34 } },
+            "color-accent-300": { "step": 300, "light": { "h": 19, "s": 81, "l": 66 }, "dark": { "h": 19, "s": 88, "l": 44 } },
+            "color-accent-400": { "step": 400, "light": { "h": 18, "s": 73, "l": 55 }, "dark": { "h": 18, "s": 81, "l": 52 } }
+          }
+        },
+        {
+          "id": "complement",
+          "displayNameCN": "互补色",
+          "displayNameEN": "Complement",
+          "accentStep": 400,
+          "steps": [50, 100, 200, 300, 400],
+          "tokens": {
+            "color-complement-50":  { "step": 50,  "light": { "h": 93, "s": 31, "l": 93 }, "dark": { "h": 93, "s": 55, "l": 20 } },
+            "color-complement-100": { "step": 100, "light": { "h": 87, "s": 35, "l": 83 }, "dark": { "h": 87, "s": 57, "l": 28 } },
+            "color-complement-200": { "step": 200, "light": { "h": 88, "s": 35, "l": 68 }, "dark": { "h": 88, "s": 61, "l": 36 } },
+            "color-complement-300": { "step": 300, "light": { "h": 87, "s": 33, "l": 54 }, "dark": { "h": 87, "s": 63, "l": 46 } },
+            "color-complement-400": { "step": 400, "light": { "h": 88, "s": 44, "l": 41 }, "dark": { "h": 88, "s": 64, "l": 53 } }
+          }
+        }
+      ]
+    },
+    {
+      "id": "neutral",
+      "renderType": "scale",
+      "sectionTitle": "03 · 中性色 Neutral",
+      "rows": [
+        {
+          "id": "neutral",
+          "displayNameCN": "中性灰",
+          "displayNameEN": "Neutral",
+          "steps": [0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900],
+          "tokens": {
+            "color-neutral-0":   { "step": 0,   "light": { "h": 0,  "s": 0,  "l": 100 }, "dark": { "h": 0,  "s": 0,  "l": 92 }, "border": { "light": "color-neutral-100" } },
+            "color-neutral-50":  { "step": 50,  "light": { "h": 40, "s": 13, "l": 95 },  "dark": { "h": 0,  "s": 3,  "l": 84 } },
+            "color-neutral-100": { "step": 100, "light": { "h": 38, "s": 18, "l": 91 },  "dark": { "h": 20, "s": 4,  "l": 76 } },
+            "color-neutral-200": { "step": 200, "light": { "h": 37, "s": 15, "l": 83 },  "dark": { "h": 30, "s": 3,  "l": 68 } },
+            "color-neutral-300": { "step": 300, "light": { "h": 37, "s": 14, "l": 70 },  "dark": { "h": 30, "s": 5,  "l": 60 } },
+            "color-neutral-400": { "step": 400, "light": { "h": 36, "s": 12, "l": 57 },  "dark": { "h": 30, "s": 4,  "l": 52 } },
+            "color-neutral-500": { "step": 500, "light": { "h": 32, "s": 14, "l": 44 },  "dark": { "h": 30, "s": 5,  "l": 44 } },
+            "color-neutral-600": { "step": 600, "light": { "h": 31, "s": 14, "l": 34 },  "dark": { "h": 30, "s": 3,  "l": 36 } },
+            "color-neutral-700": { "step": 700, "light": { "h": 30, "s": 16, "l": 25 },  "dark": { "h": 30, "s": 4,  "l": 28 } },
+            "color-neutral-800": { "step": 800, "light": { "h": 32, "s": 15, "l": 17 },  "dark": { "h": 30, "s": 5,  "l": 20 } },
+            "color-neutral-900": { "step": 900, "light": { "h": 30, "s": 12, "l": 10 },  "dark": { "h": 30, "s": 8,  "l": 12 }, "border": { "dark": "color-neutral-700" } }
+          }
+        }
+      ]
+    },
+    {
+      "id": "semantic",
+      "renderType": "semantic",
+      "sectionTitle": "04 · 语义色 Semantic Colors",
+      "rows": [
+        {
+          "id": "success",
+          "displayNameCN": "成功",
+          "displayNameEN": "Success",
+          "steps": [50, 400],
+          "tokens": {
+            "color-success-50":  { "step": 50,  "light": { "h": 99,  "s": 50, "l": 92 }, "dark": { "h": 105, "s": 30, "l": 20 } },
+            "color-success-400": { "step": 400, "light": { "h": 105, "s": 54, "l": 40 }, "dark": { "h": 105, "s": 57, "l": 58 } }
+          }
+        },
+        {
+          "id": "warning",
+          "displayNameCN": "警告",
+          "displayNameEN": "Warning",
+          "steps": [50, 400],
+          "tokens": {
+            "color-warning-50":  { "step": 50,  "light": { "h": 43, "s": 100, "l": 94 }, "dark": { "h": 39, "s": 35, "l": 20 } },
+            "color-warning-400": { "step": 400, "light": { "h": 40, "s": 91,  "l": 44 }, "dark": { "h": 38, "s": 87, "l": 62 } }
+          }
+        },
+        {
+          "id": "error",
+          "displayNameCN": "错误",
+          "displayNameEN": "Error",
+          "steps": [50, 400],
+          "tokens": {
+            "color-error-50":  { "step": 50,  "light": { "h": 0, "s": 81, "l": 96 }, "dark": { "h": 0, "s": 30, "l": 18 } },
+            "color-error-400": { "step": 400, "light": { "h": 3, "s": 65, "l": 52 }, "dark": { "h": 2, "s": 68, "l": 62 } }
+          }
+        },
+        {
+          "id": "info",
+          "displayNameCN": "信息",
+          "displayNameEN": "Info",
+          "steps": [50, 400],
+          "tokens": {
+            "color-info-50":  { "step": 50,  "light": { "h": 215, "s": 43, "l": 95 }, "dark": { "h": 216, "s": 25, "l": 20 } },
+            "color-info-400": { "step": 400, "light": { "h": 214, "s": 44, "l": 51 }, "dark": { "h": 214, "s": 55, "l": 62 } }
+          }
+        }
+      ]
+    },
+    {
+      "id": "surface-text-border",
+      "renderType": "surface-text-border",
+      "sectionTitle": "05 · 背景色 & 文字色 Surface & Text",
+      "blocks": [
+        {
+          "id": "surface",
+          "renderType": "surface",
+          "displayNameCN": "背景",
+          "displayNameEN": "Background",
+          "items": [
+            { "name": "color-page-bg",      "label": "页面底色", "light": { "h": 61, "s": 17, "l": 98 }, "dark": { "h": 30, "s": 6,  "l": 14 } },
+            { "name": "color-popup-bg",     "label": "卡片/弹层", "light": { "h": 0,  "s": 0,  "l": 100 }, "dark": { "h": 30, "s": 8,  "l": 12 } },
+            { "name": "color-secondary-bg", "label": "次级区域",  "light": { "h": 41, "s": 13, "l": 95 }, "dark": { "h": 30, "s": 5,  "l": 20 } }
+          ]
+        },
+        {
+          "id": "text",
+          "renderType": "text",
+          "displayNameCN": "文字",
+          "displayNameEN": "Text Color",
+          "items": [
+            { "name": "color-text-title",     "label": "主标题", "light": { "h": 41, "s": 12, "l": 10 }, "dark": { "h": 0,  "s": 0, "l": 92 } },
+            { "name": "color-text",           "label": "正文",   "light": { "h": 41, "s": 15, "l": 17 }, "dark": { "h": 0,  "s": 3, "l": 84 } },
+            { "name": "color-text-secondary", "label": "辅助",   "light": { "h": 41, "s": 12, "l": 57 }, "dark": { "h": 30, "s": 4, "l": 52 } },
+            { "name": "color-text-disabled",  "label": "禁用",   "light": { "h": 41, "s": 14, "l": 70 }, "dark": { "h": 30, "s": 5, "l": 44 } }
+          ],
+          "extras": [
+            {
+              "id": "on-primary",
+              "label": "主色上",
+              "fgToken": "color-neutral-0",
+              "bgToken": "color-primary-400"
+            }
+          ]
+        },
+        {
+          "id": "border",
+          "renderType": "border",
+          "displayNameCN": "边框",
+          "displayNameEN": "Border",
+          "items": [
+            { "name": "color-border-default", "label": "默认", "light": { "h": 41, "s": 15, "l": 83 }, "dark": { "h": 30, "s": 3, "l": 36 } },
+            { "name": "color-border-strong",  "label": "强调", "light": { "h": 41, "s": 12, "l": 57 }, "dark": { "h": 30, "s": 4, "l": 52 } },
+            { "name": "color-border-focus",   "label": "聚焦", "light": { "h": 41, "s": 61, "l": 56 }, "dark": { "h": 41, "s": 61, "l": 56 } }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ retrieval:
 reranker:
   model: "BAAI/bge-reranker-large"
   max_length: 512
+  batch_size: 16
 
 ranking:
   w_relevance: 0.5
@@ -32,6 +33,7 @@ milvus:
   index_type: "IVF_FLAT"
   metric_type: "COSINE"
   nlist: 128
+  analyzer_type: "chinese"    # BM25 全文搜索分词器（Milvus 2.5 内置）
 
 allow_file_types: ["txt", "pdf", "md", "pptx", "docx", "xlsx", "xls", "py", "js", "ts", "java", "go"]
 
@@ -44,6 +46,8 @@ doc_category_weights:
   default: 0.7
 
 hybrid_search:
+  reranker: "weighted"        # weighted（动态权重）或 rrf（倒数排名融合）
+  rrf_k: 60                   # RRF k 值（reranker=rrf 时生效）
   weights:
     balanced: [0.5, 0.5]
     precise: [0.65, 0.35]

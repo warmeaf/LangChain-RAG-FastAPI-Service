@@ -16,6 +16,24 @@ from app.core.logger_handler import logger
 class RagService:
     """企业级 RAG 服务：查询预处理 → 粗排 → 精排 → 多因素排序 → 总结"""
 
+    # 流水线超时配置（秒）——单阶段超时降级，总超时兜底
+    _TIMEOUT_TOTAL = 60          # 整条流水线总超时
+    _TIMEOUT_PREPROCESS = 20     # ① 查询预处理
+    _TIMEOUT_HYDE = 15           #    HyDE 生成
+    _TIMEOUT_RETRIEVE = 15       # ② 粗排检索
+    _TIMEOUT_IMAGE = 8           #    图片检索（非关键通路）
+    _TIMEOUT_RERANK = 20         # ③ 精排
+    _TIMEOUT_RANK = 10           # ④ 多因素排序
+    _TIMEOUT_EXPAND = 10         #    chunk 扩展
+    _TIMEOUT_SUMMARY = 30        # ⑥ 分批总结
+
+    # 文档去重：按内容前缀去重，避免重复 chunk 进入下游
+    _DEDUP_CONTENT_PREFIX = 100
+
+    # 上下文组装预算：按字符数截断（1 中文字 ≈ 1.5 token，6000 字符 ≈ 9K token）
+    # 为 64K context window 留足输出空间，防御性保护
+    _MAX_CONTEXT_CHARS = 6000
+
     def __init__(self, user_id: str = None, thinking_callback=None):
         self.milvus = MilvusService()
         self.retriever = None
@@ -27,6 +45,7 @@ class RagService:
         self.query_processor = QueryProcessor()
         self.ranker = MultiFactorRanker()
         self.thinking_callback = thinking_callback
+        self._log_task = None
 
     async def initialize_retriever(self, query: str = None):
         if self.retriever is None:
@@ -51,7 +70,7 @@ class RagService:
         for result in results:
             if isinstance(result, list):
                 for doc in result:
-                    key = doc.page_content[:100]
+                    key = self._dedup_key(doc)
                     if key not in seen:
                         seen.add(key)
                         merged.append(doc)
@@ -59,70 +78,107 @@ class RagService:
         logger.info(f"多路检索: {len(queries)}个变体 → {len(merged)}个去重文档")
         return merged
 
+    @staticmethod
+    def _dedup_key(doc) -> str:
+        """生成文档去重 key（取内容前缀，与图片去重保持一致）"""
+        return doc.page_content[:RagService._DEDUP_CONTENT_PREFIX]
+
     @traceable
     async def get_documents_and_summary(self, query: str) -> dict:
         if not self.user_id:
             return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
 
         try:
-            # ① 查询预处理
-            query_variants = await self.query_processor.process(query)
-            hyde_variant = await self._generate_hyde(query)
+            return await asyncio.wait_for(self._pipeline_inner(query), timeout=self._TIMEOUT_TOTAL)
+        except asyncio.TimeoutError:
+            logger.error("RAG 流水线总超时(%ss)，query=%s", self._TIMEOUT_TOTAL, query[:100])
+            return {"documents": [], "summary": "抱歉，处理您的请求超时，请稍后重试。"}
+        except Exception as e:
+            logger.error(f"RAG 流水线失败: {e}", exc_info=True)
+            return {"documents": [], "summary": "抱歉，处理您的请求时出现了错误。"}
+
+    async def _pipeline_inner(self, query: str) -> dict:
+        """RAG 流水线主体（由 get_documents_and_summary 包 60s 总超时）"""
+
+        # ① 查询预处理（超时降级：用原始 query）
+        try:
+            query_variants = await asyncio.wait_for(
+                self.query_processor.process(query), timeout=self._TIMEOUT_PREPROCESS
+            )
+            hyde_variant = await asyncio.wait_for(
+                self._generate_hyde(query), timeout=self._TIMEOUT_HYDE
+            )
             all_variants = query_variants + [hyde_variant]
+        except asyncio.TimeoutError:
+            logger.warning("查询预处理超时，使用原始查询")
+            all_variants = [query]
 
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "query_processing",
-                    "content": f"查询预处理完成: {len(all_variants)} 个检索变体",
-                })
+        if self.thinking_callback:
+            await self.thinking_callback({
+                "type": "thinking",
+                "stage": "query_processing",
+                "content": f"查询预处理完成: {len(all_variants)} 个检索变体",
+            })
 
-            # ② 粗排: 多路并行检索 → 合并
-            documents = await self.retrieve_documents_batch(all_variants)
+        # ② 粗排: 多路并行检索 → 合并（超时降级：返回空）
+        try:
+            documents = await asyncio.wait_for(
+                self.retrieve_documents_batch(all_variants), timeout=self._TIMEOUT_RETRIEVE
+            )
+        except asyncio.TimeoutError:
+            logger.warning("粗排检索超时")
+            documents = []
 
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "retrieval",
-                    "content": f"粗排检索完成: {len(documents)} 个候选文档",
-                })
+        if self.thinking_callback:
+            await self.thinking_callback({
+                "type": "thinking",
+                "stage": "retrieval",
+                "content": f"粗排检索完成: {len(documents)} 个候选文档",
+            })
 
-            # 图片视觉检索通路（跨模态 CLIP）
-            image_docs = []
-            if rag_config.get("image_retrieval", {}).get("enabled", True):
-                try:
-                    image_docs = await self.milvus.search_images(
+        # 图片视觉检索通路（跨模态 CLIP，超时8s降级：跳过）
+        image_docs = []
+        if rag_config.get("image_retrieval", {}).get("enabled", True):
+            try:
+                image_docs = await asyncio.wait_for(
+                    self.milvus.search_images(
                         query, self.user_id,
                         top_k=rag_config.get("image_retrieval", {}).get("max_image_chunks", 5)
-                    )
-                except Exception:
-                    pass
+                    ),
+                    timeout=self._TIMEOUT_IMAGE,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("图片检索超时，跳过图片通路")
+            except Exception as e:
+                logger.warning(f"图片检索失败，跳过图片通路: {e}", exc_info=True)
 
-            if image_docs:
-                image_contents = set(doc.page_content for doc in documents)
-                for idoc in image_docs:
-                    if idoc.page_content not in image_contents:
-                        documents.append(idoc)
+        if image_docs:
+            existing_keys = set(self._dedup_key(doc) for doc in documents)
+            for idoc in image_docs:
+                if self._dedup_key(idoc) not in existing_keys:
+                    documents.append(idoc)
 
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "retrieval",
-                    "content": f"粗排检索完成: {len(documents)} 个候选文档 (含 {len(image_docs)} 个图片结果)",
-                })
+        if self.thinking_callback:
+            await self.thinking_callback({
+                "type": "thinking",
+                "stage": "retrieval",
+                "content": f"粗排检索完成: {len(documents)} 个候选文档 (含 {len(image_docs)} 个图片结果)",
+            })
 
-            if not documents:
-                return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
+        if not documents:
+            return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
 
-            # ③ 精排: Reranker
-            doc_contents = [doc.page_content for doc in documents]
-            rerank_result = await reorder_service.reorder_documents(
-                query, doc_contents, thinking_callback=self.thinking_callback
+        # ③ 精排: Reranker（超时降级：用粗排结果）
+        doc_contents = [doc.page_content for doc in documents]
+        try:
+            rerank_result = await asyncio.wait_for(
+                reorder_service.reorder_documents(
+                    query, doc_contents, thinking_callback=self.thinking_callback
+                ),
+                timeout=self._TIMEOUT_RERANK,
             )
             if rerank_result["success"]:
                 reranked = rerank_result["documents"]
-                relevance_scores = [d["similarity"] for d in reranked]
-                # 重建 Document 列表 (保留 metadata)
                 content_to_doc = {doc.page_content: doc for doc in documents}
                 ordered_docs = []
                 ordered_scores = []
@@ -134,33 +190,50 @@ class RagService:
             else:
                 ordered_docs = documents
                 ordered_scores = [0.5] * len(documents)
+        except asyncio.TimeoutError:
+            logger.warning("精排超时，使用粗排结果")
+            ordered_docs = documents
+            ordered_scores = [0.5] * len(documents)
 
-            # ④ 多因素排序
-            final_docs = await self.ranker.rank(query, ordered_docs, ordered_scores, self.user_id)
+        # ④ 多因素排序 + chunk扩展（超时降级：用精排结果）
+        try:
+            final_docs = await asyncio.wait_for(
+                self.ranker.rank(query, ordered_docs, ordered_scores, self.user_id),
+                timeout=self._TIMEOUT_RANK,
+            )
+            final_docs = await asyncio.wait_for(
+                self._expand_adjacent_chunks(final_docs), timeout=self._TIMEOUT_EXPAND
+            )
+        except asyncio.TimeoutError:
+            logger.warning("多因素排序/扩展超时，使用精排结果")
+            final_docs = ordered_docs
 
-            # ④.⑤ 相邻 chunk 扩展：为每个检索到的 chunk 补充前后邻居
-            final_docs = await self._expand_adjacent_chunks(final_docs)
+        if self.thinking_callback:
+            await self.thinking_callback({
+                "type": "thinking",
+                "stage": "ranking",
+                "content": f"多因素排序完成: {len(final_docs)} 篇文档",
+            })
 
-            if self.thinking_callback:
-                await self.thinking_callback({
-                    "type": "thinking",
-                    "stage": "ranking",
-                    "content": f"多因素排序完成: {len(final_docs)} 篇文档",
-                })
+        # ⑤ 异步写入 QueryLog（不阻塞主流程，保留 task 引用避免 GC）
+        self._log_task = asyncio.create_task(self._log_query(query, final_docs))
+        self._log_task.add_done_callback(self._on_log_done)
 
-            # ⑤ 异步写入 QueryLog（不阻塞主流程）
-            asyncio.create_task(self._log_query(query, final_docs))
+        # ⑥ 分批总结（内部已有 30s 超时）
+        summary = await self._batch_summarize(query, final_docs)
 
-            # ⑥ 分批总结
-            summary = await self._batch_summarize(query, final_docs)
+        return {
+            "documents": [doc.page_content for doc in final_docs],
+            "summary": summary,
+        }
 
-            return {
-                "documents": [doc.page_content for doc in final_docs],
-                "summary": summary,
-            }
-        except Exception as e:
-            logger.error(f"RAG 流水线失败: {e}", exc_info=True)
-            return {"documents": [], "summary": "抱歉，处理您的请求时出现了错误。"}
+    def _on_log_done(self, task):
+        """create_task 完成回调：记录未捕获异常"""
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc:
+            logger.error(f"查询日志异步写入失败: {exc}", exc_info=exc)
 
     async def _expand_adjacent_chunks(self, docs: list) -> list:
         """为检索到的文档补充相邻 chunk（上下文扩展）"""
@@ -208,7 +281,8 @@ class RagService:
             chain = hyde_prompt | self.chat_model | StrOutputParser()
             result = await chain.ainvoke({"query": query})
             return result.strip() if result else query
-        except Exception:
+        except Exception as e:
+            logger.debug(f"HyDE 生成失败，使用原始查询: {e}")
             return query
 
     async def _batch_summarize(self, query: str, documents: list) -> str:
@@ -219,15 +293,21 @@ class RagService:
         max_docs = rag_config["retrieval"]["max_documents"]
         docs = documents[:max_docs]
 
-        # 直接拼接所有文档原文作为上下文
+        # 拼接文档原文作为上下文，带 [编号] 供 LLM 引用，按字符预算截断
         combined = ""
+        total_chars = 0
         for i, doc in enumerate(docs, 1):
-            combined += f"【参考资料{i}】\n{doc.page_content}\n\n"
+            chunk_text = f"[{i}] {doc.page_content}\n\n"
+            if total_chars + len(chunk_text) > self._MAX_CONTEXT_CHARS:
+                logger.info(f"上下文达字符预算({self._MAX_CONTEXT_CHARS})，截断于第 {i} 篇文档")
+                break
+            combined += chunk_text
+            total_chars += len(chunk_text)
 
         try:
             final = await asyncio.wait_for(
                 self.chain.ainvoke({"input": query, "context": combined}),
-                timeout=30.0,
+                timeout=self._TIMEOUT_SUMMARY,
             )
             return final
         except asyncio.TimeoutError:
@@ -252,8 +332,8 @@ class RagService:
                 )
                 session.add(ql)
                 await session.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"查询日志写入失败: {e}", exc_info=True)
 
     @traceable
     async def rag_summary(self, query: str) -> str:
