@@ -303,7 +303,14 @@ class RagService:
         combined = ""
         total_chars = 0
         for i, doc in enumerate(docs, 1):
-            chunk_text = f"[{i}] {doc.page_content}\n\n"
+            # 标注文档来源，让 LLM 知道每段内容属于哪个人/文档
+            source = doc.metadata.get("original_filename", "") or doc.metadata.get("source", "")
+            if source:
+                import os
+                source_label = f"（来源：{os.path.basename(source)}）"
+            else:
+                source_label = ""
+            chunk_text = f"[{i}]{source_label} {doc.page_content}\n\n"
             if total_chars + len(chunk_text) > self._MAX_CONTEXT_CHARS:
                 logger.info(f"上下文达字符预算({self._MAX_CONTEXT_CHARS})，截断于第 {i} 篇文档")
                 break
