@@ -30,6 +30,9 @@ class RagService:
     # 文档去重：按内容前缀去重，避免重复 chunk 进入下游
     _DEDUP_CONTENT_PREFIX = 100
 
+    # 精排后截断：只保留 top-K 进多因素排序，避免低相关文档靠时间/权重挤进最终结果
+    _RERANK_TOP_K = 20
+
     # 上下文组装预算：按字符数截断（1 中文字 ≈ 1.5 token，6000 字符 ≈ 9K token）
     # 为 64K context window 留足输出空间，防御性保护
     _MAX_CONTEXT_CHARS = 6000
@@ -187,6 +190,9 @@ class RagService:
                     if content in content_to_doc:
                         ordered_docs.append(content_to_doc[content])
                         ordered_scores.append(rd["similarity"])
+                # 精排后截断：只保留 top-K，避免低相关文档靠时间/权重挤进最终结果
+                ordered_docs = ordered_docs[:self._RERANK_TOP_K]
+                ordered_scores = ordered_scores[:self._RERANK_TOP_K]
             else:
                 ordered_docs = documents
                 ordered_scores = [0.5] * len(documents)

@@ -1,7 +1,7 @@
 # RAG 企业级配置
 
 retrieval:
-  coarse_k: 100          # 粗排召回数
+  coarse_k: 30           # 粗排召回数（原 100，降到 30 避免全量召回）
   max_documents: 8       # 最终总结文档数（简历/工作经历类文档分散，需要更多）
 
 reranker:
