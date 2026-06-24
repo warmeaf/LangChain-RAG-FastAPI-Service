@@ -1,78 +1,145 @@
-"""P0: BM25 中文分词修复 — TDD 测试"""
+"""Milvus 2.5 原生 sparse BM25 中文检索集成测试。
 
+标记 @pytest.mark.e2e，需连接 Milvus 服务。
+用独立临时 collection，测试后自动清理，不污染正式数据。
+"""
+
+import os
 import pytest
-from langchain_core.documents import Document
+from pymilvus import MilvusClient, DataType, Function, FunctionType
 
 
-class TestBM25ChineseSegmentation:
-    """企业级验收标准：BM25 对中文文本按词切分（非按字或无效空白切分）"""
+pytestmark = [pytest.mark.e2e]
 
-    def test_chinese_corpus_is_word_tokenized(self):
-        """验证中文语料库被正确分词（非 .split() 的空操作）"""
-        from app.rag.retrievers.hybrid_retriever import BM25Retriever
 
-        docs = [
-            Document(page_content="员工申请报销流程说明", metadata={"id": "1"}),
-            Document(page_content="公司年假政策规定每年十天", metadata={"id": "2"}),
-            Document(page_content="会议室预定系统使用指南", metadata={"id": "3"}),
-        ]
+def _get_client():
+    host = os.getenv("MILVUS_HOST", "localhost")
+    port = int(os.getenv("MILVUS_PORT", 19530))
+    return MilvusClient(uri=f"http://{host}:{port}")
 
-        retriever = BM25Retriever(documents=docs, k=3)
 
-        # 分词后应有多个 token（不是整个字符串或单字）
-        assert len(retriever._tokenized_corpus[0]) > 1, \
-            f"中文应被分词为多 token，实际: {retriever._tokenized_corpus[0]}"
-        # 不应是单个完整字符串（未分词）
-        assert len(retriever._tokenized_corpus[0]) < len(docs[0].page_content), \
-            f"分词后 token 数应小于原文字数"
+def _create_test_collection(client, collection_name):
+    """创建带 sparse BM25 的临时 collection"""
+    schema = client.create_schema()
+    schema.add_field("id", DataType.VARCHAR, max_length=128, is_primary=True)
+    schema.add_field(
+        "text", DataType.VARCHAR, max_length=65535,
+        enable_analyzer=True,
+        analyzer_params={"type": "chinese"},
+    )
+    schema.add_field("sparse", DataType.SPARSE_FLOAT_VECTOR)
 
-    def test_chinese_query_is_word_tokenized(self):
-        """验证中文查询被正确分词"""
-        from app.rag.retrievers.hybrid_retriever import BM25Retriever
+    bm25_function = Function(
+        name="text_bm25_emb",
+        input_field_names=["text"],
+        output_field_names=["sparse"],
+        function_type=FunctionType.BM25,
+    )
+    schema.add_function(bm25_function)
 
-        docs = [
-            Document(page_content="员工申请报销流程说明", metadata={"id": "1"}),
-            Document(page_content="公司年假政策规定每年十天", metadata={"id": "2"}),
-        ]
-        retriever = BM25Retriever(documents=docs, k=2)
+    index_params = client.prepare_index_params()
+    index_params.add_index(
+        field_name="sparse",
+        index_type="SPARSE_INVERTED_INDEX",
+        metric_type="BM25",
+        params={"inverted_index_algo": "DAAT_MAXSCORE"},
+    )
 
-        query = "如何申请报销"
-        query_tokens = retriever._tokenize(query)
-        assert len(query_tokens) > 1, \
-            f"查询分词后应有多个 token，实际: {query_tokens}"
-        assert "申请" in query_tokens or "报销" in query_tokens, \
-            f"关键词应出现在分词结果中，实际: {query_tokens}"
+    client.create_collection(
+        collection_name=collection_name,
+        schema=schema,
+        index_params=index_params,
+    )
 
-    def test_bm25_ranks_relevant_chinese_higher(self):
+
+def _insert_docs(client, collection_name, texts):
+    """插入测试文档"""
+    data = [{"id": str(i), "text": text} for i, text in enumerate(texts)]
+    client.insert(collection_name=collection_name, data=data)
+    client.flush(collection_name=collection_name)
+
+
+def _search_sparse(client, collection_name, query, limit=3):
+    """sparse BM25 检索"""
+    results = client.search(
+        collection_name=collection_name,
+        data=[query],
+        anns_field="sparse",
+        param={"metric_type": "BM25"},
+        limit=limit,
+        output_fields=["text"],
+    )
+    return results
+
+
+class TestSparseBM25Chinese:
+    """Milvus 原生 sparse BM25 中文检索验收测试"""
+
+    def test_sparse_bm25_chinese_search(self):
         """相关中文文档排名高于不相关文档"""
-        from app.rag.retrievers.hybrid_retriever import BM25Retriever
+        client = _get_client()
+        coll = "test_sparse_bm25_chinese"
 
-        docs = [
-            Document(page_content="公司年假政策规定每年十天", metadata={"id": "1"}),
-            Document(page_content="报销流程：先填写报销单然后提交给财务部", metadata={"id": "2"}),
-            Document(page_content="会议室预定系统使用指南登录后选择时间", metadata={"id": "3"}),
-        ]
-        retriever = BM25Retriever(documents=docs, k=3)
+        try:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
 
-        results = retriever._get_relevant_documents("如何申请报销")
-        assert len(results) > 0, "应有检索结果"
-        # 报销文档应排第一
-        assert "报销" in results[0].page_content, \
-            f"报销文档应排第一，实际: {results[0].page_content[:50]}"
+            _create_test_collection(client, coll)
+            _insert_docs(client, coll, [
+                "公司年假政策规定每年十天",
+                "报销流程：先填写报销单然后提交给财务部",
+                "会议室预定系统使用指南登录后选择时间",
+            ])
 
-    def test_chinese_tokenizer_handles_english_mixed(self):
-        """中英混合文本正常分词"""
-        from app.rag.retrievers.hybrid_retriever import BM25Retriever
+            results = _search_sparse(client, coll, "如何申请报销")
+            assert len(results) > 0, "应有检索结果"
+            assert len(results[0]) > 0, "应返回文档"
 
-        docs = [
-            Document(page_content="API 接口文档 v2.0 版本说明", metadata={"id": "1"}),
-            Document(page_content="用户登录 authentication 流程", metadata={"id": "2"}),
-        ]
-        retriever = BM25Retriever(documents=docs, k=2)
+            top_text = results[0][0].get("entity", {}).get("text", "")
+            assert "报销" in top_text, f"报销文档应排第一，实际: {top_text[:50]}"
+        finally:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
 
-        # 中英混合应正常分词，不报错
-        tokens = retriever._tokenized_corpus[0]
-        assert len(tokens) > 0, "中英混合文本应正常分词"
-        # "API" 和 "接口" 应该各自成为独立 token
-        has_api = any("API" in t for t in tokens)
-        assert has_api, f"英文 'API' 应被保留为独立 token，实际: {tokens}"
+    def test_sparse_bm25_chinese_english_mixed(self):
+        """中英混合文本正常检索"""
+        client = _get_client()
+        coll = "test_sparse_bm25_mixed"
+
+        try:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
+
+            _create_test_collection(client, coll)
+            _insert_docs(client, coll, [
+                "API 接口文档 v2.0 版本说明",
+                "用户登录 authentication 流程",
+            ])
+
+            results = _search_sparse(client, coll, "API 接口")
+            assert len(results) > 0, "中英混合检索应返回结果"
+            assert len(results[0]) > 0, "应返回文档"
+
+            top_text = results[0][0].get("entity", {}).get("text", "")
+            assert "API" in top_text, f"API 文档应排第一，实际: {top_text[:50]}"
+        finally:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
+
+    def test_sparse_bm25_empty_collection(self):
+        """空 collection 检索返回空列表"""
+        client = _get_client()
+        coll = "test_sparse_bm25_empty"
+
+        try:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
+
+            _create_test_collection(client, coll)
+
+            results = _search_sparse(client, coll, "测试查询")
+            assert len(results) > 0, "应返回结果列表"
+            assert len(results[0]) == 0, "空 collection 应返回零文档"
+        finally:
+            if client.has_collection(coll):
+                client.drop_collection(coll)
