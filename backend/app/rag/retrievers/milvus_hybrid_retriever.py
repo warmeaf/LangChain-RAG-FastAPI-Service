@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -11,6 +11,7 @@ class MilvusHybridRetriever(BaseRetriever):
 
     用 Milvus 2.5 的 hybrid_search + WeightedRanker 替代自研 RRF，
     支持运行时动态权重切换（balanced/precise/semantic）。
+    可选 entity_filter 在 Milvus 层精确过滤到指定文档主体（如某人简历）。
     """
 
     client: object
@@ -23,9 +24,17 @@ class MilvusHybridRetriever(BaseRetriever):
     nprobe: int = 16
     reranker: str = "weighted"
     rrf_k: int = 60
+    entity_filter: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True
+
+    def _build_expr(self) -> str:
+        """构造 Milvus filter 表达式"""
+        expr = f'user_id == "{self.user_id}"'
+        if self.entity_filter:
+            expr += f' && doc_entity == "{self.entity_filter}"'
+        return expr
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun = None
@@ -35,13 +44,15 @@ class MilvusHybridRetriever(BaseRetriever):
             [query], normalize_embeddings=True
         ).tolist()
 
+        expr = self._build_expr()
+
         # ② 构造 dense 检索请求
         dense_req = AnnSearchRequest(
             data=query_embedding,
             anns_field="embedding",
             param={"metric_type": "COSINE", "params": {"nprobe": self.nprobe}},
             limit=self.k,
-            expr=f'user_id == "{self.user_id}"',
+            expr=expr,
         )
 
         # ③ 构造 sparse 检索请求（传原始文本，BM25 Function 自动转换）
@@ -50,7 +61,7 @@ class MilvusHybridRetriever(BaseRetriever):
             anns_field="sparse",
             param={"metric_type": "BM25"},
             limit=self.k,
-            expr=f'user_id == "{self.user_id}"',
+            expr=expr,
         )
 
         # ④ 选择 reranker（运行时动态权重）

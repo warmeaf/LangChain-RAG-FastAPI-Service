@@ -1,4 +1,3 @@
-import re
 import asyncio
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -33,10 +32,6 @@ class RagService:
 
     # 精排后截断：只保留 top-K 进多因素排序，避免低相关文档靠时间/权重挤进最终结果
     _RERANK_TOP_K = 20
-
-    # 实体过滤：粗排后按 query 关键词过滤，避免 reranker 把同名不同人的文档混入
-    # 只保留出现在 < 50% 文档中的关键词（有区分性的），再过滤不含这些关键词的文档
-    _KEYWORD_DISTINCTIVENESS_RATIO = 0.5
 
     # 上下文组装预算：按字符数截断（1 中文字 ≈ 1.5 token，6000 字符 ≈ 9K token）
     # 为 64K context window 留足输出空间，防御性保护
@@ -90,66 +85,6 @@ class RagService:
     def _dedup_key(doc) -> str:
         """生成文档去重 key（取内容前缀，与图片去重保持一致）"""
         return doc.page_content[:RagService._DEDUP_CONTENT_PREFIX]
-
-    def _filter_by_query_entity(self, query: str, docs: list) -> list:
-        """按 query 关键词过滤文档，避免 reranker 混入同名不同人的内容。
-
-        原理：reranker 只看 query-doc 语义相关性，无法区分实体归属。
-        例如问"王小明工作经历"，所有人的简历"工作经历"部分语义都高度相关，
-        reranker 会给高分。但只有王小明自己的简历包含"王小明"三个字。
-
-        策略：
-        1. 从 query 提取中文关键词（连续中文字符 >= 2）
-        2. 统计每个关键词在候选文档中的出现频率
-        3. 只保留有区分性的关键词（出现在 < 50% 文档中的）
-        4. 只保留包含至少一个区分性关键词的文档
-        5. 回退保护：无区分性关键词或过滤后为空，则不过滤
-        """
-        if not docs or len(docs) <= 1:
-            return docs
-
-        # 提取 query 中的中文关键词（连续中文字符，长度 >= 2）
-        cn_keywords = re.findall(r'[\u4e00-\u9fa5]{2,}', query)
-        if not cn_keywords:
-            return docs
-
-        # 去重关键词
-        cn_keywords = list(set(cn_keywords))
-
-        # 统计每个关键词在文档中的出现频率
-        total = len(docs)
-        keyword_doc_count = {}
-        for kw in cn_keywords:
-            count = sum(1 for doc in docs if kw in doc.page_content)
-            keyword_doc_count[kw] = count
-
-        # 只保留有区分性的关键词（出现在 < 50% 文档中，且至少出现 1 次）
-        threshold = total * self._KEYWORD_DISTINCTIVENESS_RATIO
-        distinctive_keywords = [
-            kw for kw, count in keyword_doc_count.items()
-            if count <= threshold and count > 0
-        ]
-
-        if not distinctive_keywords:
-            # 所有关键词都出现在 > 50% 文档中（通用查询），不过滤
-            return docs
-
-        # 只保留包含至少一个区分性关键词的文档
-        filtered = [
-            doc for doc in docs
-            if any(kw in doc.page_content for kw in distinctive_keywords)
-        ]
-
-        if not filtered:
-            # 过滤后为空（极端情况），回退
-            return docs
-
-        logger.info(
-            f"实体过滤: query='{query[:30]}', "
-            f"关键词={distinctive_keywords}, "
-            f"{len(docs)}→{len(filtered)} 文档"
-        )
-        return filtered
 
     @traceable
     async def get_documents_and_summary(self, query: str) -> dict:
@@ -231,18 +166,6 @@ class RagService:
                 "type": "thinking",
                 "stage": "retrieval",
                 "content": f"粗排检索完成: {len(documents)} 个候选文档 (含 {len(image_docs)} 个图片结果)",
-            })
-
-        if not documents:
-            return {"documents": [], "summary": "抱歉，我没有找到相关的信息。"}
-
-        # ②.5 实体过滤：按 query 关键词过滤，避免 reranker 混入同名不同人的文档
-        documents = self._filter_by_query_entity(query, documents)
-        if self.thinking_callback:
-            await self.thinking_callback({
-                "type": "thinking",
-                "stage": "retrieval",
-                "content": f"实体过滤后: {len(documents)} 个候选文档",
             })
 
         if not documents:

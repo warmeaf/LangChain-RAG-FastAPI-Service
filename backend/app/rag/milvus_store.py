@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import threading
 import uuid
 import time
@@ -62,14 +63,14 @@ class MilvusService:
         analyzer_type = milvus_cfg.get("analyzer_type", "chinese")
 
         if self.client.has_collection(self.collection_name):
-            # 检测是否有 sparse 字段，无则 drop 重建（迁移到原生 BM25）
+            # 检测是否有 doc_entity 字段，无则 drop 重建
             desc = self.client.describe_collection(self.collection_name)
             field_names = {f["name"] for f in desc.get("fields", [])}
-            if "sparse" not in field_names:
-                logger.warning(f"Collection '{self.collection_name}' 无 sparse 字段，drop 后重建（迁移到原生 BM25）")
+            if "doc_entity" not in field_names:
+                logger.warning(f"Collection '{self.collection_name}' 无 doc_entity 字段，drop 后重建")
                 self.client.drop_collection(self.collection_name)
             else:
-                logger.info(f"Milvus collection '{self.collection_name}' 已存在（含 sparse），加载完成")
+                logger.info(f"Milvus collection '{self.collection_name}' 已存在（含 doc_entity），加载完成")
                 self._ensure_image_collection()
                 return
 
@@ -83,6 +84,7 @@ class MilvusService:
         schema.add_field("embedding", DataType.FLOAT_VECTOR, dim=1024)
         schema.add_field("sparse", DataType.SPARSE_FLOAT_VECTOR)
         schema.add_field("user_id", DataType.VARCHAR, max_length=64, is_partition_key=True)
+        schema.add_field("doc_entity", DataType.VARCHAR, max_length=128)  # 文档主体标识（如人名），用于精确过滤
         schema.add_field("doc_weight", DataType.FLOAT)
         schema.add_field("created_at", DataType.INT64)
         schema.add_field("metadata", DataType.JSON)
@@ -155,6 +157,49 @@ class MilvusService:
         """批量向量化文本 (bge-large-zh, 1024维)"""
         return embed_model.encode(texts, normalize_embeddings=True).tolist()
 
+    @staticmethod
+    def _extract_doc_entity(filename: str) -> str:
+        """从文件名提取文档主体标识（如人名）。
+
+        规则：去扩展名 → 按 - 分割取第一部分 → 去常见后缀词。
+        示例：
+          "王小明的个人简历.md" → "王小明"
+          "赵明轩-软件开发.pdf" → "赵明轩"
+          "李大乐 - 销售总监个人简历.pptx" → "李大乐"
+          "陈林.docx" → "陈林"
+        """
+        if not filename:
+            return ""
+        name = os.path.splitext(filename)[0]
+        # 按 - 或 — 分割取第一部分
+        for sep in [' - ', '-', '—', ' – ']:
+            if sep in name:
+                name = name.split(sep)[0].strip()
+                break
+        # 去常见后缀
+        for suffix in ['的个人简历', '个人简历', '的简历', '简历']:
+            if name.endswith(suffix):
+                name = name[:-len(suffix)]
+                break
+        return name.strip()
+
+    async def _get_user_entities(self, user_id: str) -> List[str]:
+        """获取用户所有文档的 distinct doc_entity 列表（用于反向匹配 query）"""
+        def _query():
+            results = self.client.query(
+                collection_name=self.collection_name,
+                filter=f'user_id == "{user_id}"',
+                output_fields=["doc_entity"],
+                limit=self._QUERY_LIMIT,
+            )
+            entities = set()
+            for r in results:
+                entity = r.get("doc_entity", "")
+                if entity:
+                    entities.add(entity)
+            return list(entities)
+        return await asyncio.to_thread(_query)
+
     async def check_connection(self) -> bool:
         """健康检查：验证 Milvus 连接是否正常"""
         def _probe():
@@ -180,11 +225,15 @@ class MilvusService:
 
         data = []
         for i, doc in enumerate(documents):
+            # 从文件名提取文档主体标识（如人名），用于检索时精确过滤
+            filename = doc.metadata.get("original_filename", "") or doc.metadata.get("source", "")
+            doc_entity = self._extract_doc_entity(filename)
             data.append({
                 "id": ids[i],
                 "text": texts[i],
                 "embedding": embeddings[i],
                 "user_id": doc.metadata.get("user_id", ""),
+                "doc_entity": doc_entity,
                 "doc_weight": float(doc.metadata.get("doc_weight", 1.0)),
                 "created_at": now,
                 "metadata": doc.metadata,
@@ -233,8 +282,18 @@ class MilvusService:
 
         k = rag_config["retrieval"]["coarse_k"]
         weights = await self.get_dynamic_weights(query)
-        # weights = [bm25_weight, vector_weight]
         hybrid_cfg = rag_config.get("hybrid_search", {})
+
+        # 反向匹配：拿用户所有已知 doc_entity，看 query 包含哪个
+        # 命中则在 Milvus 层硬过滤，reranker 根本看不到其他人的文档
+        entity_filter = None
+        if query:
+            entities = await self._get_user_entities(user_id)
+            for entity in entities:
+                if entity and len(entity) >= 2 and entity in query:
+                    entity_filter = entity
+                    logger.info(f"实体匹配: query 包含 '{entity}'，启用精确过滤")
+                    break
 
         return MilvusHybridRetriever(
             client=self.client,
@@ -247,6 +306,7 @@ class MilvusService:
             nprobe=self._SEARCH_NPROBE,
             reranker=hybrid_cfg.get("reranker", "weighted"),
             rrf_k=hybrid_cfg.get("rrf_k", 60),
+            entity_filter=entity_filter,
         )
 
     async def delete_user_documents(self, user_id: str):
