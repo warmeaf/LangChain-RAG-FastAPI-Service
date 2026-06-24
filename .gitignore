@@ -96,3 +96,4 @@ volumes/
 
 # WorkBuddy (工具元数据/记忆)
 .workbuddy/
+nul
