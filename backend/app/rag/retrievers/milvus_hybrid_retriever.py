@@ -37,7 +37,7 @@ class MilvusHybridRetriever(BaseRetriever):
 
         # ② 构造 dense 检索请求
         dense_req = AnnSearchRequest(
-            data=[query_embedding],
+            data=query_embedding,
             anns_field="embedding",
             param={"metric_type": "COSINE", "params": {"nprobe": self.nprobe}},
             limit=self.k,
