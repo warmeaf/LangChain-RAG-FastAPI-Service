@@ -74,10 +74,13 @@ async def get_session_thinking(
     return success_response(data={"session_id": session_id, "thinking": thinking})
 
 @chat_router.get("/sessions")
-async def get_all_sessions(router_service: ChatService = Depends(get_router_service)):
-    """获取所有会话ID"""
-    session_ids = await router_service.handle_get_all_sessions()
-    return success_response(data={"sessions": session_ids})
+async def get_current_user_sessions(
+    user_id: str = Depends(get_current_user_id),
+    router_service: ChatService = Depends(get_router_service)
+):
+    """获取当前用户的所有会话（需鉴权，仅返回当前调用者的会话）"""
+    sessions = await router_service.handle_get_user_sessions(user_id, user_id)
+    return success_response(data={"sessions": sessions})
 
 
 @chat_router.get("/sessions/{user_id}")

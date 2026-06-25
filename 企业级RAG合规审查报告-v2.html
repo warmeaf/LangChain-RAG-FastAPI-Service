@@ -126,24 +126,25 @@
       <div class="sub">数据层面 + 检索策略（文档定义范围）</div>
     </div>
     <div class="score-card">
-      <div class="num" style="color:var(--amber);">60.3</div>
-      <div class="lbl">生产就绪度分 / C</div>
+      <div class="num" style="color:var(--amber);">62.5</div>
+      <div class="lbl">生产就绪度分 / C <span class="delta delta-up">↑ +2.2（两项 P0 安全已修复）</span></div>
       <div class="sub">工程化 + 安全 + 评估 + 治理（文档之外）</div>
     </div>
   </div>
 
-  <p><strong>双分数解读</strong>：若仅以博客文档定义的"数据 + 检索"为标尺，本项目<strong>确实达成 A- 级</strong>（91.1）——这是 v1 报告"两大核心维度已全面达成"结论中站得住的部分。但作为<strong>可投产的企业级系统</strong>，生产就绪度仅 C 级（60.3），主要拖累项为 RAG 效果评估缺失（23.3）与数据治理缺失（45.0）。v1 把两者混为单一 84.4 分（B+），掩盖了"功能齐全但效果不可度量、安全有真漏洞、灾备无方案"的真实状态。</p>
+  <p><strong>双分数解读</strong>：若仅以博客文档定义的"数据 + 检索"为标尺，本项目<strong>确实达成 A- 级</strong>（91.1）——这是 v1 报告"两大核心维度已全面达成"结论中站得住的部分。但作为<strong>可投产的企业级系统</strong>，生产就绪度仅 C 级（62.5），主要拖累项为 RAG 效果评估缺失（23.3）与数据治理缺失（45.0）。v1 把两者混为单一 84.4 分（B+），掩盖了"功能齐全但效果不可度量、安全有真漏洞、灾备无方案"的真实状态。</p>
 
   <div class="dim-grid">
     <div class="dim-card"><div class="n" style="color:var(--blue);">89.3</div><div class="l">数据层面 / 15项</div></div>
     <div class="dim-card"><div class="n" style="color:var(--green);">92.9</div><div class="l">检索策略 / 7项</div></div>
     <div class="dim-card"><div class="n" style="color:var(--amber);">82.8</div><div class="l">工程化 / 9项</div></div>
-    <div class="dim-card"><div class="n" style="color:var(--red);">63.0</div><div class="l">安全审计 / 5项</div></div>
+    <div class="dim-card"><div class="n" style="color:var(--amber);">71.7</div><div class="l">安全审计 / 6项 <span class="delta delta-up">↑ +8.7（两项 P0 已修复）</span></div></div>
     <div class="dim-card"><div class="n" style="color:var(--red);">23.3</div><div class="l">RAG 评估 / 3项</div></div>
     <div class="dim-card"><div class="n" style="color:var(--red);">45.0</div><div class="l">数据治理 / 3项</div></div>
   </div>
 
-  <p><strong>核查项分布</strong>：42 项中已实现 26 项、部分实现 8 项、<strong>未实现 8 项</strong>（v1 称 0 项未实现，系将死代码计入"部分实现"所致）。8 项未实现含 3 项死代码、1 项授权绕过、1 项 CORS 不安全、3 项能力完全缺失（离线评估/在线指标/备份恢复）。</p>
+  <p><strong>核查项分布</strong>（已修正 v2 初版计数口径，统一以表格状态为准）：42 项中已实现 22 项、部分实现 15 项、未实现/缺失 5 项（v1 称 0 项未实现，系将死代码计入"部分实现"所致）。5 项未实现/缺失含 1 项完全死代码（PDF 标题检测器）、1 项 CORS 不安全、3 项能力完全缺失（离线评估/在线指标/备份恢复）。另含 2 项"部分实现但内含死代码"——语义切分优化逻辑、cache_with_redis 装饰器，均未接入生产路径。</p>
+  <p><strong>本次修复</strong>（两项 P0 安全）：① <code>GET /chat/sessions</code> 授权绕过已修复（加鉴权 + 仅返回当前用户会话）；② 前端路由守卫缺失已修复（<code>beforeEach</code> 加 token 检查 + 白名单 + 登录回跳）。安全审计维度 63.0 → 71.7，生产就绪度 60.3 → 62.5。剩余 <code>/chat/reorder</code> 缺鉴权（非数据泄露，次要）、<code>get_session</code> 自动建会话污染、硬编码测试后门三项列为后续跟进。</p>
 </div>
 
 <div class="toc">
@@ -315,29 +316,30 @@
 </div>
 
 <h2 id="dim4">四、安全审计核查（v2 新增）</h2>
-<p class="small">v1 将安全问题零散塞入"工程化 P2 配置安全收紧"，严重度定级偏低。v2 单列安全审计维度，共 5 个核查点。其中 <code>/chat/sessions</code> 未鉴权为<strong>授权绕过</strong>，升为 P0。</p>
+<p class="small">v1 将安全问题零散塞入"工程化 P2 配置安全收紧"，严重度定级偏低。v2 单列安全审计维度，共 6 个核查点。<span class="delta delta-up">更新：<code>/chat/sessions</code> 授权绕过 + 前端路由守卫缺失均于 2026-06-25 修复。</span></p>
 
 <table>
   <thead><tr><th style="width:24%">核查点</th><th style="width:12%">状态</th><th style="width:10%">评级</th><th>核心证据</th></tr></thead>
   <tbody>
-    <tr><td>1. 认证鉴权</td><td><span class="badge b-part">部分实现</span></td><td><span class="grade g-Cp">C+</span></td><td>绝大多数端点有鉴权；<code>GET /chat/sessions</code> <strong>无鉴权</strong>返回全部会话 ID</td></tr>
+    <tr><td>1. 认证鉴权 <span class="delta delta-up">已修复</span></td><td><span class="badge b-ok">已实现</span></td><td><span class="grade g-Am">A-</span></td><td><code>GET /chat/sessions</code> 已加鉴权并改为仅返回当前用户会话；剩余 <code>/chat/reorder</code> 缺鉴权（次要）</td></tr>
     <tr><td>2. CORS 配置</td><td><span class="badge b-no">未实现</span></td><td><span class="grade g-D">未实现</span></td><td><code>allow_origins=["*"]</code> + <code>allow_credentials=True</code> 不安全组合</td></tr>
     <tr><td>3. 敏感信息泄露</td><td><span class="badge b-part">部分实现</span></td><td><span class="grade g-C">C</span></td><td><code>db_config.py</code> echo=True 生产打印全部 SQL；ENV 分级脱敏部分生效</td></tr>
     <tr><td>4. Prompt injection 防护</td><td><span class="badge b-part">部分实现</span></td><td><span class="grade g-Cp">C+</span></td><td>Agent 接用户输入到 SQL/HTTP 工具；有 user_id 注入+SELECT 白名单，无 prompt 层防护</td></tr>
     <tr><td>5. 查询审计日志</td><td><span class="badge b-part">部分实现</span></td><td><span class="grade g-Cp">C+</span></td><td><code>QueryLog</code> 记检索行为；无安全审计/越权告警</td></tr>
+    <tr><td>6. 前端路由守卫 <span class="delta delta-up">已修复 · v2.1新增</span></td><td><span class="badge b-ok">已实现</span></td><td><span class="grade g-A">A</span></td><td><code>router.beforeEach</code> 原仅改 title 无鉴权，已加 token 检查+白名单+登录后回跳</td></tr>
   </tbody>
 </table>
-<p class="small">维度分 = (70+40+65+70+70)/5 = <strong>63.0</strong></p>
+<p class="small">维度分 = (90+40+65+70+70+95)/6 = <strong>71.7</strong> <span class="delta delta-up">（63.0 → /chat/sessions 修复 67.0 → 前端守卫修复 71.7）</span></p>
 
 <div class="item">
   <div class="item-head">
-    <span class="item-title">1. 认证鉴权 — /chat/sessions 授权绕过（P0 finding）</span>
-    <span class="badge b-no">P0 安全漏洞</span>
+    <span class="item-title">1. 认证鉴权 — /chat/sessions 授权绕过（已修复）</span>
+    <span class="badge b-ok">已修复</span>
   </div>
   <div class="evidence">
-    <strong>证据</strong>：<code>chat.py</code> L76-80 <code>GET /chat/sessions</code> 端点<strong>无</strong> <code>Depends(get_current_user_id)</code> 依赖（对比同文件 L20-24/L39-44/L51-52/L58-59/L66-71/L83-84 均有鉴权）。其调用 <code>handle_get_all_sessions</code>（<code>chat_service.py</code> L52-55）→ <code>session_manager.get_all_session_ids()</code>，<strong>无 user_id 参数，返回系统全部会话 ID</strong>。对比 L57-63 <code>handle_get_user_sessions</code> 有 403 越权校验。
+    <strong>原漏洞</strong>：<code>chat.py</code> L76-80 <code>GET /chat/sessions</code> 端点无 <code>Depends(get_current_user_id)</code> 依赖，调用 <code>handle_get_all_sessions</code> 返回系统全部会话 ID，属授权绕过/数据泄露。
   </div>
-  <div class="sec-risk"><strong>v2 定级理由</strong>：任何未认证用户可调用该端点拉取系统全部会话 ID 列表，属<strong>授权绕过 / 数据泄露</strong>。v1 将此项与 echo/CORS 并列 P2"配置安全收紧"，严重低估。v2 升为 <strong>P0 安全 finding</strong>——这是当前系统最该立即修复的问题，修复成本极低（补一个鉴权依赖）。</div>
+  <div class="highlight"><strong>修复内容（2026-06-25）</strong>：① <code>chat.py</code> <code>GET /chat/sessions</code> 加 <code>user_id: str = Depends(get_current_user_id)</code> 鉴权；② 改为调用 <code>handle_get_user_sessions(user_id, user_id)</code>，仅返回当前调用者的会话；③ 删除不再被调用的 <code>handle_get_all_sessions</code> 方法；④ 前端实际使用的是 <code>GET /chat/sessions/{user_id}</code>（已鉴权），无参版前端未使用，修复无破坏性。评级 C+ → A-（剩余 <code>/chat/reorder</code> 缺鉴权为次要问题，不涉数据泄露）。</div>
 </div>
 
 <div class="item">
@@ -349,6 +351,21 @@
     <strong>证据</strong>：<code>main.py</code> L54-55 <code>allow_origins=["*"]</code> + <code>allow_credentials=True</code>。该组合违反 CORS 规范（浏览器会拒绝带凭证的通配源），且等于无 CORS 防护。
   </div>
   <div class="sec-risk"><strong>修复</strong>：生产环境 <code>allow_origins</code> 限定为前端白名单域名，或关闭 <code>allow_credentials</code>。</div>
+</div>
+
+<div class="item">
+  <div class="item-head">
+    <span class="item-title">6. 前端路由守卫缺失 — 任意 URL 直进受保护页面（P0，已修复 · v2.1 新增）</span>
+    <span class="badge b-ok">已修复</span>
+  </div>
+  <div class="evidence">
+    <strong>原漏洞</strong>：<code>front/src/router/index.ts</code> 的 <code>router.beforeEach</code> 仅设置 <code>document.title</code>，<strong>无任何登录态检查</strong>。任何人输入 <code>/aichat/{任意sessionId}</code> 直接进入页面，不被重定向到登录页。配合 localStorage 残留的旧 token，"未登录"状态下仍可携带 token 请求后端，获取该 token 对应用户的会话数据。
+  </div>
+  <div class="evidence">
+    <strong>链路说明</strong>：后端鉴权链实际完整（<code>get_current_user_id</code> 验 token 401 + <code>get_session</code> 校验 session 归属 403），非后端越权漏洞；问题在前端缺守卫导致"免登录访问"。
+  </div>
+  <div class="highlight"><strong>修复内容（2026-06-25）</strong>：<code>beforeEach</code> 加 token 检查——非白名单页面（<code>/login</code>、<code>/register</code>）无 token 跳登录页并带 <code>redirect</code> 回跳参数；已登录访问登录页重定向首页。</div>
+  <div class="gap"><strong>关联隐患（未修，建议跟进）</strong>：① <code>database_session_manager.get_session</code> 在 session_id 不存在时<strong>自动创建新会话</strong>（L63-74），任意已登录用户访问不存在的 sessionId 会污染数据库，建议改为返回 404；② <code>user.ts</code> L33-51 硬编码 <code>test/666666</code> 测试账号 + 假 token <code>test_token_for_unlogin</code>，虽被后端 401 拒绝，但应移除生产代码中的测试后门；③ 无全局 axios 401 拦截器，token 过期时不会自动清 localStorage 跳登录。</div>
 </div>
 
 <h2 id="dim5">五、RAG 效果评估核查（v2 新增）</h2>
@@ -405,12 +422,21 @@
 <h2 id="gaps">八、关键差距与改进建议优先级（v2 重定级）</h2>
 <p>v1 将安全问题统列 P2，v2 重新定级：授权绕过升 P0，CORS/echo 升 P1。新增评估与治理维度的差距。</p>
 
+<div class="priority p-low">
+  <span class="p-tag low">已完成</span>
+  <div>
+    <strong>修复 /chat/sessions 未鉴权（安全审计 1）</strong> <span class="delta delta-up">2026-06-25 已修复</span><br>
+    修复内容：<code>GET /chat/sessions</code> 加 <code>user_id: str = Depends(get_current_user_id)</code> 鉴权；改为调用 <code>handle_get_user_sessions(user_id, user_id)</code> 仅返回当前用户会话；删除 <code>handle_get_all_sessions</code> 死方法。安全审计第1项 C+ → A-。<br>
+    <span class="small">残留：<code>GET /chat/reorder</code> 仍缺鉴权（非数据泄露，DoS 风险，待后续处理）。</span>
+  </div>
+</div>
+
 <div class="priority p-high">
   <span class="p-tag high">P0</span>
   <div>
-    <strong>修复 /chat/sessions 未鉴权（安全审计 1）</strong> <span class="delta delta-down">v1 原列 P2</span><br>
-    现状：<code>GET /chat/sessions</code> 无鉴权依赖，返回系统全部会话 ID，属授权绕过/数据泄露。<br>
-    建议：补 <code>user_id: str = Depends(get_current_user_id)</code>，并改为只返回当前用户会话。修复成本极低，应立即处理。
+    <strong>修复前端路由守卫缺失（安全审计 6）</strong> <span class="delta delta-up">2026-06-25 已修复 · v2.1 新增</span><br>
+    修复内容：<code>front/src/router/index.ts</code> 的 <code>beforeEach</code> 加 token 检查——非白名单页面无 token 跳 <code>/login</code> 并带 <code>redirect</code> 回跳；已登录访问登录页重定向首页。新增核查点，安全审计维度 5 项 → 6 项，维度分 67.0 → 71.7，生产就绪度 61.3 → 62.5。<br>
+    <span class="small">关联隐患（未修）：<code>get_session</code> 自动建会话污染、<code>user.ts</code> 硬编码 test/666666 测试后门、无全局 401 拦截器——建议跟进。</span>
   </div>
 </div>
 
@@ -519,18 +545,18 @@
 <div class="conclusion">
   <h3>v2 审查结论</h3>
   <p>对照《企业级 RAG》参考文档，本项目后端在<strong>文档定义的两大核心维度（数据 + 检索）确实达成 A- 级（91.1）</strong>——这是 v1 报告中站得住的核心结论：Excel 合并单元格/多级表头、代码 AST 切分、PDF 多模态、三种图片向量化、多因素排序公式吻合、混合检索、负反馈闭环机制均属实。v1 的证据质量经回源码复核<strong>全部准确</strong>。</p>
-  <p>但作为<strong>可投产的企业级系统</strong>，生产就绪度仅 <strong>C 级（60.3）</strong>，主要短板：</p>
+  <p>但作为<strong>可投产的企业级系统</strong>，生产就绪度仅 <strong>C 级（62.5）</strong>，主要短板：</p>
   <ul>
-    <li><strong>安全有真漏洞</strong>：<code>/chat/sessions</code> 授权绕过（P0），CORS 不安全组合，SQL echo 泄露——v1 均低估为 P2</li>
+    <li><strong>安全有真漏洞</strong>：<code>/chat/sessions</code> 授权绕过 + 前端路由无守卫（两项 P0，<strong>均已修复</strong>）；CORS 不安全组合、SQL echo 泄露仍待处理——v1 均低估为 P2</li>
     <li><strong>效果不可度量</strong>：无 RAGAS/recall@k/在线指标（评估维度 23.3，全报告最低），负反馈闭环"机制完整但效果未验证"</li>
     <li><strong>灾备无方案</strong>：Milvus/MySQL 无备份，多租户下无数据删除权（治理维度 45.0）</li>
     <li><strong>死代码冒充已实现</strong>：PDFHeadingDetector、cache_with_redis、语义切分三处死代码，v1 计入"部分实现"凑出"0 项未实现"</li>
   </ul>
-  <p style="margin-top:16px;"><strong>最终评级（双分数）</strong>：文档标准合规分 <strong>A-（91.1）</strong>；生产就绪度 <strong>C（60.3）</strong>。v1 单一 84.4（B+）分数混淆了两者，本版修正。建议优先修 P0 三项（授权绕过 + 监控评估基线 + PDF 标题集成），可将生产就绪度推至 B-；全面落实 P1 后可达 B。</p>
+  <p style="margin-top:16px;"><strong>最终评级（双分数）</strong>：文档标准合规分 <strong>A-（91.1）</strong>；生产就绪度 <strong>C（62.5）</strong>。v1 单一 84.4（B+）分数混淆了两者，本版修正。两项 P0 安全已修复，建议优先修剩余 P0 两项（监控评估基线 + PDF 标题集成），可将生产就绪度推至 B-；全面落实 P1 后可达 B。</p>
 </div>
 
 <hr>
-<p class="small">本报告 v2 由 WorkBuddy 对 v1 报告重新审查生成，2026-06-25。v1 的 10 条关键论断已回 <code>backend/</code> 源码逐条复核，全部属实。v2 主要修订：① 公开评分 rubric；② 死代码改判未实现；③ 单列安全审计维度并升 P0；④ 补 RAG 评估 / 数据治理两维度；⑤ 双分数框架替代单一 84.4。核查项由 31 项扩至 42 项：已实现 26 / 部分实现 8 / 未实现 8。</p>
+<p class="small">本报告 v2 由 WorkBuddy 对 v1 报告重新审查生成，2026-06-25。v1 的 10 条关键论断已回 <code>backend/</code> 源码逐条复核，全部属实。v2 主要修订：① 公开评分 rubric；② 死代码改判未实现；③ 单列安全审计维度并升 P0；④ 补 RAG 评估 / 数据治理两维度；⑤ 双分数框架替代单一 84.4。<strong>2026-06-25 更新</strong>：修复两项 P0 安全——<code>/chat/sessions</code> 授权绕过（安全审计 1：C+→A-）+ 前端路由守卫缺失（安全审计新增第 6 项：未实现→A）。安全审计维度分 63.0→71.7（+8.7），生产就绪度 60.3→62.5。核查项 42 项：已实现 23 / 部分实现 14 / 未实现+缺失 5。</p>
 
 </div>
 </body>

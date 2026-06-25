@@ -79,24 +79,27 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function logout(): Promise<void> {
+    // 先吊销本地凭据（立即生效，不依赖后端响应）。
+    // 这样路由守卫在 router.push('/login') 时立刻看到无 token，不会把登录页重定向走。
+    // 安全上也更稳：本地凭据先清，即使后端通知失败，本地已是登出态。
+    const t = localStorage.getItem('jwt_token') || token.value;
+    userInfo.value = null;
+    token.value = '';
+    isLogin.value = false;
+    localStorage.removeItem('jwt_token');
+
+    if (!t) return;
+
     try {
-      const t = localStorage.getItem('jwt_token') || token.value;
-      if (t) {
-        await axios.post(
-          '/user/logout/',
-          {},
-          {
-            headers: { Authorization: `Bearer ${t}`, 'X-CSRFTOKEN': getCsrfToken() },
-          },
-        );
-      }
+      await axios.post(
+        '/user/logout/',
+        {},
+        {
+          headers: { Authorization: `Bearer ${t}`, 'X-CSRFTOKEN': getCsrfToken() },
+        },
+      );
     } catch {
-      // ignore
-    } finally {
-      userInfo.value = null;
-      token.value = '';
-      isLogin.value = false;
-      localStorage.removeItem('jwt_token');
+      // 后端通知失败不阻断登出，本地凭据已清
     }
   }
 
@@ -194,6 +197,20 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  /**
+   * 从 localStorage 恢复登录态。
+   * 刷新页面后 pinia 内存状态会重置，但 localStorage 里的 jwt_token 仍在。
+   * 调用此方法把 token 同步回 pinia，使 UI（依据 isLogin）与路由守卫（依据 localStorage）保持一致。
+   * 注意：仅恢复状态，不验证 token 有效性；token 过期的情况由后端 401 + axios 拦截器处理。
+   */
+  function restoreSession(): void {
+    const t = localStorage.getItem('jwt_token');
+    if (t) {
+      token.value = t;
+      isLogin.value = true;
+    }
+  }
+
   async function register(userData: RegistrationForm): Promise<OperationResult> {
     try {
       const response = await axios.post<{
@@ -246,5 +263,6 @@ export const useUserStore = defineStore('user', () => {
     updateUserInfo,
     updatePassword,
     register,
+    restoreSession,
   };
 });

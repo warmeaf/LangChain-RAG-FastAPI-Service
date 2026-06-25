@@ -59,8 +59,24 @@ const router = createRouter({
   routes,
 });
 
+// 公开页面白名单：无需登录即可访问
+const PUBLIC_PAGES = ['/login', '/register'];
+
 router.beforeEach((to, _from) => {
   document.title = (to.meta.title as string) || '新闻资讯';
+
+  const token = localStorage.getItem('jwt_token');
+  const isPublic = PUBLIC_PAGES.includes(to.path);
+
+  // 未登录访问受保护页面 → 跳登录页，并记录原目标以便登录后回跳
+  if (!isPublic && !token) {
+    return { path: '/login', query: { redirect: to.fullPath } };
+  }
+
+  // 已登录访问登录/注册页 → 回首页（避免重复登录）
+  if (isPublic && token && (to.path === '/login' || to.path === '/register')) {
+    return { path: '/aichat' };
+  }
 });
 
 export default router;

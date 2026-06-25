@@ -128,9 +128,9 @@ const handleLogout = () => {
     title: t('common.confirm'),
     message: `${t('my.logout')}?`,
     showCancelButton: true,
-  }).then((action: unknown) => {
+  }).then(async (action: unknown) => {
     if (action === 'confirm') {
-      userStore.logout();
+      await userStore.logout();
       router.push('/login');
     }
   });

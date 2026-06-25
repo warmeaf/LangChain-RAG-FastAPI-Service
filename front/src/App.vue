@@ -18,7 +18,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useThemeStore } from './store/theme'
+import { useUserStore } from './store/user'
 
 const themeStore = useThemeStore()
-onMounted(() => themeStore.initTheme())
+const userStore = useUserStore()
+onMounted(() => {
+  themeStore.initTheme()
+  // 刷新后从 localStorage 恢复 pinia 登录态，使 UI 与路由守卫的真相源一致
+  userStore.restoreSession()
+})
 </script>
