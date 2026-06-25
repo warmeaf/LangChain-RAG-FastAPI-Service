@@ -96,6 +96,11 @@ class DocumentProcessor:
         if read_path.endswith('.txt'):
             return txt_loader_sync(read_path)
         elif read_path.endswith('.pdf'):
+            # OCR 先行尝试（同步）
+            from .ocr_processor import OCRProcessor
+            ocr_docs = OCRProcessor().process_sync(read_path)
+            if ocr_docs and len(ocr_docs) > 0 and len(ocr_docs[0].page_content) > 50:
+                return ocr_docs
             if md5 and user_id:
                 return pdf_multimodal_loader_sync(read_path, md5, user_id)
             return pdf_loader_sync(read_path)
