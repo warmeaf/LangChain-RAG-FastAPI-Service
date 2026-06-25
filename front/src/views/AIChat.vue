@@ -10,18 +10,23 @@
           <History :size="18" />
         </span>
       </template>
+      <template #right>
+        <span @click="resetToWelcome">
+          <MessageCirclePlus :size="18" />
+        </span>
+      </template>
     </van-nav-bar>
     
     <div class="flex flex-col" style="height: calc(100dvh - 46px - 50px)">
-      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-[var(--van-padding-sm)] py-[var(--van-padding-md)]" style="scrollbar-gutter: stable">
+      <div ref="messagesContainer" class="flex-1 overflow-y-auto px-(--van-padding-sm) py-(--van-padding-md)" style="scrollbar-gutter: stable">
         <!-- 欢迎状态（仅首次进入时显示） -->
-        <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-[var(--van-padding-lg)] py-12">
+        <div v-if="showWelcome" class="flex flex-col items-center justify-center gap-(--van-padding-lg) py-12">
           <div class="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full">
             <Bot :size="32" color="var(--van-blue)" />
           </div>
-          <h3 class="m-0 text-[var(--van-font-size-lg)] font-semibold">RAG 智能问答</h3>
-          <p class="m-0 text-[var(--van-font-size-md)] text-[var(--van-text-color-2)] text-center px-[var(--van-padding-md)]">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
-          <div class="flex flex-wrap justify-center gap-[var(--van-padding-xs)]">
+          <h3 class="m-0 text-(--van-font-size-lg) font-semibold">RAG 智能问答</h3>
+          <p class="m-0 text-(--van-font-size-md) text-center px-(--van-padding-md)">基于知识库文档的智能问答系统。上传你的文档，开始提问。</p>
+          <div class="flex flex-wrap justify-center gap-(--van-padding-xs)">
             <van-button
               v-for="(q, i) in quickQuestions"
               :key="i"
@@ -42,10 +47,10 @@
         >
           <div :class="[
               message.role === 'user'
-                ? 'w-fit max-w-[85%] bg-[var(--van-primary-color)] text-[var(--van-white)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
+                ? 'w-fit max-w-[85%] bg-(--van-primary-color) text-(--van-white) rounded-(--van-radius-lg) px-(--van-padding-sm) py-(--van-padding-base)'
                 : message.thinking && message.thinking.length > 0
-                  ? 'w-full max-w-[85%] bg-[var(--van-background-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
-                  : 'w-fit max-w-[85%] bg-[var(--van-background-2)] border border-[var(--van-border-color)] rounded-[var(--van-radius-lg)] px-[var(--van-padding-sm)] py-[var(--van-padding-base)]'
+                  ? 'w-full max-w-[85%] bg-(--van-background-2) border border-(--van-border-color) rounded-(--van-radius-lg) px-(--van-padding-sm) py-(--van-padding-base)'
+                  : 'w-fit max-w-[85%] bg-(--van-background-2) border border-(--van-border-color) rounded-(--van-radius-lg) px-(--van-padding-sm) py-(--van-padding-base)'
             ]">
             <!-- 思考过程区域 -->
             <ThinkingSteps
@@ -54,7 +59,7 @@
               @toggle="toggleThinking(message)"
             />
             <!-- 回复正文 -->
-            <div v-if="message.content" class="text-[var(--van-font-size-md)] leading-relaxed">
+            <div v-if="message.content" class="text-(--van-font-size-md) leading-relaxed">
               <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" :is-dark="themeStore.isDark" />
             </div>
             <!-- 打字指示器（无内容且无思考过程时显示） -->
@@ -68,7 +73,7 @@
         </div>
       </div>
       
-      <van-cell-group inset class="mb-[var(--van-padding-sm)]!">
+      <van-cell-group inset class="mb-(--van-padding-sm)!">
       <van-cell center class="shadow-sm!" :border="false">
         <template #title>
           <van-field
@@ -103,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { Bot, History, Send } from '@lucide/vue';
+import { Bot, History, MessageCirclePlus, Send } from '@lucide/vue';
 import MarkdownRender from 'markstream-vue';
 import { showToast } from 'vant';
 import { onMounted, ref, watch } from 'vue';
