@@ -239,6 +239,7 @@
     <strong>证据</strong>：<code>pdf_heading_detector.py</code> 实现完整（字号检测 + 5 种中文编号模式 + 标题路径面包屑），有 5 个测试。但全局 Grep 确认该模块<strong>仅在自身和测试文件中被引用</strong>，实际 PDF 处理管线（<code>pdf_multimodal_loader.py</code>、<code>file_handler.py</code>、<code>processor.py</code>）均未调用。
   </div>
   <div class="sec-risk"><strong>v2 定级理由</strong>：v1 将其归为"部分实现 C"。但按 v2 方法论，"代码存在但未接入生产路径"= 死代码 = <strong>未实现</strong>。PDF 章节结构信息在生产处理中实际丢失，该功能对用户不可用。改判未实现（35 分）。</div>
+  <div class="gap"><strong>集成代价说明（v2.2 更新 · 暂缓）</strong>：初版报告称"工作量小，收益高"，经源码探索后修正。<code>PDFHeadingDetector.extract_headings()</code> 需要每个文本块的 <code>font_size</code> 字段，但当前 <code>pdf_multimodal_loader.py</code> L111 用 <code>page.get_text()</code>（纯文本，无字号信息）。集成需：① 改用 <code>page.get_text("dict")</code> 提取并重组带字号的 blocks；② 决策集成范围（仅多模态 loader / 含 <code>pdf_loader</code> 回退路径，后者用 unstructured/pypdf 拿字号更困难）；③ 决策 metadata 格式（字符串 vs list）。非"工作量小"的快胜项，<strong>转为"暂缓-需设计决策"</strong>，从 P0 待办移出。降级为 P1。</div>
 </div>
 
 <div class="item">
@@ -449,12 +450,13 @@
   </div>
 </div>
 
-<div class="priority p-high">
-  <span class="p-tag high">P0</span>
+<div class="priority p-mid">
+  <span class="p-tag mid">P1 暂缓</span>
   <div>
-    <strong>集成 PDFHeadingDetector 到处理管线（数据层面 2.1.8）</strong><br>
+    <strong>集成 PDFHeadingDetector 到处理管线（数据层面 2.1.8）</strong> <span class="delta delta-down">v2.2 由 P0 降级</span><br>
     现状：代码完整有测试但全程死代码，PDF 章节结构信息丢失。<br>
-    建议：在 <code>pdf_multimodal_loader.py</code> 文本提取阶段调用 <code>build_heading_path()</code>，为每个文本块附加标题路径上下文。工作量小，收益高。
+    <strong>集成代价</strong>：<code>PDFHeadingDetector</code> 需 <code>font_size</code>，当前 loader 用 <code>page.get_text()</code> 纯文本无字号。集成需改 <code>page.get_text("dict")</code> 提取并重组 blocks，且需决策范围（仅多模态 / 含 <code>pdf_loader</code> 回退）与 metadata 格式。初版"工作量小"评估有误，非快胜项。<br>
+    <span class="small">暂缓理由：需设计决策（提取方式改动 + 范围 + 格式），留待下一轮迭代。</span>
   </div>
 </div>
 
@@ -552,7 +554,7 @@
     <li><strong>灾备无方案</strong>：Milvus/MySQL 无备份，多租户下无数据删除权（治理维度 45.0）</li>
     <li><strong>死代码冒充已实现</strong>：PDFHeadingDetector、cache_with_redis、语义切分三处死代码，v1 计入"部分实现"凑出"0 项未实现"</li>
   </ul>
-  <p style="margin-top:16px;"><strong>最终评级（双分数）</strong>：文档标准合规分 <strong>A-（91.1）</strong>；生产就绪度 <strong>C（62.5）</strong>。v1 单一 84.4（B+）分数混淆了两者，本版修正。两项 P0 安全已修复，建议优先修剩余 P0 两项（监控评估基线 + PDF 标题集成），可将生产就绪度推至 B-；全面落实 P1 后可达 B。</p>
+  <p style="margin-top:16px;"><strong>最终评级（双分数）</strong>：文档标准合规分 <strong>A-（91.1）</strong>；生产就绪度 <strong>C（62.5）</strong>。v1 单一 84.4（B+）分数混淆了两者，本版修正。两项 P0 安全已修复，PDF 标题集成经探索后降级为 P1 暂缓（需设计决策），剩余 P0 仅监控评估基线一项。</p>
 </div>
 
 <hr>
