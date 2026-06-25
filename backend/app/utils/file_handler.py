@@ -94,42 +94,13 @@ async def listdir_allowed_type(path: str, allowed_types: tuple[str]) -> tuple:
 # ── 文档加载器 ──
 
 async def pdf_loader(file_path: str, password: str = None) -> List[Document]:
-    """PDF 加载器：先尝试 unstructured，失败回退 pypdf"""
+    """PDF 加载器：使用 pypdf 提取文本（无系统依赖）"""
     abs_file_path = get_abstract_path(file_path) if not os.path.isabs(file_path) else file_path
-    
-    if password:
-        import pypdf
-        reader = pypdf.PdfReader(abs_file_path)
-        if reader.is_encrypted:
-            reader.decrypt(password)
-        docs = []
-        for i, page in enumerate(reader.pages):
-            text = page.extract_text() or ""
-            docs.append(Document(page_content=text, metadata={"page": i + 1, "source": abs_file_path}))
-        return docs
-    
-    # 优先尝试 unstructured
-    try:
-        from unstructured.partition.pdf import partition_pdf
-        elements = partition_pdf(filename=abs_file_path, strategy="auto")
-        if elements:
-            docs = []
-            for el in elements:
-                page_number = getattr(el.metadata, 'page_number', None) if el.metadata else None
-                metadata = {"source": abs_file_path}
-                if page_number:
-                    metadata["page"] = page_number
-                text = str(el) if hasattr(el, '__str__') else getattr(el, 'text', "")
-                if text.strip():
-                    docs.append(Document(page_content=text, metadata=metadata))
-            if docs:
-                return docs
-    except Exception as e:
-        logger.warning(f"【PDF加载】unstructured 失败，尝试 pypdf: {e}")
-    
-    # 回退到 pypdf
+
     import pypdf
     reader = pypdf.PdfReader(abs_file_path)
+    if password and reader.is_encrypted:
+        reader.decrypt(password)
     docs = []
     for i, page in enumerate(reader.pages):
         text = page.extract_text() or ""
@@ -194,40 +165,13 @@ async def ppt_loader(file_path: str) -> List[Document]:
 # ── 同步版本（用于多线程场景）──
 
 def pdf_loader_sync(file_path: str, password: str = None) -> List[Document]:
-    """同步加载PDF文件内容"""
+    """同步加载PDF文件内容（使用 pypdf，无系统依赖）"""
     abs_file_path = get_abstract_path(file_path) if not os.path.isabs(file_path) else file_path
-    
-    if password:
-        import pypdf
-        reader = pypdf.PdfReader(abs_file_path)
-        if reader.is_encrypted:
-            reader.decrypt(password)
-        docs = []
-        for i, page in enumerate(reader.pages):
-            text = page.extract_text() or ""
-            docs.append(Document(page_content=text, metadata={"page": i + 1, "source": abs_file_path}))
-        return docs
-    
-    try:
-        from unstructured.partition.pdf import partition_pdf
-        elements = partition_pdf(filename=abs_file_path, strategy="auto")
-        if elements:
-            docs = []
-            for el in elements:
-                page_number = getattr(el.metadata, 'page_number', None) if el.metadata else None
-                metadata = {"source": abs_file_path}
-                if page_number:
-                    metadata["page"] = page_number
-                text = str(el) if hasattr(el, '__str__') else getattr(el, 'text', "")
-                if text.strip():
-                    docs.append(Document(page_content=text, metadata=metadata))
-            if docs:
-                return docs
-    except Exception as e:
-        logger.warning(f"【PDF加载(同步)】unstructured 失败，尝试 pypdf: {e}")
-    
+
     import pypdf
     reader = pypdf.PdfReader(abs_file_path)
+    if password and reader.is_encrypted:
+        reader.decrypt(password)
     docs = []
     for i, page in enumerate(reader.pages):
         text = page.extract_text() or ""
