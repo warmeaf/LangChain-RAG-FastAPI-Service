@@ -1,9 +1,23 @@
+import os
+from pathlib import Path
 from typing import List
 from langchain_core.documents import Document
 from app.utils.config import rag_config
 from app.core.logger_handler import logger
+from app.utils.path_tool import get_project_root
 
 
+# PaddleOCR 模型缓存目录
+# 优先级：环境变量 PADDLE_OCR_BASE_DIR > 默认 .cache/paddleocr
+# 相对路径基于 backend/ 根目录解析
+_PADDLEOCR_CACHE = os.environ.get("PADDLE_OCR_BASE_DIR")
+if _PADDLEOCR_CACHE:
+    _PROJ_ROOT = Path(get_project_root())
+    _PADDLEOCR_CACHE = str(_PROJ_ROOT / _PADDLEOCR_CACHE)
+else:
+    _PADDLEOCR_CACHE = str(Path(get_project_root()) / ".cache" / "paddleocr")
+    os.environ["PADDLE_OCR_BASE_DIR"] = _PADDLEOCR_CACHE
+Path(_PADDLEOCR_CACHE).mkdir(parents=True, exist_ok=True)
 class OCRProcessor:
     """扫描版 PDF OCR 处理器 (PaddleOCR)"""
 
