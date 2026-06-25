@@ -1,7 +1,6 @@
 <template>
   <van-nav-bar
     title="用户登录"
-    left-arrow
     @click-left="onClickLeft"
     fixed
     placeholder
@@ -36,9 +35,9 @@
         <van-button block type="primary" native-type="submit" size="large">
           登录
         </van-button>
-        <van-button block type="default" size="large" @click="loginTestUser">
+        <!-- <van-button block type="default" size="large" @click="loginTestUser">
           测试用户登录
-        </van-button>
+        </van-button> -->
       </div>
 
       <div class="text-center text-sm text-gray-500">
@@ -103,8 +102,8 @@ const goToRegister = () => {
   router.push('/register');
 };
 
-const loginTestUser = () => {
-  username.value = 'test';
-  password.value = '666666';
-};
+// const loginTestUser = () => {
+//   username.value = 'test';
+//   password.value = '666666';
+// };
 </script>
