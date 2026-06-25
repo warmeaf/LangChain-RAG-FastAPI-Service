@@ -431,8 +431,8 @@
   </div>
 </div>
 
-<div class="priority p-high">
-  <span class="p-tag high">P0</span>
+<div class="priority p-low">
+  <span class="p-tag low">已完成</span>
   <div>
     <strong>修复前端路由守卫缺失（安全审计 6）</strong> <span class="delta delta-up">2026-06-25 已修复 · v2.1 新增</span><br>
     修复内容：<code>front/src/router/index.ts</code> 的 <code>beforeEach</code> 加 token 检查——非白名单页面无 token 跳 <code>/login</code> 并带 <code>redirect</code> 回跳；已登录访问登录页重定向首页。新增核查点，安全审计维度 5 项 → 6 项，维度分 67.0 → 71.7，生产就绪度 61.3 → 62.5。<br>
