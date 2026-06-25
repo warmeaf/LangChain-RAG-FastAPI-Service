@@ -43,7 +43,7 @@
           v-for="(message, index) in messages"
           v-show="!showWelcome || message.role === 'user' || index > 0"
           :key="index"
-          :class="['flex mb-[var(--van-padding-sm)]', message.role === 'user' ? 'justify-end' : 'justify-start']"
+          :class="['flex mb-(--van-padding-sm)', message.role === 'user' ? 'justify-end' : 'justify-start']"
         >
           <div :class="[
               message.role === 'user'
