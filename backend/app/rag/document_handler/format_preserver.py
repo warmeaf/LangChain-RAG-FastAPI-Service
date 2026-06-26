@@ -93,13 +93,18 @@ def aggregate_by_slide(elements, source_path: str) -> List[Document]:
         slides[slide_key].append(formatted)
 
     result = []
+    total_slides = len(slides)
     for slide_num in sorted(slides.keys()):
         content = "\n".join(slides[slide_num])
+        # 在内容头部注入页码标记，双保险：即使下游丢失 metadata，
+        # LLM 仍能从纯文本读到"第N张/共X张"，支持回答幻灯片总数类问题
+        page_marker = f"【第{slide_num}张/共{total_slides}张幻灯片】\n"
         result.append(Document(
-            page_content=content,
+            page_content=page_marker + content,
             metadata={
                 "source": source_path,
                 "page": slide_num,
+                "total_slides": total_slides,
             }
         ))
 

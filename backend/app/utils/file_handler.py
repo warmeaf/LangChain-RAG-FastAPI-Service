@@ -158,8 +158,8 @@ async def ppt_loader(file_path: str) -> List[Document]:
         elements = partition_pptx(filename=abs_file_path)
         return aggregate_by_slide(elements, abs_file_path)
     except Exception as e:
-        logger.error(f"【PPT文件加载】失败: {e}")
-        return []
+        logger.error(f"【PPT文件加载】unstructured 失败，尝试 fallback: {e}", exc_info=True)
+        return _pptx_fallback_load(abs_file_path)
 
 
 # ── 同步版本（用于多线程场景）──
@@ -278,5 +278,55 @@ def ppt_loader_sync(file_path: str) -> List[Document]:
         elements = partition_pptx(filename=abs_file_path)
         return aggregate_by_slide(elements, abs_file_path)
     except Exception as e:
-        logger.error(f"【PPT文件加载(同步)】失败: {e}")
+        logger.error(f"【PPT文件加载(同步)】unstructured 失败，尝试 fallback: {e}", exc_info=True)
+        return _pptx_fallback_load(abs_file_path)
+
+
+def _pptx_fallback_load(file_path: str) -> List[Document]:
+    """PPTX fallback 加载器：直接用 python-pptx 解析，绕过 unstructured 的 spacy 依赖
+
+    当 unstructured 的 partition_pptx 因 spacy 模型未安装/网络超时失败时启用。
+    不做文本类型分类（Title/NarrativeText 判断），但仍能提取所有文本，
+    并通过 aggregate_by_slide 完成幻灯片聚合与元信息注入。
+    """
+    try:
+        from pptx import Presentation
+        from app.rag.document_handler.format_preserver import aggregate_by_slide
+
+        class _FakeElement:
+            """模拟 unstructured element，供 aggregate_by_slide 使用"""
+            __slots__ = ('_text', 'category', 'metadata')
+
+            def __init__(self, text: str, category: str, page_number: int):
+                self._text = text
+                self.category = category
+                self.metadata = type('_M', (), {'page_number': page_number})()
+
+            def __str__(self) -> str:
+                return self._text
+
+        prs = Presentation(file_path)
+        elements = []
+        for slide_idx, slide in enumerate(prs.slides, 1):
+            title_shape = slide.shapes.title
+            for shape in slide.shapes:
+                if not shape.has_text_frame:
+                    continue
+                for para in shape.text_frame.paragraphs:
+                    text = para.text.strip()
+                    if not text:
+                        continue
+                    # 简单分类：标题 shape → Title，有缩进 → ListItem，其余 → NarrativeText
+                    if title_shape is not None and shape == title_shape:
+                        category = "Title"
+                    elif para.level > 0:
+                        category = "ListItem"
+                    else:
+                        category = "NarrativeText"
+                    elements.append(_FakeElement(text, category, slide_idx))
+
+        logger.info(f"【PPT fallback】python-pptx 提取 {len(elements)} 个元素")
+        return aggregate_by_slide(elements, file_path)
+    except Exception as e:
+        logger.error(f"【PPT fallback】也失败: {e}", exc_info=True)
         return []

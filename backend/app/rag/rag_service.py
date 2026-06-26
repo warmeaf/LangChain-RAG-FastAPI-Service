@@ -230,6 +230,10 @@ class RagService:
 
         return {
             "documents": [doc.page_content for doc in final_docs],
+            "documents_meta": [
+                {"content": doc.page_content, "metadata": doc.metadata}
+                for doc in final_docs
+            ],
             "summary": summary,
         }
 
@@ -310,7 +314,18 @@ class RagService:
                 source_label = f"（来源：{os.path.basename(source)}）"
             else:
                 source_label = ""
-            chunk_text = f"[{i}]{source_label} {doc.page_content}\n\n"
+            # 读取页码元信息（PPT 聚合后存在），注入到引用标签中
+            # 解决"幻灯片总数/第几页"类问题：metadata 在此之前虽完整保留，
+            # 但组装纯文本上下文时被忽略，导致 LLM 无法获知全局结构信息
+            page = doc.metadata.get("page")
+            total = doc.metadata.get("total_slides")
+            if page and total:
+                page_label = f"[第{page}页/共{total}页]"
+            elif page:
+                page_label = f"[第{page}页]"
+            else:
+                page_label = ""
+            chunk_text = f"[{i}]{source_label}{page_label} {doc.page_content}\n\n"
             if total_chars + len(chunk_text) > self._MAX_CONTEXT_CHARS:
                 logger.info(f"上下文达字符预算({self._MAX_CONTEXT_CHARS})，截断于第 {i} 篇文档")
                 break

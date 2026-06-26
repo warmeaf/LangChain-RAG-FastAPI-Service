@@ -40,12 +40,23 @@ async def rag_summary_tools(query: str, user_id: str = None) -> str:
 
     result = await RagService(effective_user_id, thinking_callback=_thinking_callback).get_documents_and_summary(query)
     documents = result.get("documents", [])
+    documents_meta = result.get("documents_meta", [])
     summary = result.get("summary", "")
 
     formatted_result = f"摘要: {summary}\n\n"
     formatted_result += "检索到的文档列表（已重排序）:\n"
     for i, doc in enumerate(documents, 1):
-        formatted_result += f"{i}. {doc}\n"
+        # 若有元信息可用，标注页码（PPT 幻灯片编号），帮助 LLM 回答结构类问题
+        meta_label = ""
+        if i - 1 < len(documents_meta):
+            md = documents_meta[i - 1].get("metadata", {})
+            page = md.get("page")
+            total = md.get("total_slides")
+            if page and total:
+                meta_label = f" [第{page}页/共{total}页]"
+            elif page:
+                meta_label = f" [第{page}页]"
+        formatted_result += f"{i}.{meta_label} {doc}\n"
 
     return formatted_result
 
