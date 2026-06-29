@@ -79,6 +79,9 @@ markers = [
     "e2e: end-to-end tests requiring running services",
     "db: tests requiring database connection",
     "slow: slow tests (model loading)",
+    "asyncio: async tests",
+    "integration: integration tests requiring external services",
+    "smoke: smoke tests for API format validation",
 ]
 addopts = "-v --tb=short"
 

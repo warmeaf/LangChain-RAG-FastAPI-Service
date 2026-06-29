@@ -1,6 +1,10 @@
+from typing import Dict
+import yaml
+import os
+
 from app.utils.config import prompt_config
 from app.core.logger_handler import logger
-from app.utils.path_tool import get_abstract_path
+from app.utils.path_tool import get_abstract_path, get_project_root
 
 
 def load_prompt(prompt_type: str = 'main_prompt'):
@@ -33,6 +37,59 @@ def load_prompt(prompt_type: str = 'main_prompt'):
     except Exception as e:
         logger.error(f"【加载提示词模板】读取 {prompt_path} 时出错: {e}")
         raise e
+
+
+def load_system_prompts() -> Dict[str, str]:
+    """加载分层系统提示词（YAML 格式）
+
+    从 app/prompt/system_prompt.yaml 加载 base / planning / execution / summarization 四层提示词。
+    每层中的 {tools} 占位符由调用方动态注入工具描述。
+
+    Returns:
+        {"base": str, "planning": str, "execution": str, "summarization": str}
+    """
+    yaml_path = os.path.join(get_project_root(), "app", "prompt", "system_prompt.yaml")
+    try:
+        with open(yaml_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except FileNotFoundError:
+        logger.error(f"【加载系统提示词】文件不存在: {yaml_path}")
+        raise
+    except yaml.YAMLError as e:
+        logger.error(f"【加载系统提示词】YAML 解析错误: {e}")
+        raise
+
+    if not isinstance(data, dict):
+        raise ValueError(f"system_prompt.yaml 格式错误：期望 dict，实际 {type(data)}")
+
+    return {
+        "base": data.get("base", "").strip(),
+        "planning": data.get("planning", "").strip(),
+        "execution": data.get("execution", "").strip(),
+        "summarization": data.get("summarization", "").strip(),
+    }
+
+
+def build_stage_prompt(stage: str, tools_xml: str) -> str:
+    """构建特定阶段的完整系统提示词
+
+    Args:
+        stage: 阶段名称 (planning / execution / summarization)
+        tools_xml: 工具 XML 描述字符串
+
+    Returns:
+        完整的系统提示词（工具注入后的）
+    """
+    prompts = load_system_prompts()
+    base = prompts.get("base", "")
+    stage_prompt = prompts.get(stage, "")
+
+    # 组合：base + 阶段特定
+    combined = base + "\n\n" + stage_prompt
+
+    # 注入工具描述
+    return combined.replace("{tools}", tools_xml)
+
 
 if __name__ == '__main__':
     print(load_prompt('report_prompt'))
