@@ -90,14 +90,21 @@ async def summarization_node(state: AgentState) -> AgentState:
 
 
 def _build_summarization_context(state: AgentState) -> str:
-    """构建 Summarization 的输入上下文"""
+    """构建 Summarization 的输入上下文
+
+    两轮收集：
+    1. 从 state["plan"] 提取步骤结果（有 create_plan 时）
+    2. 从 state["messages"] 提取 ToolMessage 结果（无 plan 时的兜底）
+    """
     messages = state.get("messages", [])
     user_query = _get_user_query(messages)
 
     plan = state.get("plan", [])
-    tool_results = state.get("tool_results", {})
 
     parts = [f"## 用户问题\n{user_query}\n"]
+
+    # 收集已在 plan 中出现的 tool_call_id，用于去重
+    seen_tool_ids = set()
 
     if plan:
         parts.append("## 检索执行记录\n")
@@ -107,12 +114,24 @@ def _build_summarization_context(state: AgentState) -> str:
             parts.append(f"原因: {step['reason']}")
             parts.append(f"状态: {step['status']}")
             if step.get("result"):
-                # 截断过长的结果
                 result = step["result"]
                 if len(result) > 3000:
                     result = result[:3000] + "\n... (内容过长已截断)"
                 parts.append(f"结果:\n{result}")
             parts.append("")
+    else:
+        # 无 plan 时，从 messages 中提取 ToolMessage 结果
+        tool_results_from_messages = _extract_tool_results_from_messages(messages)
+        if tool_results_from_messages:
+            parts.append("## 工具执行结果\n")
+            for tr in tool_results_from_messages:
+                tool_label = tr.get("tool_name", "未知工具")
+                result = tr.get("content", "")
+                if len(result) > 3000:
+                    result = result[:3000] + "\n... (内容过长已截断)"
+                parts.append(f"### {tool_label}")
+                parts.append(f"结果:\n{result}")
+                parts.append("")
 
     parts.append("## 请基于上述信息，生成完整、准确的回答\n")
     parts.append("要求：")
@@ -123,6 +142,40 @@ def _build_summarization_context(state: AgentState) -> str:
     parts.append("- 使用 Markdown 格式组织回答")
 
     return "\n".join(parts)
+
+
+def _extract_tool_results_from_messages(messages: list) -> list:
+    """从 messages 列表中提取所有 ToolMessage 的工具返回结果
+
+    Anthropic Messages API 中，tool_result 放在 user role 的 content blocks 里。
+    LangChain 中表现为 ToolMessage。
+    """
+    from langchain_core.messages import ToolMessage
+
+    results = []
+    for i, msg in enumerate(messages):
+        if not isinstance(msg, ToolMessage):
+            continue
+
+        # 尝试从前一条 assistant message 获取工具名
+        tool_name = "未知工具"
+        for j in range(i - 1, -1, -1):
+            prev = messages[j]
+            if hasattr(prev, 'tool_calls') and prev.tool_calls:
+                # tool_calls 可能已全部处理，找对应 tool_call_id 的
+                for tc in prev.tool_calls:
+                    tc_id = tc.get("id", "") if isinstance(tc, dict) else getattr(tc, "id", "")
+                    if tc_id == msg.tool_call_id:
+                        tool_name = tc.get("name", "") if isinstance(tc, dict) else getattr(tc, "name", "")
+                        break
+                break
+
+        results.append({
+            "tool_name": tool_name,
+            "content": msg.content if isinstance(msg.content, str) else str(msg.content),
+        })
+
+    return results
 
 
 def _get_user_query(messages: list) -> str:
