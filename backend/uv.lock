@@ -334,7 +334,7 @@ requires-dist = [
     { name = "aiomysql", specifier = ">=0.3.2" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
     { name = "dashscope", specifier = ">=1.25.14" },
-    { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
+    { name = "en-core-web-sm", path = "vendor/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "fastapi", specifier = ">=0.137.0" },
     { name = "greenlet", specifier = ">=3.0.0" },
     { name = "httpx", specifier = ">=0.27.0" },
@@ -1018,9 +1018,9 @@ wheels = [
 [[package]]
 name = "en-core-web-sm"
 version = "3.8.0"
-source = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+source = { path = "vendor/en_core_web_sm-3.8.0-py3-none-any.whl" }
 wheels = [
-    { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl", hash = "sha256:1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85" },
+    { filename = "en_core_web_sm-3.8.0-py3-none-any.whl", hash = "sha256:bd869d8c54f6a629f99a05505390781e6e758d8354892111cb039888ca259de6" },
 ]
 
 [[package]]
