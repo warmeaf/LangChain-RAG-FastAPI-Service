@@ -34,11 +34,12 @@ async def summarization_node(state: AgentState) -> AgentState:
     system_prompt = build_stage_prompt("summarization", "(无可用的工具 — 请直接基于已有信息回答)")
 
     llm = create_anthropic_streaming_model(temperature=0.5, max_tokens=2048)
-    llm_no_tools = llm.bind_tools([], tool_choice="none")  # 禁止工具调用
+    # Summarization 不走工具：直接使用裸 LLM，不传 tools 参数
+    # 注意：不能用 llm.bind_tools([], tool_choice="none")，DeepSeek 端点对该组合
+    # 支持不佳，会导致返回空响应。
 
     # 构建回答上下文
     context = _build_summarization_context(state)
-    user_query = _get_user_query(state.get("messages", []))
 
     messages = [
         SystemMessage(content=system_prompt),
@@ -51,31 +52,25 @@ async def summarization_node(state: AgentState) -> AgentState:
 
     full_answer = ""
     try:
-        async for chunk in llm_no_tools.astream(messages):
+        async for chunk in llm.astream(messages):
             if hasattr(chunk, 'content') and chunk.content:
                 content = chunk.content
                 if isinstance(content, str) and content:
                     full_answer += content
                     if writer:
-                        writer({
-                            "type": "delta",
-                            "content": content,
-                        })
+                        writer({"type": "delta", "content": content})
                 elif isinstance(content, list):
                     for block in content:
                         if isinstance(block, dict) and block.get("type") == "text":
                             text = block.get("text", "")
                             full_answer += text
                             if writer:
-                                writer({
-                                    "type": "delta",
-                                    "content": text,
-                                })
+                                writer({"type": "delta", "content": text})
     except Exception as e:
         logger.error(f"[Summarization] 流式生成失败: {e}", exc_info=True)
         # 降级：非流式生成
         try:
-            result = await llm_no_tools.ainvoke(messages)
+            result = await llm.ainvoke(messages)
             full_answer = result.content if hasattr(result, 'content') else str(result)
             if isinstance(full_answer, list):
                 full_answer = "".join(
@@ -85,8 +80,8 @@ async def summarization_node(state: AgentState) -> AgentState:
             if writer:
                 writer({"type": "delta", "content": full_answer})
         except Exception as e2:
-            logger.error(f"[Summarization] 非流式降级也失败: {e2}")
-            full_answer = "抱歉，生成回答时出现错误。"
+            logger.error(f"[Summarization] 非流式降级也失败: {e2}", exc_info=True)
+            full_answer = f"抱歉，生成回答时出现错误: {e2}"
 
     state["final_answer"] = full_answer or "抱歉，我无法回答这个问题。"
     logger.info(f"[Summarization] 最终回答: {len(state['final_answer'])} 字符")
