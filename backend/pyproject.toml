@@ -53,6 +53,7 @@ dependencies = [
     # unstructured 的 partition_pptx 需要 spacy 模型做文本分类，
     # 若未预装会在运行时从 GitHub 下载导致 120s 超时（容器网络不通时）
     "en-core-web-sm@https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "langchain-anthropic",
 ]
 
 # 开发依赖

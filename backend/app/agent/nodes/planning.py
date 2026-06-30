@@ -90,6 +90,22 @@ async def planning_node(state: AgentState, tools: List[Callable]) -> AgentState:
                         state["plan"] = plan
                         state["current_step"] = 0
                         state["messages"] = messages
+
+                        # 推送 plan_created SSE 事件
+                        try:
+                            from langgraph.config import get_stream_writer
+                            writer = get_stream_writer()
+                            writer({
+                                "type": "plan_created",
+                                "steps": [
+                                    {"id": s["id"], "tool_name": s["tool_name"], "reason": s["reason"]}
+                                    for s in plan
+                                ],
+                                "total_steps": len(plan),
+                            })
+                        except Exception:
+                            pass  # 非流式上下文
+
                         logger.info(f"[Planning] 计划创建成功: {len(plan)} 步")
                         return state
 

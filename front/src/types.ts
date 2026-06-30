@@ -51,6 +51,20 @@ export interface SessionData {
   history?: string[][];
 }
 
+// ---- Agent Plan / Progress ----
+export interface PlanStep {
+  id: string;
+  tool_name: string;
+  reason: string;
+  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped';
+}
+
+export interface AgentPlan {
+  steps: PlanStep[];
+  total_steps: number;
+  replan_count: number;
+}
+
 // ---- Chat / Thinking ----
 export interface ThinkingStepDetails {
   documents?: Array<{ source: string; score?: number }>;
@@ -71,6 +85,8 @@ export interface ChatMessage {
   thinking?: ThinkingStep[];
   thinkingCollapsed?: boolean;
   thinkingAutoCollapsed?: boolean;
+  /** Plan-then-Execute Agent 检索计划 */
+  plan?: AgentPlan;
 }
 
 // ---- Knowledge / Upload ----
@@ -101,18 +117,41 @@ export interface ActionSheetAction {
   color?: string;
 }
 
-// ---- SSE Events ----
-export interface SseThinkingEvent {
-  type: 'thinking';
-  stage: string;
-  content: string;
-  details: Record<string, unknown> | null;
+// ---- SSE Events (new Plan-then-Execute Agent format) ----
+
+export interface SsePlanCreatedEvent {
+  type: 'plan_created';
+  steps: Array<{ id: string; tool_name: string; reason: string }>;
+  total_steps: number;
 }
 
-export interface SseResponseEvent {
-  type: 'response';
+export interface SseStepStartEvent {
+  type: 'step_start';
+  step_id: string;
+  tool_name: string;
+  reason: string;
+}
+
+export interface SseStepDoneEvent {
+  type: 'step_done';
+  step_id: string;
+  status: 'done' | 'failed' | 'skipped';
+}
+
+export interface SseStepReplanEvent {
+  type: 'step_replan';
+  reason: string;
+  new_steps: Array<{ id: string; tool_name: string; tool_args: Record<string, unknown>; reason: string }>;
+  new_total_steps: number;
+}
+
+export interface SseAnswerStartEvent {
+  type: 'answer_start';
+}
+
+export interface SseDeltaEvent {
+  type: 'delta';
   content: string;
-  session_id?: string;
 }
 
 export interface SseDoneEvent {
@@ -125,4 +164,21 @@ export interface SseErrorEvent {
   content: string;
 }
 
-export type SseEvent = SseThinkingEvent | SseResponseEvent | SseDoneEvent | SseErrorEvent;
+/** Raw thinking event (debug info, preserved for backward tracing) */
+export interface SseThinkingEvent {
+  type: 'thinking';
+  stage: string;
+  content: string;
+  details: Record<string, unknown> | null;
+}
+
+export type SseEvent =
+  | SsePlanCreatedEvent
+  | SseStepStartEvent
+  | SseStepDoneEvent
+  | SseStepReplanEvent
+  | SseAnswerStartEvent
+  | SseDeltaEvent
+  | SseDoneEvent
+  | SseErrorEvent
+  | SseThinkingEvent;

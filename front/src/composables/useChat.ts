@@ -3,7 +3,7 @@ import { computed, nextTick, type Ref, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '../store/session';
 import { useUserStore } from '../store/user';
-import type { ChatMessage, SessionData, SseEvent } from '../types';
+import type { AgentPlan, ChatMessage, PlanStep, SessionData, SseEvent } from '../types';
 
 interface UseChatReturn {
   messages: Ref<ChatMessage[]>;
@@ -16,6 +16,21 @@ interface UseChatReturn {
   sendQuickQuestion: (question: string) => void;
   resetToWelcome: () => void;
   loadSessionHistory: (session: SessionData) => Promise<void>;
+}
+
+/** 工具名 → 中文标签映射 */
+const TOOL_LABELS: Record<string, string> = {
+  vector_search: '向量检索',
+  keyword_search: '关键词检索',
+  sql_query: 'SQL 查询',
+  metadata_filter_milvus: '元数据过滤',
+  get_weather: '天气查询',
+  get_current_time: '时间查询',
+  ocr_recognize: 'OCR 识别',
+};
+
+function toolLabel(name: string): string {
+  return TOOL_LABELS[name] || name;
 }
 
 export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatReturn {
@@ -68,6 +83,14 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     sendMessage();
   };
 
+  /** 获取最后一条 assistant 消息 */
+  const lastAssistant = (): ChatMessage | null => {
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      if (messages.value[i].role === 'assistant') return messages.value[i];
+    }
+    return null;
+  };
+
   const sendMessage = async (): Promise<void> => {
     if (!userInput.value.trim() || isLoading.value) return;
 
@@ -86,6 +109,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
       thinking: [],
       thinkingCollapsed: false,
       thinkingAutoCollapsed: false,
+      plan: undefined,
     });
 
     await nextTick();
@@ -96,8 +120,8 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
       await fetchAIResponse(userMessage);
     } catch (error: unknown) {
       const err = error as { message?: string };
-      messages.value[messages.value.length - 1].content =
-        `发生错误: ${err.message || '请检查网络连接和API设置'}`;
+      const last = lastAssistant();
+      if (last) last.content = `发生错误: ${err.message || '请检查网络连接和API设置'}`;
     } finally {
       isLoading.value = false;
       await nextTick();
@@ -105,7 +129,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     }
   };
 
-  const fetchAIResponse = async (userMessage: string): Promise<void> => {
+  const fetchAIResponse = async (_userMessage: string): Promise<void> => {
     const token = localStorage.getItem('jwt_token') || userStore.token;
 
     const response = await fetch('/chat/agent/query/stream', {
@@ -116,7 +140,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
       },
       body: JSON.stringify({
         session_id: sessionId.value || undefined,
-        query: userMessage,
+        query: _userMessage,
       }),
     });
 
@@ -131,6 +155,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     const decoder = new TextDecoder();
     let buffer = '';
     let aiResponse = '';
+    let answerStarted = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -149,18 +174,124 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
           const json = JSON.parse(data) as SseEvent;
 
           switch (json.type) {
+            // ── 计划创建 ──
+            case 'plan_created': {
+              const msg = lastAssistant();
+              if (msg) {
+                msg.plan = {
+                  steps: json.steps.map((s) => ({
+                    id: s.id,
+                    tool_name: s.tool_name,
+                    reason: s.reason,
+                    status: 'pending' as const,
+                  })),
+                  total_steps: json.total_steps,
+                  replan_count: 0,
+                };
+              }
+              break;
+            }
+
+            // ── 步骤开始 ──
+            case 'step_start': {
+              const msg = lastAssistant();
+              if (msg?.plan) {
+                const step = msg.plan.steps.find((s) => s.id === json.step_id);
+                if (step) step.status = 'running';
+              }
+              break;
+            }
+
+            // ── 步骤完成 ──
+            case 'step_done': {
+              const msg = lastAssistant();
+              if (msg?.plan) {
+                const step = msg.plan.steps.find((s) => s.id === json.step_id);
+                if (step) step.status = json.status as PlanStep['status'];
+              }
+              break;
+            }
+
+            // ── 计划修正 ──
+            case 'step_replan': {
+              const msg = lastAssistant();
+              if (msg?.plan) {
+                // 保留已完成的步骤，替换为新步骤
+                const completed = msg.plan.steps.filter(
+                  (s) => s.status === 'done' || s.status === 'failed'
+                );
+                const newSteps: PlanStep[] = json.new_steps.map((s) => ({
+                  id: s.id,
+                  tool_name: s.tool_name,
+                  reason: s.reason,
+                  status: 'pending' as const,
+                }));
+                msg.plan.steps = [...completed, ...newSteps];
+                msg.plan.total_steps = json.new_total_steps;
+                msg.plan.replan_count++;
+              }
+              break;
+            }
+
+            // ── 回答开始 ──
+            case 'answer_start': {
+              answerStarted = true;
+              const msg = lastAssistant();
+              if (msg && (msg.thinking?.length || 0) > 0) {
+                msg.thinkingAutoCollapsed = true;
+                if (autoCollapseTimer.value) clearTimeout(autoCollapseTimer.value);
+                autoCollapseTimer.value = setTimeout(() => {
+                  msg.thinkingCollapsed = true;
+                  autoCollapseTimer.value = null;
+                }, 1500);
+              }
+              break;
+            }
+
+            // ── 回答文本增量 ──
+            case 'delta': {
+              const content = json.content || '';
+              if (!content) break;
+              aiResponse += content;
+
+              // 首次 delta 视为隐式 answer_start
+              if (!answerStarted) {
+                answerStarted = true;
+                const msg = lastAssistant();
+                if (msg && (msg.thinking?.length || 0) > 0) {
+                  msg.thinkingAutoCollapsed = true;
+                  if (autoCollapseTimer.value) clearTimeout(autoCollapseTimer.value);
+                  autoCollapseTimer.value = setTimeout(() => {
+                    msg.thinkingCollapsed = true;
+                    autoCollapseTimer.value = null;
+                  }, 1500);
+                }
+              }
+
+              const last = lastAssistant();
+              if (last) {
+                const displayContent = last.content || '';
+                const remainingContent = aiResponse.substring(displayContent.length);
+                for (const char of remainingContent) {
+                  last.content += char;
+                  await new Promise<void>((r) => setTimeout(r, 0));
+                  scrollToBottom();
+                  await new Promise<void>((r) => setTimeout(r, 8));
+                }
+              }
+              break;
+            }
+
+            // ── 思考事件（保留用于调试）──
             case 'thinking': {
-              const idx = messages.value.length - 1;
-              if (messages.value[idx].role === 'assistant') {
+              const msg = lastAssistant();
+              if (msg) {
                 const newStep = {
                   stage: json.stage || '',
                   content: json.content || '',
                   details: json.details || null,
                 };
-                messages.value[idx] = {
-                  ...messages.value[idx],
-                  thinking: [...(messages.value[idx].thinking || []), newStep],
-                };
+                msg.thinking = [...(msg.thinking || []), newStep];
                 await nextTick();
                 await new Promise<void>((r) => requestAnimationFrame(() => r()));
                 scrollToBottom();
@@ -168,38 +299,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
               break;
             }
 
-            case 'response': {
-              const lastMsg = messages.value[messages.value.length - 1];
-              if (!lastMsg.thinkingAutoCollapsed && (lastMsg.thinking?.length || 0) > 0) {
-                lastMsg.thinkingAutoCollapsed = true;
-                if (autoCollapseTimer.value) clearTimeout(autoCollapseTimer.value);
-                autoCollapseTimer.value = setTimeout(() => {
-                  lastMsg.thinkingCollapsed = true;
-                  autoCollapseTimer.value = null;
-                }, 1500);
-              }
-              const content = json.content || '';
-              if (content) {
-                aiResponse += content;
-                const displayContent = lastMsg.content || '';
-                const remainingContent = aiResponse.substring(displayContent.length);
-                for (const char of remainingContent) {
-                  lastMsg.content += char;
-                  await new Promise<void>((r) => setTimeout(r, 0));
-                  scrollToBottom();
-                  await new Promise<void>((r) => setTimeout(r, 8));
-                }
-              }
-              if (
-                json.session_id &&
-                typeof json.session_id === 'string' &&
-                json.session_id.trim()
-              ) {
-                sessionId.value = json.session_id;
-              }
-              break;
-            }
-
+            // ── 流结束 ──
             case 'done': {
               const sid = json.session_id;
               if (sid && typeof sid === 'string' && sid.trim()) {
@@ -211,13 +311,14 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
               break;
             }
 
+            // ── 错误 ──
             case 'error':
               throw new Error(json.content || 'API错误');
           }
         } catch (e: unknown) {
           const err = e as { message?: string };
           if (err.message && !err.message.includes('API错误')) {
-            // Log parse errors but don't throw
+            // 解析错误不抛
           } else {
             throw e;
           }
@@ -226,8 +327,8 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     }
 
     if (!aiResponse) {
-      messages.value[messages.value.length - 1].content =
-        '抱歉，我无法生成回复。请检查API设置或稍后再试。';
+      const last = lastAssistant();
+      if (last) last.content = '抱歉，我无法生成回复。请检查API设置或稍后再试。';
     }
   };
 
@@ -265,8 +366,8 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     } else {
       const saved = loadThinkingFromHistory(session.session_id);
       if (saved) {
-        const last = messages.value[messages.value.length - 1];
-        if (last?.role === 'assistant') last.thinking = saved;
+        const last = lastAssistant();
+        if (last) last.thinking = saved;
       }
     }
   };

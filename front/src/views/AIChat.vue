@@ -52,18 +52,19 @@
                   ? 'w-full max-w-[85%] bg-(--van-background-2) border border-(--van-border-color) rounded-(--van-radius-lg) px-(--van-padding-sm) py-(--van-padding-base)'
                   : 'w-fit max-w-[85%] bg-(--van-background-2) border border-(--van-border-color) rounded-(--van-radius-lg) px-(--van-padding-sm) py-(--van-padding-base)'
             ]">
-            <!-- 思考过程区域 -->
+            <!-- 检索进度 / 思考过程区域 -->
             <ThinkingSteps
               :thinking="message.thinking || []"
               :collapsed="message.thinkingCollapsed || false"
+              :plan="message.plan"
               @toggle="toggleThinking(message)"
             />
             <!-- 回复正文 -->
             <div v-if="message.content" class="text-(--van-font-size-md) leading-relaxed">
               <MarkdownRender custom-id="chat" :content="message.content" :typewriter="false" :fade="false" :is-dark="themeStore.isDark" />
             </div>
-            <!-- 打字指示器（无内容且无思考过程时显示） -->
-            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0)"
+            <!-- 打字指示器（无内容、无思考过程、无计划进度时显示） -->
+            <div v-if="message.role === 'assistant' && !message.content && (!message.thinking || message.thinking.length === 0) && (!message.plan || !message.plan.steps?.length)"
               class="typing-indicator">
               <span></span>
               <span></span>

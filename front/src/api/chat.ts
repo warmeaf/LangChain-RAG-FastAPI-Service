@@ -1,13 +1,23 @@
 const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+/** SSE 事件回调 */
+export interface ChatCallbacks {
+  onPlanCreated?: (data: { steps: Array<{ id: string; tool_name: string; reason: string }>; total_steps: number }) => void;
+  onStepStart?: (data: { step_id: string; tool_name: string; reason: string }) => void;
+  onStepDone?: (data: { step_id: string; status: 'done' | 'failed' | 'skipped' }) => void;
+  onStepReplan?: (data: { reason: string; new_steps: unknown[]; new_total_steps: number }) => void;
+  onAnswerStart?: () => void;
+  onDelta?: (text: string) => void;
+  onThinking?: (data: { stage: string; content: string; details: Record<string, unknown> | null }) => void;
+  onDone?: (sessionId?: string) => void;
+  onError?: (err: string) => void;
+}
+
 export async function sendChatMessage(
   query: string,
   sessionId: string,
   token: string,
-  onThinking: (data: any) => void,
-  onText: (text: string) => void,
-  onDone: () => void,
-  onError: (err: string) => void,
+  callbacks: ChatCallbacks,
 ) {
   const response = await fetch(`${BASE}/chat/agent/query/stream`, {
     method: 'POST',
@@ -33,11 +43,20 @@ export async function sendChatMessage(
       if (line.startsWith('data: ')) {
         try {
           const data = JSON.parse(line.slice(6));
-          if (data.type === 'thinking') onThinking(data);
-          else if (data.type === 'text') onText(data.content);
-          else if (data.type === 'done') onDone();
-          else if (data.type === 'error') onError(data.content);
-        } catch {}
+          switch (data.type) {
+            case 'plan_created': callbacks.onPlanCreated?.(data); break;
+            case 'step_start': callbacks.onStepStart?.(data); break;
+            case 'step_done': callbacks.onStepDone?.(data); break;
+            case 'step_replan': callbacks.onStepReplan?.(data); break;
+            case 'answer_start': callbacks.onAnswerStart?.(); break;
+            case 'delta': callbacks.onDelta?.(data.content); break;
+            case 'thinking': callbacks.onThinking?.(data); break;
+            case 'done': callbacks.onDone?.(data.session_id); break;
+            case 'error': callbacks.onError?.(data.content); break;
+          }
+        } catch {
+          // skip parse errors
+        }
       }
     }
   }
