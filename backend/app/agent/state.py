@@ -22,12 +22,12 @@ class AgentState(TypedDict):
     """Agent 全局状态
 
     messages 使用手动 append 模式，不使用 LangGraph 的 MessagesState 自动合并。
-    消息格式遵循 Anthropic Messages API content blocks 规范。
     """
     messages: list          # 对话历史（Anthropic content blocks 兼容格式）
     plan: list[Step]        # 当前检索计划
     current_step: int       # 当前执行到第几步（索引）
     replan_count: int       # 已重规划次数
+    cycle_count: int        # 统一工具循环已执行轮数（防无限循环）
     tool_results: dict      # 工具执行结果汇总 {step_id: result}
     final_answer: str       # 最终回答（Summarization 节点产出）
     session_id: str         # 会话 ID（持久化使用）

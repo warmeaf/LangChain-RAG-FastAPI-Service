@@ -12,8 +12,7 @@ def test_graph_builds_successfully():
     graph = _build_agent_graph(DEFAULT_TOOLS)
     nodes = list(graph.nodes.keys())
     assert "__start__" in nodes
-    assert "planning" in nodes
-    assert "execution" in nodes
+    assert "execute" in nodes
     assert "summarization" in nodes
 
 
@@ -47,16 +46,15 @@ def test_system_prompts_load():
     """测试系统提示词可以正常加载"""
     prompts = load_system_prompts()
     assert "base" in prompts
-    assert "planning" in prompts
-    assert "execution" in prompts
+    assert "execute" in prompts
     assert "summarization" in prompts
     assert len(prompts["base"]) > 0
 
 
-def test_build_stage_prompt_planning():
-    """测试构建 Planning 阶段提示词"""
+def test_build_stage_prompt_execute():
+    """测试构建 Execute 阶段提示词"""
     tools_xml = "<tool name='test'><description>Test</description></tool>"
-    result = build_stage_prompt("planning", tools_xml)
+    result = build_stage_prompt("execute", tools_xml)
     assert len(result) > 0
     assert "test" in result
     assert "{tools}" not in result  # 应已被替换

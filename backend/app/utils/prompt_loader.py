@@ -42,11 +42,11 @@ def load_prompt(prompt_type: str = 'main_prompt'):
 def load_system_prompts() -> Dict[str, str]:
     """加载分层系统提示词（YAML 格式）
 
-    从 app/prompt/system_prompt.yaml 加载 base / planning / execution / summarization 四层提示词。
+    从 app/prompt/system_prompt.yaml 加载 base / execute / summarization 三层提示词。
     每层中的 {tools} 占位符由调用方动态注入工具描述。
 
     Returns:
-        {"base": str, "planning": str, "execution": str, "summarization": str}
+        {"base": str, "execute": str, "summarization": str}
     """
     yaml_path = os.path.join(get_project_root(), "app", "prompt", "system_prompt.yaml")
     try:
@@ -64,8 +64,7 @@ def load_system_prompts() -> Dict[str, str]:
 
     return {
         "base": data.get("base", "").strip(),
-        "planning": data.get("planning", "").strip(),
-        "execution": data.get("execution", "").strip(),
+        "execute": data.get("execute", "").strip(),
         "summarization": data.get("summarization", "").strip(),
     }
 
@@ -74,7 +73,7 @@ def build_stage_prompt(stage: str, tools_xml: str) -> str:
     """构建特定阶段的完整系统提示词
 
     Args:
-        stage: 阶段名称 (planning / execution / summarization)
+        stage: 阶段名称 (execute / summarization)
         tools_xml: 工具 XML 描述字符串
 
     Returns:
