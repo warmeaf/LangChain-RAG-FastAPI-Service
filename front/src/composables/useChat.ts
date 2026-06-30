@@ -354,6 +354,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
     });
     sessionId.value = session.session_id;
 
+    // 加载 thinking 事件
     const thinkingData = await sessionStore.getThinking(session.session_id);
     if (thinkingData?.length) {
       let aiIndex = 0;
@@ -369,6 +370,24 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
         const last = lastAssistant();
         if (last) last.thinking = saved;
       }
+    }
+
+    // 加载检索计划（Plan-then-Execute Agent）
+    try {
+      const planResp = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || ''}/chat/session/${session.session_id}/plan`,
+        { headers: { Authorization: `Bearer ${userStore.token}` } }
+      );
+      if (planResp.ok) {
+        const planJson = await planResp.json();
+        const plan = planJson?.data?.plan;
+        if (plan) {
+          const last = lastAssistant();
+          if (last) last.plan = plan;
+        }
+      }
+    } catch {
+      // plan 加载失败不影响主流程
     }
   };
 

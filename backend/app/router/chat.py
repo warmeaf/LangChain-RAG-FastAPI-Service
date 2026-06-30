@@ -29,6 +29,141 @@ from app.core.logger_handler import logger
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _normalize_thinking_event(event: dict) -> dict:
+    """将新的 Agent SSE 事件规范化为可持久化的 thinking 格式
+
+    新事件类型 (plan_created/step_start/step_done/step_replan) 的字段
+    与旧 thinking 事件 (stage/content/details) 不同，需要映射后才能正确存入
+    ChatThinkingEvent 表，供前端刷新页面后重放。
+    """
+    event_type = event.get("type", "")
+
+    if event_type == "plan_created":
+        return {
+            "stage": "plan_created",
+            "content": f"制定检索计划，共 {event.get('total_steps', 0)} 步",
+            "details": {
+                "steps": event.get("steps", []),
+                "total_steps": event.get("total_steps", 0),
+            },
+        }
+    elif event_type == "step_start":
+        return {
+            "stage": "step_start",
+            "content": f"调用 {event.get('tool_name', '')}: {event.get('reason', '')}",
+            "details": {
+                "step_id": event.get("step_id", ""),
+                "tool_name": event.get("tool_name", ""),
+                "reason": event.get("reason", ""),
+            },
+        }
+    elif event_type == "step_done":
+        return {
+            "stage": "step_done",
+            "content": f"步骤完成: {event.get('step_id', '')} ({event.get('status', '')})",
+            "details": {
+                "step_id": event.get("step_id", ""),
+                "status": event.get("status", ""),
+            },
+        }
+    elif event_type == "step_replan":
+        return {
+            "stage": "step_replan",
+            "content": f"计划修正: {event.get('reason', '')}",
+            "details": {
+                "reason": event.get("reason", ""),
+                "new_steps": event.get("new_steps", []),
+                "new_total_steps": event.get("new_total_steps", 0),
+            },
+        }
+    else:
+        # 旧 thinking 事件原样保留
+        return event
+
+
+def _reconstruct_plan_from_events(thinking_events: list) -> dict:
+    """从持久化的 thinking 事件中重建 AgentPlan
+
+    遍历事件序列，重建计划的完整状态用于前端回显。
+    """
+    if not thinking_events:
+        return None
+
+    plan_steps = []
+    replan_count = 0
+
+    for evt in thinking_events:
+        stage = evt.get("stage", "")
+        details = evt.get("details") or {}
+
+        if stage == "plan_created":
+            # 初始计划
+            plan_steps = [
+                {
+                    "id": s.get("id", ""),
+                    "tool_name": s.get("tool_name", ""),
+                    "reason": s.get("reason", ""),
+                    "status": "pending",
+                }
+                for s in details.get("steps", [])
+            ]
+
+        elif stage == "step_start":
+            sid = details.get("step_id", "")
+            for s in plan_steps:
+                if s["id"] == sid:
+                    s["status"] = "running"
+
+        elif stage == "step_done":
+            sid = details.get("step_id", "")
+            status = details.get("status", "done")
+            for s in plan_steps:
+                if s["id"] == sid:
+                    s["status"] = status
+
+        elif stage == "step_replan":
+            replan_count += 1
+            # 保留已完成的步骤，替换为新步骤
+            completed = [s for s in plan_steps if s["status"] in ("done", "failed")]
+            new_steps = [
+                {
+                    "id": s.get("id", ""),
+                    "tool_name": s.get("tool_name", ""),
+                    "reason": s.get("reason", ""),
+                    "status": "pending",
+                }
+                for s in details.get("new_steps", [])
+            ]
+            plan_steps = completed + new_steps
+
+    if not plan_steps:
+        return None
+
+    return {
+        "steps": plan_steps,
+        "total_steps": len(plan_steps),
+        "replan_count": replan_count,
+    }
+
+
+@chat_router.get("/session/{session_id}/plan")
+async def get_session_plan(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id),
+    router_service: ChatService = Depends(get_router_service),
+):
+    """获取会话最新回答的检索计划（供前端刷新页面后重放进度条）"""
+    from app.services import session_manager as sm
+    # 验证会话归属
+    await sm.session_manager.get_session(session_id, user_id)
+    thinking_events = await sm.session_manager.get_thinking_events(session_id)
+    if thinking_events:
+        # 取最后一条回答的 thinking
+        plan = _reconstruct_plan_from_events(thinking_events[-1])
+        return success_response(data={"session_id": session_id, "plan": plan})
+    return success_response(data={"session_id": session_id, "plan": None})
+
+
 @chat_router.post("/agent/query/stream")
 async def query_stream(
     request: QueryRequest,
@@ -59,7 +194,7 @@ async def query_stream(
         final_answer = ""
 
         try:
-            # 加载聊天历史（Anthropic content blocks 兼容格式）
+            # 加载聊天历史
             history = await sm.session_manager.get_history(session_id, user_id)
             history_messages = []
             if history:
@@ -76,9 +211,9 @@ async def query_stream(
             ):
                 event_type = event.get("type", "")
 
-                # 收集 thinking 事件
+                # 收集并规范化 thinking 事件（持久化用）
                 if event_type in ("plan_created", "step_start", "step_done", "step_replan", "thinking"):
-                    thinking_events.append(event)
+                    thinking_events.append(_normalize_thinking_event(event))
 
                 # 收集 delta 回答
                 if event_type == "delta":
