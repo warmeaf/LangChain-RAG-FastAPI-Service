@@ -345,31 +345,40 @@ class OpenAICompatibleEmbeddings(Embeddings):
 
 # ── Anthropic 协议工厂函数（Agent 使用）──
 
+# 默认最大输出 token 数，可通过 ANTHROPIC_MAX_TOKENS 环境变量覆盖
+_DEFAULT_ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "393216"))
+
+
 def create_anthropic_model(
     model_name: Optional[str] = None,
     streaming: bool = False,
     temperature: float = 0.2,
-    max_tokens: int = 4096,
+    max_tokens: Optional[int] = None,
 ) -> "ChatAnthropic":
     """创建 ChatAnthropic 实例（Anthropic Messages API 协议）
 
     通过 DeepSeek 的 Anthropic 兼容端点调用，使用 x-api-key 认证。
     Agent 的全部 LLM 调用走此函数，与 RAG 流水线的 OpenAI 协议共存。
 
-    配置来源：.env 中的 DEEPSEEK_API_KEY
+    配置来源：
+    - DEEPSEEK_API_KEY: .env
+    - ANTHROPIC_BASE_URL: .env（默认 https://api.deepseek.com/anthropic）
+    - DEEPSEEK_MODEL_NAME: .env（默认 deepseek-v4-flash）
+    - ANTHROPIC_MAX_TOKENS: .env（默认 393216 = 384K）
     """
     from langchain_anthropic import ChatAnthropic
 
     api_key = os.getenv("DEEPSEEK_API_KEY", "")
     base_url = os.getenv("ANTHROPIC_BASE_URL", "https://api.deepseek.com/anthropic")
     model = model_name or os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-v4-flash")
+    effective_max_tokens = max_tokens if max_tokens is not None else _DEFAULT_ANTHROPIC_MAX_TOKENS
 
     return ChatAnthropic(
         model=model,
         api_key=api_key,
         base_url=base_url,
         temperature=temperature,
-        max_tokens=max_tokens,
+        max_tokens=effective_max_tokens,
         streaming=streaming,
     )
 
@@ -377,7 +386,7 @@ def create_anthropic_model(
 def create_anthropic_streaming_model(
     model_name: Optional[str] = None,
     temperature: float = 0.2,
-    max_tokens: int = 4096,
+    max_tokens: Optional[int] = None,
 ) -> "ChatAnthropic":
     """创建流式 ChatAnthropic 实例（用于 Summarization 节点逐 token 推送）"""
     return create_anthropic_model(

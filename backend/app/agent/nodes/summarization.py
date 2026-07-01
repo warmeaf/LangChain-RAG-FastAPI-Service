@@ -33,7 +33,7 @@ async def summarization_node(state: AgentState) -> AgentState:
     # 构建系统提示词（summarization 层，无工具）
     system_prompt = build_stage_prompt("summarization", "(无可用的工具 — 请直接基于已有信息回答)")
 
-    llm = create_anthropic_streaming_model(temperature=0.5, max_tokens=2048)
+    llm = create_anthropic_streaming_model(temperature=0.5)
     # Summarization 不走工具：直接使用裸 LLM，不传 tools 参数
     # 注意：不能用 llm.bind_tools([], tool_choice="none")，DeepSeek 端点对该组合
     # 支持不佳，会导致返回空响应。
