@@ -198,6 +198,22 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
               if (msg?.plan) {
                 const step = msg.plan.steps.find((s) => s.id === json.step_id);
                 if (step) step.status = 'running';
+              } else {
+                // 无 plan 时，插入 thinking 条目供 ThinkingSteps 渲染
+                if (msg) {
+                  msg.thinking = [...(msg.thinking || []), {
+                    stage: 'step_start',
+                    content: `调用 ${toolLabel(json.tool_name)}: ${json.reason || ''}`,
+                    details: {
+                      step_id: json.step_id,
+                      tool_name: json.tool_name,
+                      reason: json.reason,
+                    },
+                  }];
+                  await nextTick();
+                  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+                  scrollToBottom();
+                }
               }
               break;
             }
@@ -208,6 +224,22 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
               if (msg?.plan) {
                 const step = msg.plan.steps.find((s) => s.id === json.step_id);
                 if (step) step.status = json.status as PlanStep['status'];
+              } else {
+                // 无 plan 时，插入 thinking 条目
+                if (msg) {
+                  const statusText = { done: '完成', failed: '失败', skipped: '跳过' }[json.status] || json.status;
+                  msg.thinking = [...(msg.thinking || []), {
+                    stage: 'step_done',
+                    content: `步骤完成: ${toolLabel(json.step_id)} (${statusText})`,
+                    details: {
+                      step_id: json.step_id,
+                      status: json.status,
+                    },
+                  }];
+                  await nextTick();
+                  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+                  scrollToBottom();
+                }
               }
               break;
             }
