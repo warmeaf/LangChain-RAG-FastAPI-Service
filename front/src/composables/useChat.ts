@@ -174,19 +174,18 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
           const json = JSON.parse(data) as SseEvent;
 
           switch (json.type) {
-            // ── 计划创建 ──
-            case 'plan_created': {
+            // ── 计划更新（全量替换）──
+            case 'plan_updated': {
               const msg = lastAssistant();
               if (msg) {
                 msg.plan = {
                   steps: json.steps.map((s) => ({
                     id: s.id,
-                    tool_name: s.tool_name,
-                    reason: s.reason,
-                    status: 'pending' as const,
+                    content: s.content,
+                    status: s.status as PlanStep['status'],
                   })),
                   total_steps: json.total_steps,
-                  replan_count: 0,
+                  replan_count: (msg.plan?.replan_count || 0) + 1,
                 };
               }
               break;
@@ -196,8 +195,12 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
             case 'step_start': {
               const msg = lastAssistant();
               if (msg?.plan) {
+                // 将之前的 in_progress 改为 completed，当前步骤设为 in_progress
+                for (const s of msg.plan.steps) {
+                  if (s.status === 'in_progress') s.status = 'completed';
+                }
                 const step = msg.plan.steps.find((s) => s.id === json.step_id);
-                if (step) step.status = 'running';
+                if (step) step.status = 'in_progress';
               } else {
                 // 无 plan 时，插入 thinking 条目供 ThinkingSteps 渲染
                 if (msg) {
@@ -223,7 +226,7 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
               const msg = lastAssistant();
               if (msg?.plan) {
                 const step = msg.plan.steps.find((s) => s.id === json.step_id);
-                if (step) step.status = json.status as PlanStep['status'];
+                if (step) step.status = 'completed';
               } else {
                 // 无 plan 时，插入 thinking 条目
                 if (msg) {
@@ -240,27 +243,6 @@ export function useChat(messagesContainer: Ref<HTMLElement | null>): UseChatRetu
                   await new Promise<void>((r) => requestAnimationFrame(() => r()));
                   scrollToBottom();
                 }
-              }
-              break;
-            }
-
-            // ── 计划修正 ──
-            case 'step_replan': {
-              const msg = lastAssistant();
-              if (msg?.plan) {
-                // 保留已完成的步骤，替换为新步骤
-                const completed = msg.plan.steps.filter(
-                  (s) => s.status === 'done' || s.status === 'failed'
-                );
-                const newSteps: PlanStep[] = json.new_steps.map((s) => ({
-                  id: s.id,
-                  tool_name: s.tool_name,
-                  reason: s.reason,
-                  status: 'pending' as const,
-                }));
-                msg.plan.steps = [...completed, ...newSteps];
-                msg.plan.total_steps = json.new_total_steps;
-                msg.plan.replan_count++;
               }
               break;
             }

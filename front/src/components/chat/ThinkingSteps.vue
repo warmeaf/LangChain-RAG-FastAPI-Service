@@ -15,18 +15,13 @@
       <div v-show="!collapsed" class="flex flex-col gap-1 mt-1 max-h-60 overflow-y-auto" style="scrollbar-gutter: stable">
         <div v-for="step in plan?.steps" :key="step.id"
           class="flex items-center gap-[var(--van-padding-xs)] py-1.5 px-2 rounded-[var(--van-radius-sm)]"
-          :class="step.status === 'running' ? 'bg-[var(--van-primary-color)]/10' : 'bg-[var(--van-background-2)]'">
+          :class="step.status === 'in_progress' ? 'bg-[var(--van-primary-color)]/10' : 'bg-[var(--van-background-2)]'">
           <!-- 状态图标 -->
-          <span v-if="step.status === 'done'" class="text-green-500 shrink-0"><CircleCheckBig :size="14" /></span>
-          <span v-else-if="step.status === 'failed'" class="text-red-400 shrink-0"><CircleX :size="14" /></span>
-          <span v-else-if="step.status === 'skipped'" class="text-gray-300 shrink-0"><CircleSlash :size="14" /></span>
-          <span v-else-if="step.status === 'running'" class="text-blue-500 shrink-0 animate-spin"><LoaderCircle :size="14" /></span>
+          <span v-if="step.status === 'completed'" class="text-green-500 shrink-0"><CircleCheckBig :size="14" /></span>
+          <span v-else-if="step.status === 'in_progress'" class="text-blue-500 shrink-0 animate-spin"><LoaderCircle :size="14" /></span>
           <span v-else class="text-gray-300 shrink-0"><Circle :size="14" /></span>
-          <!-- 工具名 + 原因 -->
-          <div class="flex-1 min-w-0">
-            <span class="text-[var(--van-font-size-sm)] font-medium text-[var(--van-text-color)]">{{ toolLabel(step.tool_name) }}</span>
-            <span class="text-[var(--van-font-size-sm)] text-[var(--van-text-color-3)] ml-1 truncate">— {{ step.reason }}</span>
-          </div>
+          <!-- 步骤内容 -->
+          <span class="text-[var(--van-font-size-sm)] text-[var(--van-text-color)] truncate">{{ step.content }}</span>
         </div>
       </div>
     </div>
@@ -87,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { Brain, Circle, CircleCheckBig, CircleSlash, CircleX, ListTodo, LoaderCircle } from '@lucide/vue';
+import { Brain, Circle, CircleCheckBig, ListTodo, LoaderCircle } from '@lucide/vue';
 import { computed } from 'vue';
 import type { AgentPlan, ThinkingStep } from '../../types';
 
@@ -105,20 +100,8 @@ const hasPlan = computed(() => !!(props.plan && props.plan.steps?.length));
 
 const planDoneCount = computed(() => {
   if (!props.plan?.steps) return 0;
-  return props.plan.steps.filter((s) => s.status === 'done' || s.status === 'failed' || s.status === 'skipped').length;
+  return props.plan.steps.filter((s) => s.status === 'completed').length;
 });
-
-const TOOL_LABELS: Record<string, string> = {
-  vector_search: '向量检索',
-  keyword_search: '关键词检索',
-  sql_query: 'SQL 查询',
-  metadata_filter_milvus: '元数据过滤',
-  get_weather: '天气查询',
-  get_current_time: '时间查询',
-  ocr_recognize: 'OCR 识别',
-};
-
-const toolLabel = (name: string): string => TOOL_LABELS[name] || name;
 
 const stageConfig: Record<string, { label: string; color: string }> = {
   retrieval: { label: '检索', color: '#B8926E' },

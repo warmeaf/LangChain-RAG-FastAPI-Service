@@ -92,50 +92,42 @@ async def summarization_node(state: AgentState) -> AgentState:
 def _build_summarization_context(state: AgentState) -> str:
     """构建 Summarization 的输入上下文
 
-    两轮收集：
-    1. 从 state["plan"] 提取步骤结果（有 create_plan 时）
-    2. 从 state["messages"] 提取 ToolMessage 结果（无 plan 时的兜底）
+    两路并行，各取各的：
+    1. 从 state["plan"] 获取步骤状态（做什么 + 做到哪了）
+    2. 从 state["messages"] 获取工具结果（ToolMessage content）
     """
     messages = state.get("messages", [])
     user_query = _get_user_query(messages)
-
     plan = state.get("plan", [])
 
     parts = [f"## 用户问题\n{user_query}\n"]
 
-    # 收集已在 plan 中出现的 tool_call_id，用于去重
-    seen_tool_ids = set()
-
+    # ── 步骤规划（来自 update_plan）──
     if plan:
-        parts.append("## 检索执行记录\n")
+        parts.append("## 检索计划\n")
+        markers = {"pending": "[ ]", "in_progress": "[>]", "completed": "[x]"}
         for step in plan:
-            status_icon = {"done": "✅", "failed": "❌", "skipped": "⏭️", "pending": "⏳"}.get(step["status"], "❓")
-            parts.append(f"### {status_icon} {step['id']}: {step['tool_name']}")
-            parts.append(f"原因: {step['reason']}")
-            parts.append(f"状态: {step['status']}")
-            if step.get("result"):
-                result = step["result"]
-                if len(result) > 3000:
-                    result = result[:3000] + "\n... (内容过长已截断)"
-                parts.append(f"结果:\n{result}")
+            m = markers.get(step["status"], "[?]")
+            parts.append(f"- {m} {step['id']}: {step['content']}")
+        completed = sum(1 for s in plan if s["status"] == "completed")
+        parts.append(f"\n({completed}/{len(plan)} 已完成)\n")
+
+    # ── 工具执行结果（来自 messages，始终提取）──
+    tool_results = _extract_tool_results_from_messages(messages)
+    if tool_results:
+        parts.append("## 工具执行结果\n")
+        for tr in tool_results:
+            tool_label = tr.get("tool_name", "未知工具")
+            result = tr.get("content", "")
+            if len(result) > 3000:
+                result = result[:3000] + "\n... (内容过长已截断)"
+            parts.append(f"### {tool_label}")
+            parts.append(f"结果:\n{result}")
             parts.append("")
-    else:
-        # 无 plan 时，从 messages 中提取 ToolMessage 结果
-        tool_results_from_messages = _extract_tool_results_from_messages(messages)
-        if tool_results_from_messages:
-            parts.append("## 工具执行结果\n")
-            for tr in tool_results_from_messages:
-                tool_label = tr.get("tool_name", "未知工具")
-                result = tr.get("content", "")
-                if len(result) > 3000:
-                    result = result[:3000] + "\n... (内容过长已截断)"
-                parts.append(f"### {tool_label}")
-                parts.append(f"结果:\n{result}")
-                parts.append("")
 
     parts.append("## 请基于上述信息，生成完整、准确的回答\n")
     parts.append("要求：")
-    parts.append("- 综合所有步骤的结果，不遗漏重要信息")
+    parts.append("- 综合所有工具结果，不遗漏重要信息")
     parts.append("- 明确标注信息来源（文档名等）")
     parts.append("- 涉及数值和时间时仔细核对")
     parts.append("- 如果信息不足或矛盾，如实说明")

@@ -2,10 +2,9 @@ const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 /** SSE 事件回调 */
 export interface ChatCallbacks {
-  onPlanCreated?: (data: { steps: Array<{ id: string; tool_name: string; reason: string }>; total_steps: number }) => void;
+  onPlanUpdated?: (data: { steps: Array<{ id: string; content: string; status: string }>; total_steps: number }) => void;
   onStepStart?: (data: { step_id: string; tool_name: string; reason: string }) => void;
   onStepDone?: (data: { step_id: string; status: 'done' | 'failed' | 'skipped' }) => void;
-  onStepReplan?: (data: { reason: string; new_steps: unknown[]; new_total_steps: number }) => void;
   onAnswerStart?: () => void;
   onDelta?: (text: string) => void;
   onThinking?: (data: { stage: string; content: string; details: Record<string, unknown> | null }) => void;
@@ -44,10 +43,9 @@ export async function sendChatMessage(
         try {
           const data = JSON.parse(line.slice(6));
           switch (data.type) {
-            case 'plan_created': callbacks.onPlanCreated?.(data); break;
+            case 'plan_updated': callbacks.onPlanUpdated?.(data); break;
             case 'step_start': callbacks.onStepStart?.(data); break;
             case 'step_done': callbacks.onStepDone?.(data); break;
-            case 'step_replan': callbacks.onStepReplan?.(data); break;
             case 'answer_start': callbacks.onAnswerStart?.(); break;
             case 'delta': callbacks.onDelta?.(data.content); break;
             case 'thinking': callbacks.onThinking?.(data); break;

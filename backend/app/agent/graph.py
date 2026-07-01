@@ -110,10 +110,9 @@ async def run_agent_stream(
     initial_state: AgentState = {
         "messages": messages,
         "plan": [],
-        "current_step": 0,
         "replan_count": 0,
         "cycle_count": 0,
-        "tool_results": {},
+        "rounds_since_plan_update": 0,
         "final_answer": "",
         "session_id": session_id,
         "user_id": user_id,
@@ -165,10 +164,9 @@ async def run_agent_non_stream(
     initial_state: AgentState = {
         "messages": messages,
         "plan": [],
-        "current_step": 0,
         "replan_count": 0,
         "cycle_count": 0,
-        "tool_results": {},
+        "rounds_since_plan_update": 0,
         "final_answer": "",
         "session_id": session_id,
         "user_id": user_id,
@@ -185,7 +183,6 @@ async def run_agent_non_stream(
         return {
             "final_answer": final_state.get("final_answer", "抱歉，无法回答这个问题。"),
             "plan": final_state.get("plan", []),
-            "tool_results": final_state.get("tool_results", {}),
         }
 
     except asyncio.TimeoutError:

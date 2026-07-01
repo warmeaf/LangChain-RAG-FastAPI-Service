@@ -54,9 +54,8 @@ export interface SessionData {
 // ---- Agent Plan / Progress ----
 export interface PlanStep {
   id: string;
-  tool_name: string;
-  reason: string;
-  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped';
+  content: string;
+  status: 'pending' | 'in_progress' | 'completed';
 }
 
 export interface AgentPlan {
@@ -119,9 +118,9 @@ export interface ActionSheetAction {
 
 // ---- SSE Events (new Plan-then-Execute Agent format) ----
 
-export interface SsePlanCreatedEvent {
-  type: 'plan_created';
-  steps: Array<{ id: string; tool_name: string; reason: string }>;
+export interface SsePlanUpdatedEvent {
+  type: 'plan_updated';
+  steps: Array<{ id: string; content: string; status: string }>;
   total_steps: number;
 }
 
@@ -136,13 +135,6 @@ export interface SseStepDoneEvent {
   type: 'step_done';
   step_id: string;
   status: 'done' | 'failed' | 'skipped';
-}
-
-export interface SseStepReplanEvent {
-  type: 'step_replan';
-  reason: string;
-  new_steps: Array<{ id: string; tool_name: string; tool_args: Record<string, unknown>; reason: string }>;
-  new_total_steps: number;
 }
 
 export interface SseAnswerStartEvent {
@@ -173,10 +165,9 @@ export interface SseThinkingEvent {
 }
 
 export type SseEvent =
-  | SsePlanCreatedEvent
+  | SsePlanUpdatedEvent
   | SseStepStartEvent
   | SseStepDoneEvent
-  | SseStepReplanEvent
   | SseAnswerStartEvent
   | SseDeltaEvent
   | SseDoneEvent
